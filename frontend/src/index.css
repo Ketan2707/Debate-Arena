@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  /* Design system tokens for Tailwind v4 */
+  --color-brand-dark: #0e1013;
+  --color-brand-panel: #16191f;
+  --color-brand-border: #242731;
+  --color-brand-accent: #6366f1;
+  --color-brand-accentAmber: #f59e0b;
+  --color-brand-textMuted: #8e9aa8;
+  --color-brand-textLight: #f8fafc;
+  
+  --font-serif: "Lora", Georgia, serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+/* Base resets & structural styles */
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #0e1013 !important;
+    color: #f8fafc !important;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Lora", Georgia, serif;
+    color: #f8fafc;
+  }
+}
+
+/* Scrollbar customizations */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0e1013;
+}
+::-webkit-scrollbar-thumb {
+  background: #242731;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #313543;
+}
+
+/* Custom transitions and utility animations */
+@utility animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

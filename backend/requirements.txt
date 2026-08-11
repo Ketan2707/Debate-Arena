@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+google-generativeai
+duckduckgo-search
+pydantic
+pydantic-settings
+python-dotenv
+httpx
+groq
