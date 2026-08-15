@@ -7,3 +7,5 @@ pydantic-settings
 python-dotenv
 httpx
 groq
+supabase
+psycopg2-binary

@@ -1,11 +1,14 @@
 import asyncio
 import json
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from backend import database, agents, search, config
+from backend.config import (
+    hash_password, verify_password, create_session_token, verify_session_token
+)
 
 app = FastAPI(title="Debate Arena API")
 
@@ -23,20 +26,102 @@ app.add_middleware(
 def startup_event():
     database.init_db()
 
+# ─── Auth Dependency ─────────────────────────────────────────
+
+def get_current_user(request: Request) -> dict:
+    """Extract and verify the Bearer token from the Authorization header."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = auth_header.split(" ", 1)[1]
+    user_data = verify_session_token(token)
+    if not user_data:
+        raise HTTPException(status_code=401, detail="Invalid or expired session token")
+    return user_data
+
+def get_optional_user(request: Request) -> dict | None:
+    """Try to extract user from token, return None for guests."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.split(" ", 1)[1]
+    return verify_session_token(token)
+
+# ─── Auth Endpoints ──────────────────────────────────────────
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/api/auth/register")
+def register_user(req: RegisterRequest):
+    email = req.email.strip().lower()
+    password = req.password.strip()
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    existing = database.get_user_by_email(email)
+    if existing:
+        raise HTTPException(status_code=409, detail="An account with this email already exists")
+    
+    pw_hash = hash_password(password)
+    user_id = database.create_user(email, pw_hash)
+    token = create_session_token(user_id, email)
+    return {"token": token, "user": {"id": user_id, "email": email}}
+
+@app.post("/api/auth/login")
+def login_user(req: LoginRequest):
+    email = req.email.strip().lower()
+    password = req.password.strip()
+    
+    user = database.get_user_by_email(email)
+    if not user or not verify_password(password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    token = create_session_token(user["id"], user["email"])
+    return {"token": token, "user": {"id": user["id"], "email": user["email"]}}
+
+@app.get("/api/auth/me")
+def get_me(current_user: dict = Depends(get_current_user)):
+    user = database.get_user_by_id(current_user["user_id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"user": user}
+
+# ─── Debate Endpoints ────────────────────────────────────────
+
 class DebateCreateRequest(BaseModel):
     topic: str
+    mode: str = "debate"  # "debate" or "factcheck"
+    stance_preference: str = "both"  # "both", "for", or "against"
 
 @app.post("/api/debates")
-def start_debate(request: DebateCreateRequest):
+def start_debate(request: DebateCreateRequest, current_user: dict = Depends(get_current_user)):
     """
     Creates a new debate in the database and returns the debate ID.
+    Requires authentication.
     """
     topic_stripped = request.topic.strip()
     if not topic_stripped:
         raise HTTPException(status_code=400, detail="Topic cannot be empty")
-        
-    debate_id = database.create_debate(topic_stripped)
-    return {"debate_id": debate_id, "topic": topic_stripped}
+    
+    mode = request.mode if request.mode in ("debate", "factcheck") else "debate"
+    stance_pref = request.stance_preference if request.stance_preference in ("both", "for", "against") else "both"
+    
+    debate_id = database.create_debate(
+        topic_stripped, 
+        mode=mode, 
+        user_id=current_user["user_id"], 
+        stance_preference=stance_pref
+    )
+    return {"debate_id": debate_id, "topic": topic_stripped, "mode": mode, "stance_preference": stance_pref}
+
 
 @app.get("/api/debates")
 def get_debates():
@@ -58,6 +143,8 @@ def get_debate(debate_id: str):
         raise HTTPException(status_code=404, detail="Debate not found")
     return details
 
+# ─── Debate Stream Generator ─────────────────────────────────
+
 async def debate_stream_generator(debate_id: str):
     """
     Orchestrates the debate round-by-round and streams status, turns,
@@ -69,9 +156,10 @@ async def debate_stream_generator(debate_id: str):
         return
         
     topic = db_debate["topic"]
+    mode = db_debate.get("mode", "debate")
     
     # 1. Perform initial topic research to anchor agent and stance knowledge
-    research_results = await run_in_threadpool(search.search_whitelist, topic, 8)
+    research_results = await run_in_threadpool(search.search_whitelist, topic, 20)
     research_context = ""
     if research_results:
         research_context = "Found the following real-world articles and facts about this topic:\n"
@@ -80,6 +168,95 @@ async def debate_stream_generator(debate_id: str):
             research_context += f"  Title: {res.get('title')}\n"
             research_context += f"  Snippet: {res.get('snippet')}\n"
 
+    # ── FACTCHECK MODE ────────────────────────────────────────
+    if mode == "factcheck":
+        yield f"event: status\ndata: {json.dumps({'agent': 'Analyst', 'status': 'researching', 'round_number': 1})}\n\n"
+        await asyncio.sleep(0.2)
+        
+        try:
+            # Get stance preference from DB or default
+            stance_preference = db_debate.get("stance_preference", "both")
+
+            # Generate structured FOR / AGAINST / VERDICT analysis
+            analysis = await run_in_threadpool(
+                agents.generate_factcheck_analysis, topic, research_context, stance_preference
+            )
+            
+            # Save analysis sections as turns
+            sections_to_process = []
+            if stance_preference == "for":
+                sections_to_process = ["for_case", "verdict"]
+            elif stance_preference == "against":
+                sections_to_process = ["against_case", "verdict"]
+            else:
+                sections_to_process = ["for_case", "against_case", "verdict"]
+
+            for idx, section in enumerate(sections_to_process):
+                section_content = analysis.get(section, "")
+                if not section_content:
+                    continue
+                agent_label = {"for_case": "FOR", "against_case": "AGAINST", "verdict": "VERDICT"}[section]
+                round_num = idx + 1
+                
+                turn_id = await run_in_threadpool(
+                    database.save_turn, debate_id, agent_label, round_num, section_content
+                )
+                
+                yield f"event: status\ndata: {json.dumps({'agent': agent_label, 'status': 'fact_checking', 'round_number': round_num})}\n\n"
+                await asyncio.sleep(0.2)
+                
+                # Extract and verify claims from this section
+                extracted_claims = await run_in_threadpool(agents.extract_claims, section_content)
+                
+                async def verify_and_save_claim(claim_item, t_id):
+                    claim_text = claim_item["claim_text"]
+                    cited_url = claim_item.get("cited_url")
+                    search_results = await run_in_threadpool(search.search_whitelist, claim_text)
+                    verdict_data = await run_in_threadpool(agents.verify_claim, claim_text, search_results, cited_url)
+                    source_url = verdict_data.get("source_url")
+                    source_tier = None
+                    if source_url:
+                        source_tier = config.get_domain_tier(source_url)
+                    await run_in_threadpool(
+                        database.save_claim,
+                        t_id, claim_text, verdict_data["verdict"], source_url, source_tier,
+                        verdict_data.get("reasoning", ""), cited_url
+                    )
+                    return {
+                        "claim_text": claim_text,
+                        "verdict": verdict_data["verdict"],
+                        "source_url": source_url,
+                        "source_tier": source_tier,
+                        "reasoning": verdict_data.get("reasoning", ""),
+                        "cited_url": cited_url,
+                    }
+                
+                verified_claims = []
+                if extracted_claims:
+                    tasks = [verify_and_save_claim(c, turn_id) for c in extracted_claims]
+                    verified_claims = await asyncio.gather(*tasks)
+                
+                new_turn = {
+                    "id": turn_id,
+                    "debate_id": debate_id,
+                    "agent": agent_label,
+                    "round_number": round_num,
+                    "content": section_content,
+                    "claims": list(verified_claims),
+                }
+                yield f"event: turn\ndata: {json.dumps(new_turn)}\n\n"
+                await asyncio.sleep(0.2)
+            
+            # Mark completed
+            await run_in_threadpool(database.update_debate_status, debate_id, "completed")
+            yield f"event: verdict\ndata: {json.dumps({'scores': [], 'mode': 'factcheck'})}\n\n"
+            
+        except Exception as e:
+            await run_in_threadpool(database.update_debate_status, debate_id, "failed")
+            yield f"event: error\ndata: {json.dumps({'error': f'Factcheck analysis failed: {e}'})}\n\n"
+        return
+
+    # ── DEBATE MODE (original flow) ───────────────────────────
     # 2. Generate stances for this topic using the research context
     try:
         stances = await run_in_threadpool(agents.parse_topic_stances, topic, research_context)
@@ -105,11 +282,10 @@ async def debate_stream_generator(debate_id: str):
         return
 
     # Orchestrate turns: 5 rounds total per agent
-    # Turn Index 0 to 9. Agent A is even index, Agent B is odd index.
     total_turns = 10
     agents_list = [
-        ("Agent A", stance_a, 0.6), # Agent A (lower temp = focused)
-        ("Agent B", stance_b, 0.8)  # Agent B (higher temp = creative)
+        ("Agent A", stance_a, 0.6),
+        ("Agent B", stance_b, 0.8)
     ]
     
     turns_generated = len(existing_turns)
@@ -126,7 +302,7 @@ async def debate_stream_generator(debate_id: str):
         
         # Yield 'writing' status
         yield f"event: status\ndata: {json.dumps({'agent': agent_name, 'status': 'writing', 'round_number': round_number})}\n\n"
-        await asyncio.sleep(0.2) # Let event loop handle other stuff
+        await asyncio.sleep(0.2)
         
         try:
             # Generate the agent's turn
@@ -150,12 +326,13 @@ async def debate_stream_generator(debate_id: str):
             
             async def verify_and_save_claim(claim_item):
                 claim_text = claim_item["claim_text"]
+                cited_url = claim_item.get("cited_url")
                 
                 # Query whitelisted search results
                 search_results = await run_in_threadpool(search.search_whitelist, claim_text)
                 
                 # Perform claim verification
-                verdict_data = await run_in_threadpool(agents.verify_claim, claim_text, search_results)
+                verdict_data = await run_in_threadpool(agents.verify_claim, claim_text, search_results, cited_url)
                 
                 # Classify source domain tier
                 source_url = verdict_data.get("source_url")
@@ -166,7 +343,8 @@ async def debate_stream_generator(debate_id: str):
                 # Save the claim and verdict to the DB
                 await run_in_threadpool(
                     database.save_claim,
-                    turn_id, claim_text, verdict_data["verdict"], source_url, source_tier, verdict_data.get("reasoning", "")
+                    turn_id, claim_text, verdict_data["verdict"], source_url, source_tier,
+                    verdict_data.get("reasoning", ""), cited_url
                 )
                 
                 return {
@@ -174,7 +352,8 @@ async def debate_stream_generator(debate_id: str):
                     "verdict": verdict_data["verdict"],
                     "source_url": source_url,
                     "source_tier": source_tier,
-                    "reasoning": verdict_data.get("reasoning", "")
+                    "reasoning": verdict_data.get("reasoning", ""),
+                    "cited_url": cited_url,
                 }
             
             # Verify and save all claims in parallel
@@ -193,7 +372,7 @@ async def debate_stream_generator(debate_id: str):
                 "agent": agent_name,
                 "round_number": round_number,
                 "content": content,
-                "claims": verified_claims
+                "claims": list(verified_claims)
             }
             history.append({"id": turn_id, "agent": agent_name, "content": content})
             

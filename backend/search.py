@@ -3,7 +3,7 @@ import httpx
 import re
 from urllib.parse import urlparse
 # pyrefly: ignore [missing-import]
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 from backend.config import settings, get_domain_tier
 
 def clean_claim_for_query(claim: str) -> str:

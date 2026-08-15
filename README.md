@@ -71,9 +71,9 @@ SQLite Database (debates, turns, claims, scores)
     ```
 3.  Start the FastAPI application:
     ```bash
-    uvicorn backend.main:app --reload --port 8000
+    uvicorn backend.main:app --reload --port 8080
     ```
-    The server will run on `http://localhost:8000`.
+    The server will run on `http://localhost:8080`.
 
 ### Run the Frontend (React + Vite)
 1.  Open a new terminal tab, navigate to the `frontend` folder:
@@ -89,3 +89,35 @@ SQLite Database (debates, turns, claims, scores)
     npm run dev
     ```
     The application will be accessible at `http://localhost:5173`.
+
+---
+
+## Cloud Deployment
+
+This application is ready to be scaled and deployed to the cloud.
+
+### 1. Database (Supabase PostgreSQL)
+1. Sign up on [Supabase](https://supabase.com/).
+2. Create a new PostgreSQL project.
+3. Open the **SQL Editor** in Supabase, create a new query, paste the contents of [supabase_migration.sql](file:///c:/Users/arora_kxtfyfx/OneDrive/Desktop/DebateArena/backend/supabase_migration.sql), and click **Run**.
+4. In **Project Settings → API**, copy the `service_role` key.
+
+### 2. Backend API (Render / Railway / Fly.io)
+Deploy the FastAPI backend container or repository. Configure the following **Environment Variables** on your hosting provider:
+*   `GROQ_API_KEY`: Your Groq API key.
+*   `SUPABASE_URL`: Your Supabase Project URL (e.g., `https://xxxx.supabase.co`).
+*   `SUPABASE_KEY`: Your Supabase `service_role` secret key.
+
+*Start command:*
+```bash
+uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+```
+
+### 3. Frontend (Vercel / Netlify / Cloudflare Pages)
+Deploy the `frontend` directory. Configure the following **Environment Variable** during build time:
+*   `VITE_API_BASE_URL`: Point this to your live backend API URL (e.g., `https://debate-arena-api.onrender.com`).
+
+*Build settings:*
+*   Build Command: `npm run build`
+*   Output Directory: `dist`
+

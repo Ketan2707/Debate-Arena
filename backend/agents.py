@@ -72,19 +72,16 @@ def generate_content_with_retry(model_name: str, prompt: str, temperature: float
                 
     raise Exception("Max retries exceeded for Groq API call.")
 
+# ─── Topic Stances ───────────────────────────────────────────
+
 def parse_topic_stances(topic: str, research_context: str = "") -> dict:
     """
     Generates opposing stances for Agent A and Agent B based on the topic and optional research.
     """
     if MOCK_MODE:
-        if "electric" in topic.lower() or "ev" in topic.lower():
-            return {
-                "stance_a": "Electric vehicles should be made mandatory by 2035 to reduce greenhouse gas emissions and combat climate change.",
-                "stance_b": "Electric vehicle mandates are premature due to grid limitations, resource constraints, and consumer readiness concerns."
-            }
         return {
-            "stance_a": f"AI models and automation are key drivers for efficiency and growth in '{topic}'.",
-            "stance_b": f"Human oversight, economic disruptions, and ethical risks outweigh the benefits of '{topic}'."
+            "stance_a": f"Argues in favor of: '{topic}'.",
+            "stance_b": f"Argues against: '{topic}'."
         }
 
     research_section = ""
@@ -119,6 +116,8 @@ def parse_topic_stances(topic: str, research_context: str = "") -> dict:
             "stance_b": f"Argue against the statement: '{topic}'"
         }
 
+# ─── Debate Turn Generation (Grounded with Citations) ────────
+
 def generate_debate_turn(
     topic: str, 
     stance: str, 
@@ -129,35 +128,11 @@ def generate_debate_turn(
     research_context: str = ""
 ) -> str:
     """
-    Generates a turn for a debating agent.
+    Generates a turn for a debating agent, strictly grounded in provided research context.
+    The agent MUST cite sources inline using markdown link syntax.
     """
     if MOCK_MODE:
-        # Check if the topic is our EV example, and output high-quality, pre-compiled turns
-        is_ev = "electric" in topic.lower() or "ev" in topic.lower()
-        if is_ev:
-            ev_turns = {
-                ("Agent A", 1): "Electric vehicles are essential to achieve net-zero transport targets. In 2023, the global EV market share reached 18%. Furthermore, the International Energy Agency reports that EVs produce 50% fewer lifetime emissions than conventional internal combustion engine cars when charged on standard power grids.",
-                ("Agent B", 1): "While electric vehicles reduce direct emissions, their mineral footprint is highly problematic. Specifically, mining cobalt and lithium for EV batteries consumes millions of gallons of water. In South America's lithium triangle, mining accounts for 65% of regional water consumption, threatening local agriculture.",
-                ("Agent A", 2): "To address mineral concerns, battery recycling is scaling rapidly. The US Department of Energy states that battery recycling rates will exceed 90% by 2030. In addition, new solid-state battery chemistry reduces cobalt requirements to zero.",
-                ("Agent B", 2): "Solid-state technology is still decades from commercial scale. Currently, less than 5% of lithium-ion batteries are recycled globally. The recycling process itself is highly carbon-intensive, and recycling facilities consume significant fossil fuels.",
-                ("Agent A", 3): "Charging infrastructure is expanding to support cleaner grids. In 2023, the European Union approved a mandate requiring fast-chargers every 60 kilometers. By 2035, the European power grid is projected to be 85% decarbonized, making EVs virtually emissions-free.",
-                ("Agent B", 3): "Grids are not ready for the demand surge. In the United States, charging a full fleet of EVs would require a 25% increase in total grid capacity. Coal and gas plants still account for 60% of US power generation, meaning EVs are powered by fossil fuels.",
-                ("Agent A", 4): "Battery energy storage is key to balancing the grid demand. In 2023, global battery grid capacity grew by 120 gigawatts. Additionally, the World Health Organization reports that air pollution from combustion engines causes over 4 million premature deaths annually.",
-                ("Agent B", 4): "Grid battery storage requires massive mineral scaling, which leads to child labor in the DRC. Specifically, UNICEF reports that over 40,000 children work in cobalt mines in the DRC. Mandating EVs without ethical supply chains is indefensible.",
-                ("Agent A", 5): "In conclusion, electric vehicles are the only viable path to zero-emissions transit. They are highly efficient, and the grid is decarbonizing. Transitioning to EVs by 2035 is crucial for climate stability.",
-                ("Agent B", 5): "In summary, EV mandates are premature. The grid capacity is insufficient, and resource depletion is severe. We must invest in hydrogen and public transit instead of forced EV adoption."
-            }
-            return ev_turns.get((agent_name, round_number), f"Factual claim: In 2024 global investment reached 350 billion dollars. {agent_name} supports its stance on {topic} for round {round_number}.")
-        else:
-            claims = [
-                f"According to a 2024 survey, 65% of professionals support digital integration.",
-                f"In 2023, the total revenue in this sector exceeded 1.2 trillion dollars.",
-                f"Studies by the Brookings Institution show that automation improves efficiency by 40%.",
-                f"A report from the World Bank in 2022 indicated that over 500 million people benefit from these services.",
-                f"In 2023, global carbon emissions from transport reached 8 gigatons."
-            ]
-            claim_to_use = claims[round_number % len(claims)]
-            return f"Regarding {topic}, we must look at the facts. {claim_to_use} Therefore, {agent_name} supports its stance on {stance} in this {round_number} round."
+        return f"{agent_name} argues for round {round_number} about {topic}. According to [Reuters](https://www.reuters.com/example), the data supports the stance: {stance}."
 
     # Map round numbers to names
     round_names = {
@@ -179,14 +154,23 @@ def generate_debate_turn(
     research_section = ""
     if research_context:
         research_section = f"""
-    REAL-WORLD RESEARCH & VERIFIED FACTS ABOUT THE TOPIC:
+    ══════════════════════════════════════════
+    VERIFIED RESEARCH SOURCES (YOUR ONLY EVIDENCE POOL):
+    ══════════════════════════════════════════
     {research_context}
+    ══════════════════════════════════════════
     
-    You MUST base your arguments, facts, and figures on the research context provided above. Do not hallucinate or invent conflicting facts.
+    ABSOLUTE RULES FOR CITING SOURCES:
+    • You may ONLY use facts, statistics, dates, and claims that appear in the research sources above.
+    • For EVERY factual claim you make, you MUST include an inline citation using the format: [Source Name](URL)
+      Example: "EV sales grew 35% in 2023 [Reuters](https://www.reuters.com/article/ev-sales-growth)"
+    • If no research source supports a claim, DO NOT make that claim. Omit it entirely.
+    • NEVER invent or fabricate statistics, URLs, percentages, or dates that do not appear in the sources above.
+    • NEVER write a URL that is not listed in the research sources above.
     """
 
     prompt = f"""
-    You are a professional debater participating in a formal debate arena.
+    You are a professional debater in a formal Fact-Checked Debate Arena.
     
     Topic: {topic}
     Your Name: {agent_name}
@@ -200,51 +184,162 @@ def generate_debate_turn(
     
     INSTRUCTIONS:
     1. Argue strongly and in good faith. Stick to your assigned stance.
-    2. Write under 150 words. Be concise and impactful.
-    3. If this is a rebuttal round, directly address and dissect the argument made by {opposing_agent} in their previous turn.
-    4. CITE SPECIFIC FACTS, numbers, dates, statistics, or historical events to anchor your arguments.
-    5. CRITICAL: Do NOT create links, markdown links, or invent source URLs. Just state the facts.
-    6. CRITICAL: Separate factual claims from your opinion or interpretation. Structure factual claims as short, clear, discrete sentences, so a fact-checker can parse them individually.
+    2. Write 100-150 words. Be concise and impactful.
+    3. If this is a rebuttal round, directly address {opposing_agent}'s previous argument.
+    4. EVERY factual claim MUST have an inline citation: [Source Name](exact URL from research)
+    5. Do NOT invent facts, statistics, or URLs. Only use what appears in the research sources.
+    6. Structure your argument in clear paragraphs. Separate factual claims so they can be independently verified.
+    7. If you cannot find supporting evidence for a point, argue using logic and reasoning instead of fabricating data.
     
-    Begin your response directly with your speech. Do not add salutations like "Thank you, moderator" or "Hello, everyone." Go straight to your arguments.
+    Begin your response directly with your arguments. No salutations.
     """
     
     return generate_content_with_retry("gemini-2.5-flash", prompt, temperature=temperature)
 
+# ─── Factcheck Analysis Mode ─────────────────────────────────
+
+def generate_factcheck_analysis(topic: str, research_context: str = "", stance_preference: str = "both") -> dict:
+    """
+    Generates a structured fact-check analysis focusing on the user's stance preference:
+    FOR case, AGAINST case, or BOTH, alongside a balanced/contextual VERDICT.
+    All claims must be grounded in the provided research context with inline citations.
+    """
+    if MOCK_MODE:
+        return {
+            "for_case": f"The evidence supports '{topic}'. [Reuters](https://reuters.com) reports positive trends.",
+            "against_case": f"Critics argue against '{topic}'. [BBC](https://bbc.com) highlights concerns.",
+            "verdict": f"The evidence is mixed. Both sides present valid points grounded in credible sources."
+        }
+    
+    research_section = ""
+    if research_context:
+        research_section = f"""
+    ══════════════════════════════════════════
+    VERIFIED RESEARCH SOURCES (YOUR ONLY EVIDENCE POOL):
+    ══════════════════════════════════════════
+    {research_context}
+    ══════════════════════════════════════════
+    """
+
+    # Customize instructions and outputs based on stance preference
+    if stance_preference == "for":
+        sections_instruction = """
+    Produce a structured analysis with TWO sections:
+    1. "for_case" — The strongest arguments SUPPORTING the topic. 
+       Write a highly detailed, comprehensive analysis of 250-350 words containing specific facts, figures, dates, and percentages.
+       Cite every factual claim with [Source Name](URL) using ONLY the research sources above.
+       
+    2. "verdict" — Your balanced analytical verdict weighing the evidence supporting the topic.
+       Write 100-150 words summarizing the strength of the supporting evidence.
+        """
+        output_format = """
+    Output MUST be a JSON object:
+    {
+      "for_case": "...",
+      "verdict": "..."
+    }
+        """
+    elif stance_preference == "against":
+        sections_instruction = """
+    Produce a structured analysis with TWO sections:
+    1. "against_case" — The strongest arguments OPPOSING the topic.
+       Write a highly detailed, comprehensive analysis of 250-350 words containing specific facts, figures, dates, and percentages.
+       Cite every factual claim with [Source Name](URL) using ONLY the research sources above.
+       
+    2. "verdict" — Your balanced analytical verdict weighing the evidence opposing the topic.
+       Write 100-150 words summarizing the strength of the opposing evidence.
+        """
+        output_format = """
+    Output MUST be a JSON object:
+    {
+      "against_case": "...",
+      "verdict": "..."
+    }
+        """
+    else:  # both
+        sections_instruction = """
+    Produce a structured analysis with THREE sections:
+    1. "for_case" — The strongest arguments SUPPORTING the topic. 
+       Write 200-250 words. Cite every factual claim with [Source Name](URL) using ONLY the research sources above.
+       
+    2. "against_case" — The strongest arguments OPPOSING the topic.
+       Write 200-250 words. Cite every factual claim with [Source Name](URL) using ONLY the research sources above.
+       
+    3. "verdict" — Your balanced analytical verdict weighing both sides.
+       Write 100-150 words. Reference key evidence from both cases. State which side has stronger evidence support.
+        """
+        output_format = """
+    Output MUST be a JSON object:
+    {
+      "for_case": "...",
+      "against_case": "...",
+      "verdict": "..."
+    }
+        """
+
+    prompt = f"""
+    You are a Senior Fact-Check Analyst producing a balanced, evidence-based analysis.
+    
+    Topic: "{topic}"
+    Stance Preference: {stance_preference.upper()} (Analyze only the requested sides plus the verdict)
+    
+    {research_section}
+    
+    {sections_instruction}
+    
+    CRITICAL RULES FOR CITATIONS & FACTUAL DEPTH:
+    • Provide as many specific facts, figures, dates, and statistics as possible from the research sources. Avoid vague summaries.
+    • ONLY cite facts that appear in the research sources above. Do not invent any outside facts.
+    • Every factual claim needs an inline citation: [Source Name](URL)
+      Example: "EV sales grew 35% in 2023 [Reuters](https://www.reuters.com/article/ev-sales-growth)"
+    • NEVER write a URL that is not listed in the research sources above.
+    
+    {output_format}
+    """
+    
+    try:
+        response_text = generate_content_with_retry("gemini-2.5-flash", prompt, temperature=0.3, json_mode=True)
+        result = clean_and_parse_json(response_text)
+        
+        # Ensure fallback keys are populated to avoid frontend breakdown
+        if stance_preference == "for" or stance_preference == "both":
+            if "for_case" not in result:
+                result["for_case"] = "Supporting case analysis could not be generated."
+        if stance_preference == "against" or stance_preference == "both":
+            if "against_case" not in result:
+                result["against_case"] = "Opposing case analysis could not be generated."
+        if "verdict" not in result:
+            result["verdict"] = "Verdict analysis could not be completed."
+            
+        return result
+    except Exception as e:
+        print(f"Error generating factcheck analysis: {e}")
+        return {
+            "for_case": f"Error generating supporting case analysis: {e}",
+            "against_case": f"Error generating opposing case analysis: {e}",
+            "verdict": "Analysis could not be completed due to an error."
+        }
+
+
+# ─── Claim Extraction ────────────────────────────────────────
+
 def extract_claims(turn_content: str) -> list[dict]:
     """
     Extracts objectively checkable claims from a turn's content.
+    Also extracts any inline cited URLs associated with each claim.
     """
     if MOCK_MODE:
-        claims_map = {
-            "In 2023, the global EV market share reached 18%": "In 2023, the global EV market share reached 18%.",
-            "EVs produce 50% fewer lifetime emissions": "EVs produce 50% fewer lifetime emissions than conventional cars.",
-            "mining cobalt and lithium for EV batteries consumes millions of gallons of water": "Mining cobalt and lithium for EV battery production consumes millions of gallons of water.",
-            "mining accounts for 65% of regional water consumption": "Lithium mining accounts for 65% of regional water consumption in South America.",
-            "battery recycling rates will exceed 90% by 2030": "Battery recycling rates will exceed 90% by 2030.",
-            "reduces cobalt requirements to zero": "New battery chemistry reduces cobalt requirements to zero.",
-            "less than 5% of lithium-ion batteries are recycled globally": "Less than 5% of lithium-ion batteries are recycled globally.",
-            "fast-chargers every 60 kilometers": "The European Union requires fast-chargers every 60 kilometers.",
-            "European power grid is projected to be 85% decarbonized": "The European power grid is projected to be 85% decarbonized by 2035.",
-            "charging a full fleet of EVs would require a 25% increase in total grid capacity": "Charging a full fleet of EVs requires a 25% increase in total grid capacity.",
-            "Coal and gas plants still account for 60% of US power generation": "Coal and gas plants account for 60% of US power generation.",
-            "global battery grid capacity grew by 120 gigawatts": "Global battery grid capacity grew by 120 gigawatts in 2023.",
-            "air pollution from combustion engines causes over 4 million premature deaths": "Air pollution from combustion engines causes over 4 million premature deaths annually.",
-            "over 40,000 children work in cobalt mines": "Over 40,000 children work in cobalt mines in the Democratic Republic of Congo."
-        }
-        
-        extracted = []
-        for key, val in claims_map.items():
-            if key.lower() in turn_content.lower():
-                extracted.append({"claim_text": val})
-        
-        if not extracted:
-            # Fallback for generic mock text: grab sentences containing numbers
-            sentences = re.split(r'(?<=[.!?])\s+', turn_content)
-            for s in sentences:
-                if any(char.isdigit() for char in s):
-                    extracted.append({"claim_text": s.strip()})
-        return extracted
+        # Extract markdown links and pair with surrounding sentence
+        claims = []
+        sentences = re.split(r'(?<=[.!?])\s+', turn_content)
+        for s in sentences:
+            links = re.findall(r'\[([^\]]+)\]\(([^)]+)\)', s)
+            if links:
+                clean_text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', s).strip()
+                claims.append({"claim_text": clean_text, "cited_url": links[0][1]})
+            elif any(char.isdigit() for char in s):
+                claims.append({"claim_text": s.strip()})
+        return claims
 
     prompt = f"""
     You are a factual claim extraction agent.
@@ -255,19 +350,18 @@ def extract_claims(turn_content: str) -> list[dict]:
     
     Your task:
     1. Identify and extract only the objectively checkable factual claims (dates, historical events, statistics, numbers, scientific statements, official declarations).
-    2. Ignore subjective/opinion statements, interpretations of facts, value judgments, or logical rhetoric. Do NOT check these.
-    3. For each extracted factual claim, rewrite it as a short, clear, self-contained sentence. Replace pronouns like 'it', 'they', 'this', or 'the country' with the actual subject (e.g., 'EV batteries', 'United States') so that the claim can be searched.
+    2. Ignore subjective/opinion statements, interpretations, value judgments, or rhetoric.
+    3. For each claim, rewrite it as a short, clear, self-contained sentence. Replace pronouns with actual subjects.
+    4. If the claim has an inline citation link like [Source](URL), extract that URL as "cited_url".
     
-    Your output MUST be a JSON object with key "claims" containing an array of objects representing checkable claims.
-    Format:
+    Output MUST be a JSON object:
     {{
       "claims": [
-        {{"claim_text": "extracted checkable claim 1"}},
-        {{"claim_text": "extracted checkable claim 2"}}
+        {{"claim_text": "extracted checkable claim 1", "cited_url": "https://example.com/article" }},
+        {{"claim_text": "extracted checkable claim 2" }}
       ]
     }}
     If there are no factual claims, return: {{"claims": []}}.
-    Do not add extra text or explanation.
     """
     try:
         response_text = generate_content_with_retry("llama-3.1-8b-instant", prompt, temperature=0.1, json_mode=True)
@@ -286,74 +380,36 @@ def extract_claims(turn_content: str) -> list[dict]:
         print(f"Error extracting claims: {e}")
         return []
 
-def verify_claim(claim_text: str, search_results: list[dict]) -> dict:
+# ─── Claim Verification ──────────────────────────────────────
+
+def verify_claim(claim_text: str, search_results: list[dict], cited_url: str | None = None) -> dict:
     """
     Verifies a claim against search results from whitelisted domains.
+    If the agent provided a cited_url, that URL is prioritized in verification.
     """
     if MOCK_MODE:
-        # Determine contextual verdict and real whitelisted URL for our demo turns
-        text_lower = claim_text.lower()
-        
-        if "lithium" in text_lower or "south america" in text_lower or ("water" in text_lower and "consumption" in text_lower):
-            verdict = "Confirmed"
-            url = "https://www.reuters.com/markets/commodities/south-america-lithium-water-usage-investigation"
-            reasoning = "Reuters reports confirm that mineral mining in South America's lithium triangle consumes vast local groundwater resources, accounting for approximately 65% of regional water usage."
-        elif "90% by 2030" in text_lower or "solid-state" in text_lower:
-            verdict = "Disputed"
-            url = "https://www.nytimes.com/2023/11/02/climate/ev-solid-state-battery-limits"
-            reasoning = "The New York Times reports that while some manufacturers target solid-state scaling by 2030, energy audits suggest raw material scarcity could delay market adoption."
-        elif "60 kilometers" in text_lower or "european power grid" in text_lower:
-            verdict = "Confirmed"
-            url = "https://europa.eu/newsroom/european-parliament-electric-charger-mandate"
-            reasoning = "The official European Union Portal reports that the Parliament approved new guidelines requiring public fast-charging stations every 60km along TEN-T core roads."
-        elif "25% increase" in text_lower or "coal and gas" in text_lower:
-            verdict = "Disputed"
-            url = "https://www.theguardian.com/environment/2023/12/05/usa-power-grid-electric-vehicle-capacity"
-            reasoning = "The Guardian notes that grid scientists dispute the 25% capacity increase claim. Modern smart-charging setups are projected to limit load growth to under 10%."
-        elif "child labor" in text_lower or "cobalt" in text_lower or "unicef" in text_lower:
-            verdict = "Confirmed"
-            url = "https://apnews.com/article/congo-cobalt-mining-human-rights-report"
-            reasoning = "AP News and UNICEF reports document that artisanal cobalt mining in the DRC involves extensive child labor, with an estimated 40,000 children working in mines."
-        elif "ev market share" in text_lower or "lifetime emissions" in text_lower or "internal combustion" in text_lower:
-            verdict = "Confirmed"
-            url = "https://apnews.com/article/electric-vehicles-emissions-iea-report"
-            reasoning = "AP News verified the figures. The International Energy Agency states that global EV market share reached 18% in 2023, and lifecycle emissions remain 50% lower than traditional internal combustion engines."
-        elif "brookings" in text_lower or "automation improves efficiency" in text_lower:
-            verdict = "Confirmed"
-            url = "https://www.brookings.edu/research/automation-and-workforce-productivity-2024"
-            reasoning = "Brookings Institution research indicates that workflow automation and technological integration boost operational efficiency by up to 40%."
-        elif "world bank" in text_lower or "500 million" in text_lower:
-            verdict = "Confirmed"
-            url = "https://www.worldbank.org/en/news/press-release/2022/digital-services-global-impact"
-            reasoning = "World Bank reports validate that over 500 million individuals globally benefit from expanded digital access and utility programs."
-        elif "digital integration" in text_lower or "65% of professionals" in text_lower:
-            verdict = "Confirmed"
-            url = "https://www.pewresearch.org/internet/2024/01/15/digital-integration-in-the-workplace"
-            reasoning = "Pew Research survey data confirms that 65% of surveyed sector professionals advocate for increased digital tool integration."
-        elif "1.2 trillion" in text_lower:
-            verdict = "Confirmed"
-            url = "https://www.bloomberg.com/news/articles/2023-12-10/global-market-revenue-analysis"
-            reasoning = "Bloomberg market data reports confirm total annual revenues in this sector surpassed 1.2 trillion dollars in 2023."
-        elif "8 gigatons" in text_lower:
-            verdict = "Confirmed"
-            url = "https://www.iea.org/reports/global-energy-co2-status-report-2023"
-            reasoning = "International Energy Agency status report confirms global transport emissions reached approximately 8 gigatons."
-        else:
-            if search_results:
-                url = search_results[0]["url"]
-                domain = urllib_domain(url)
-                verdict = "Confirmed"
-                reasoning = f"Fact-checker verified claim against whitelisted source {domain}. The retrieved records validate that the claim matches reported figures."
-            else:
-                verdict = "Unverifiable"
-                url = None
-                reasoning = "No matching source found in the whitelisted domains."
-                
+        if search_results:
+            return {
+                "verdict": "Confirmed",
+                "source_url": search_results[0]["url"],
+                "reasoning": "Source matches claim content from a whitelisted domain."
+            }
         return {
-            "verdict": verdict,
-            "source_url": url,
-            "reasoning": reasoning
+            "verdict": "Unverifiable",
+            "source_url": None,
+            "reasoning": "No matching source found in the whitelisted domains."
         }
+
+    # If the agent cited a specific URL, check if it's in our search results or whitelist
+    cited_url_in_results = False
+    if cited_url:
+        from backend.config import get_domain_tier
+        cited_tier = get_domain_tier(cited_url)
+        if cited_tier is not None:
+            cited_url_in_results = True
+            # Ensure the cited URL is included in the search results for verification
+            if not any(r["url"] == cited_url for r in search_results):
+                search_results = [{"url": cited_url, "title": "Agent-cited source", "snippet": "", "tier": cited_tier}] + search_results
 
     if not search_results:
         return {
@@ -364,28 +420,33 @@ def verify_claim(claim_text: str, search_results: list[dict]) -> dict:
         
     formatted_results = ""
     for idx, res in enumerate(search_results):
-        formatted_results += f"[{idx+1}] URL: {res['url']}\nTitle: {res['title']}\nSnippet: {res['snippet']}\nTier: {res['tier']}\n\n"
+        formatted_results += f"[{idx+1}] URL: {res['url']}\nTitle: {res.get('title', '')}\nSnippet: {res.get('snippet', '')}\nTier: {res.get('tier', 'N/A')}\n\n"
         
+    cited_note = ""
+    if cited_url and cited_url_in_results:
+        cited_note = f"\nNOTE: The debater cited this specific URL: {cited_url}. If it appears in the search results and the snippet supports the claim, give it priority.\n"
+
     prompt = f"""
     You are a Source-Integrity Fact-Checker.
     Evaluate the following factual claim against the provided web search results.
     
     Factual Claim: "{claim_text}"
-    
+    {cited_note}
     Web Search Results (Restricted Whitelist):
     {formatted_results}
     
     VERDICT CRITERIA:
-    - 'Confirmed': The search results directly and unambiguously support the claim.
-    - 'Disputed': Credible whitelisted sources in the results directly contradict or disprove the claim.
+    - 'Confirmed': The search results directly and unambiguously support the claim. The snippet text must clearly validate the key facts (numbers, dates, events) in the claim.
+    - 'Disputed': Credible whitelisted sources in the results directly contradict or disprove the claim with specific counter-evidence.
     - 'Unverifiable': The search results do not contain enough specific details to confirm or contradict the claim. Do not guess.
     
     IMPORTANT RULES:
-    1. No source link = no 'Confirmed' or 'Disputed' label allowed. If the verdict is 'Confirmed' or 'Disputed', the 'source_url' MUST be one of the exact URLs from the provided search results.
+    1. No source link = no 'Confirmed' or 'Disputed' label allowed. 'source_url' MUST be one of the exact URLs from the search results.
     2. If the verdict is 'Unverifiable', the 'source_url' MUST be null.
-    3. Write a 1-2 sentence explanation of your reasoning based strictly on the snippets.
+    3. Write a 2-3 sentence explanation of your reasoning based strictly on the snippets. Quote specific text from the snippets.
+    4. Be STRICT: only mark as Confirmed if the snippet clearly validates the specific numbers/facts in the claim.
     
-    Your output MUST be a JSON object with keys "verdict", "source_url", and "reasoning".
+    Output MUST be a JSON object with keys "verdict", "source_url", and "reasoning".
     """
     try:
         response_text = generate_content_with_retry("gemini-2.5-flash", prompt, temperature=0.1, json_mode=True)
@@ -414,6 +475,8 @@ def verify_claim(claim_text: str, search_results: list[dict]) -> dict:
             "reasoning": f"Fact-checker error: {e}"
         }
 
+# ─── Judge Evaluation (Strengthened Scoring) ──────────────────
+
 def urllib_domain(url: str) -> str:
     from urllib.parse import urlparse
     try:
@@ -434,10 +497,10 @@ def run_single_judge_evaluation(
     claim_stats_b: dict
 ) -> dict:
     """
-    Runs a single judge evaluation with specific agent labels.
+    Runs a single judge evaluation with strengthened scoring criteria.
     """
     prompt = f"""
-    You are an expert Debate Judge.
+    You are an expert Debate Judge in a Fact-Checked Debate Arena.
     Analyze the following debate and score both participants.
     
     Topic: {topic}
@@ -447,33 +510,56 @@ def run_single_judge_evaluation(
     DEBATE TRANSCRIPT:
     {transcript}
     
-    FACT-CHECK SUMMARY:
+    FACT-CHECK SUMMARY (from automated verification pipeline):
     - {agent_a_name} Claims Fact-Checked: 
       Confirmed: {claim_stats_a['Confirmed']}, Disputed: {claim_stats_a['Disputed']}, Unverifiable: {claim_stats_a['Unverifiable']}
     - {agent_b_name} Claims Fact-Checked: 
       Confirmed: {claim_stats_b['Confirmed']}, Disputed: {claim_stats_b['Disputed']}, Unverifiable: {claim_stats_b['Unverifiable']}
       
-    EVALUATION CRITERIA (Score 1-10 each):
-    1. Logic: Consistency of argument, clarity, logical fallacies avoided.
-    2. Evidence Quality: Lower the score significantly if that participant's claims were 'Disputed' or 'Unverifiable' by the fact-checker. Good score requires high 'Confirmed' claims.
-    3. Rebuttal Quality: Directness, structure, and quality of responses to the opposing party's claims.
+    ══════════════════════════════════════════
+    SCORING CRITERIA (1-10 each, BE DECISIVE — do NOT cluster around 5-7):
+    ══════════════════════════════════════════
     
-    Provide your evaluation in structured JSON format with EXACTLY these keys:
+    1. LOGIC (1-10): 
+       - 9-10: Flawless logical chain, no fallacies, masterful argumentation
+       - 7-8: Strong logic with minor gaps  
+       - 5-6: Average, some logical inconsistencies
+       - 1-4: Major logical fallacies or incoherent arguments
+    
+    2. EVIDENCE QUALITY (1-10) — This is the MOST important criterion:
+       - 9-10: >80% of claims Confirmed by fact-checker, zero Disputed, proper source citations
+       - 7-8: >60% Confirmed, minimal Disputed, mostly cited
+       - 5-6: Mixed results, significant Unverifiable claims
+       - 3-4: Majority Unverifiable, multiple Disputed claims  
+       - 1-2: Mostly fabricated or completely unsourced arguments
+       
+    3. REBUTTAL QUALITY (1-10):
+       - 9-10: Devastating, precise counter-arguments that dismantle opponent's key points
+       - 7-8: Effective rebuttals that address core arguments
+       - 5-6: Surface-level rebuttals
+       - 1-4: Ignored opponent's arguments or strawmanned them
+    
+    IMPORTANT: 
+    - An agent with MOSTLY CONFIRMED claims and good citations deserves 8-10 in Evidence.
+    - An agent with MOSTLY UNVERIFIABLE claims deserves 3-5 in Evidence.
+    - An agent with DISPUTED claims deserves 1-3 in Evidence.
+    - Write 3-4 sentences of detailed reasoning for each agent.
+    
+    Output as JSON:
     {{
       "agent_a": {{
         "logic": <int 1-10>,
         "evidence": <int 1-10>,
         "rebuttal": <int 1-10>,
-        "reasoning": "<2-3 sentence summary>"
+        "reasoning": "<3-4 sentence detailed evaluation>"
       }},
       "agent_b": {{
         "logic": <int 1-10>,
         "evidence": <int 1-10>,
         "rebuttal": <int 1-10>,
-        "reasoning": "<2-3 sentence summary>"
+        "reasoning": "<3-4 sentence detailed evaluation>"
       }}
     }}
-    Do not add any other keys or formatting.
     """
     response_text = generate_content_with_retry("gemini-2.5-flash", prompt, temperature=0.2, json_mode=True)
     return clean_and_parse_json(response_text)
@@ -483,42 +569,18 @@ def evaluate_debate(topic: str, history: list[dict], claims_by_turn: dict) -> di
     Runs the judge twice with swapped labels to eliminate position bias, then averages the scores.
     """
     if MOCK_MODE:
-        # Calculate claims counts to show real-like evidence grading
-        claim_stats = {
-            "Agent A": {"Confirmed": 0, "Disputed": 0, "Unverifiable": 0},
-            "Agent B": {"Confirmed": 0, "Disputed": 0, "Unverifiable": 0}
-        }
-        for turn_id, claims in claims_by_turn.items():
-            agent = next((t["agent"] for t in history if t["id"] == turn_id), None)
-            if agent:
-                for claim in claims:
-                    verdict = claim.get("verdict", "Unverifiable")
-                    if verdict in claim_stats[agent]:
-                        claim_stats[agent][verdict] += 1
-                        
-        # Penalize Agent A or B slightly if they have Disputed/Unverifiable claims
-        evidence_a = max(1.0, 9.5 - (claim_stats["Agent A"]["Disputed"] * 1.5) - (claim_stats["Agent A"]["Unverifiable"] * 0.5))
-        evidence_b = max(1.0, 9.0 - (claim_stats["Agent B"]["Disputed"] * 1.5) - (claim_stats["Agent B"]["Unverifiable"] * 0.5))
-        
-        mock_scores = {
+        return {
             "Agent A": {
-                "logic": 8.5,
-                "evidence": round(evidence_a, 1),
-                "rebuttal": 8.0,
-                "reasoning": f"Agent A established a strong opening framework using detailed figures from the International Energy Agency. With {claim_stats['Agent A']['Confirmed']} confirmed claims, their evidence base remained solid, though disputed points on recycling targets slightly pulled down scores."
+                "logic": 8, "evidence": 8, "rebuttal": 7,
+                "total": 7.67,
+                "reasoning": "Agent A presented well-structured arguments with proper source citations."
             },
             "Agent B": {
-                "logic": 8.0,
-                "evidence": round(evidence_b, 1),
-                "rebuttal": 8.5,
-                "reasoning": f"Agent B countered effectively by shifting focus to upstream grid shortages and the ethical implications of mining in the DRC. They maintained high rebuttal scores, though grid capacity disputes left their overall evidence at {evidence_b}/10."
+                "logic": 7, "evidence": 7, "rebuttal": 8,
+                "total": 7.33,
+                "reasoning": "Agent B offered strong rebuttals but lacked source depth."
             }
         }
-        for agent in ["Agent A", "Agent B"]:
-            mock_scores[agent]["total"] = round(
-                (mock_scores[agent]["logic"] + mock_scores[agent]["evidence"] + mock_scores[agent]["rebuttal"]) / 3, 2
-            )
-        return mock_scores
 
     # Standard path
     transcript_standard = ""

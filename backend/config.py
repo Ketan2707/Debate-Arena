@@ -15,7 +15,11 @@ class Settings(BaseSettings):
     GOOGLE_SEARCH_API_KEY: str = os.getenv("GOOGLE_SEARCH_API_KEY", "")
     GOOGLE_SEARCH_CX: str = os.getenv("GOOGLE_SEARCH_CX", "")
 
-    # SQLite Database File
+    # Supabase Cloud Database
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+
+    # SQLite fallback (used only if Supabase is not configured)
     DATABASE_URL: str = "debates.db"
 
     # Whitelist definition
@@ -121,3 +125,53 @@ def get_domain_tier(url: str) -> int | None:
         return None
     except Exception:
         return None
+
+# ─── Authentication Helpers ──────────────────────────────────
+import hashlib
+import hmac
+import base64
+import time
+
+# A secret key derived from the Groq API key — unique per deployment.
+# In production, use a dedicated SECRET_KEY env variable.
+_AUTH_SECRET = hashlib.sha256(
+    (settings.GROQ_API_KEY or "debate-arena-default-secret-key-2026").encode()
+).hexdigest()
+
+def hash_password(password: str) -> str:
+    """Hash a password with a random salt using SHA-256."""
+    salt = base64.b64encode(hashlib.sha256(str(time.time_ns()).encode()).digest()[:16]).decode()
+    hashed = hashlib.sha256((salt + password).encode()).hexdigest()
+    return f"{salt}${hashed}"
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    """Verify a password against a stored salt$hash string."""
+    try:
+        salt, expected_hash = stored_hash.split("$", 1)
+        computed = hashlib.sha256((salt + password).encode()).hexdigest()
+        return hmac.compare_digest(computed, expected_hash)
+    except Exception:
+        return False
+
+def create_session_token(user_id: str, email: str) -> str:
+    """Create a signed session token: base64(payload).base64(signature)"""
+    payload = f"{user_id}|{email}|{int(time.time())}"
+    payload_b64 = base64.urlsafe_b64encode(payload.encode()).decode()
+    signature = hmac.new(_AUTH_SECRET.encode(), payload_b64.encode(), hashlib.sha256).hexdigest()
+    return f"{payload_b64}.{signature}"
+
+def verify_session_token(token: str) -> dict | None:
+    """Verify and decode a session token. Returns {user_id, email} or None."""
+    try:
+        payload_b64, signature = token.split(".", 1)
+        expected_sig = hmac.new(_AUTH_SECRET.encode(), payload_b64.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected_sig):
+            return None
+        payload = base64.urlsafe_b64decode(payload_b64).decode()
+        parts = payload.split("|")
+        if len(parts) < 3:
+            return None
+        return {"user_id": parts[0], "email": parts[1]}
+    except Exception:
+        return None
+
