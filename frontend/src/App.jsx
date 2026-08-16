@@ -4,7 +4,7 @@ import {
   CheckCircle, HelpCircle, ChevronRight, History, ArrowLeft, 
   ExternalLink, Sparkles, MessageSquare, Info, Star,
   Search, LogIn, LogOut, UserPlus, Lock, Mail, Eye, EyeOff,
-  Zap, Crown, TrendingUp, Target, Globe
+  Zap, Crown, TrendingUp, Target, Globe, Instagram, Github, Linkedin
 } from 'lucide-react';
 import DarkVeil from './DarkVeil';
 import logo from './assets/logo.png';
@@ -657,14 +657,18 @@ function App() {
             >
               Archive
             </button>
-            <a 
-              href="https://github.com/Ketan2707/Debate-Arena" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-sm text-slate-400 hover:text-white transition-colors font-sans hidden sm:inline-block"
+            <button 
+              onClick={() => {
+                if (status.status === 'idle' || confirm("Leave active session?")) {
+                  if (eventSourceRef.current) eventSourceRef.current.close();
+                  setStatus({ status: 'idle' });
+                  setActiveView('about');
+                }
+              }}
+              className="text-sm text-slate-400 hover:text-white transition-colors font-sans cursor-pointer"
             >
               About
-            </a>
+            </button>
 
             {/* Auth Button */}
             {currentUser ? (
@@ -1604,6 +1608,194 @@ function App() {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── ABOUT & DEVELOPER VIEW ── */}
+        {activeView === 'about' && (
+          <div className="max-w-4xl mx-auto w-full py-8 space-y-8 animate-slide-up">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-3xl font-bold font-serif gradient-text">About ArguForge AI</h3>
+                <p className="text-sm text-brand-textMuted font-sans mt-1">
+                  Argument Forge Artificial Intelligence &mdash; Source-Integrity AI Debate Platform
+                </p>
+              </div>
+              <button 
+                onClick={() => setActiveView('landing')}
+                className="flex items-center space-x-2 glass hover:bg-brand-border/50 px-4 py-2 rounded-xl text-sm transition-all text-slate-300 hover:text-white hover-lift cursor-pointer"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back Home</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Features & Concept (Span 2) */}
+              <div className="md:col-span-2 space-y-6">
+                {/* Platform Overview */}
+                <div className="glass rounded-2xl p-6 glow-accent border border-white/10 relative overflow-hidden group hover-lift">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand-accent/5 rounded-full blur-3xl group-hover:bg-brand-accent/10 transition-all duration-500"></div>
+                  <h4 className="text-xl font-bold font-serif mb-3 text-slate-100 flex items-center space-x-2">
+                    <Sparkles className="h-5 w-5 text-brand-accent animate-pulse" />
+                    <span>The Vision</span>
+                  </h4>
+                  <p className="text-sm text-slate-300 font-sans leading-relaxed">
+                    <strong>ArguForge AI</strong> stands for <strong>Argument Forge Artificial Intelligence</strong>. It is a full-stack, source-integrity-first AI debate and factual analysis platform designed to battle misinformation. By setting specialized, temperature-tuned agents in an adversarial debate arena, the platform forge logical, source-verified insights for any topic.
+                  </p>
+                </div>
+
+                {/* Features Card */}
+                <div className="glass rounded-2xl p-6 border border-white/10 hover-lift">
+                  <h4 className="text-xl font-bold font-serif mb-4 text-slate-100 flex items-center space-x-2">
+                    <Shield className="h-5 w-5 text-brand-accent" />
+                    <span>Core Features</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-1.5 hover:bg-white/[0.08] transition-colors duration-300">
+                      <div className="flex items-center space-x-2">
+                        <MessageSquare className="h-4 w-4 text-brand-accent" />
+                        <h5 className="font-bold text-sm text-slate-200">Adversarial Debate</h5>
+                      </div>
+                      <p className="text-xs text-brand-textMuted leading-relaxed">
+                        Two temperature-tuned agents argue opposing stances (Affirmative vs. Negative) to generate structured, logical rebuttals.
+                      </p>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-1.5 hover:bg-white/[0.08] transition-colors duration-300">
+                      <div className="flex items-center space-x-2">
+                        <Search className="h-4 w-4 text-emerald-400" />
+                        <h5 className="font-bold text-sm text-slate-200">Source-Integrity Auditing</h5>
+                      </div>
+                      <p className="text-xs text-brand-textMuted leading-relaxed">
+                        An independent Fact-Checker extracts objective claims and verifies them against a strict multi-tier whitelist.
+                      </p>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-1.5 hover:bg-white/[0.08] transition-colors duration-300">
+                      <div className="flex items-center space-x-2">
+                        <Award className="h-4 w-4 text-brand-accentAmber" />
+                        <h5 className="font-bold text-sm text-slate-200">Bias-Free Judging</h5>
+                      </div>
+                      <p className="text-xs text-brand-textMuted leading-relaxed">
+                        Eliminates position bias by evaluating the debate twice (swapping labels) and averaging scores for logic, evidence, and rebuttal.
+                      </p>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-1.5 hover:bg-white/[0.08] transition-colors duration-300">
+                      <div className="flex items-center space-x-2">
+                        <Zap className="h-4 w-4 text-indigo-400" />
+                        <h5 className="font-bold text-sm text-slate-200">Real-Time Streaming</h5>
+                      </div>
+                      <p className="text-xs text-brand-textMuted leading-relaxed">
+                        Uses Server-Sent Events (SSE) to stream live arguments, factual verdict badges, and judgment scores on the fly.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Usage Card */}
+                <div className="glass rounded-2xl p-6 border border-white/10 hover-lift">
+                  <h4 className="text-xl font-bold font-serif mb-4 text-slate-100 flex items-center space-x-2">
+                    <BookOpen className="h-5 w-5 text-brand-accentAmber" />
+                    <span>How to Use</span>
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center flex-shrink-0 text-xs font-bold text-brand-accent">1</div>
+                      <div>
+                        <h5 className="text-sm font-bold text-slate-200">Enter your topic</h5>
+                        <p className="text-xs text-brand-textMuted mt-0.5 leading-relaxed">Type any debate statement or query in the main input box on the landing page.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center flex-shrink-0 text-xs font-bold text-brand-accent">2</div>
+                      <div>
+                        <h5 className="text-sm font-bold text-slate-200">Select Mode &amp; Stance</h5>
+                        <p className="text-xs text-brand-textMuted mt-0.5 leading-relaxed">Choose "Debate" for live argumentation or "Fact-Check" for a structured source-audited synthesis. Optionally select a specific stance preference.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center flex-shrink-0 text-xs font-bold text-brand-accent">3</div>
+                      <div>
+                        <h5 className="text-sm font-bold text-slate-200">Inspect Verifications</h5>
+                        <p className="text-xs text-brand-textMuted mt-0.5 leading-relaxed">Click on any claim's color-coded verdict badge (Confirmed, Disputed, Unverifiable) to view source references and reasoning logs.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Developer Profile (Span 1) */}
+              <div className="md:col-span-1 space-y-6">
+                <div className="glass rounded-2xl p-6 glow-accent border border-white/10 flex flex-col items-center text-center space-y-5 hover-lift relative overflow-hidden">
+                  <div className="absolute -top-10 -right-10 w-24 h-24 bg-brand-accent/10 rounded-full blur-xl"></div>
+                  
+                  {/* Developer Avatar */}
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-brand-accent to-purple-500 p-[2px] shadow-lg animate-float">
+                    <div className="w-full h-full rounded-full bg-[#120F17] flex items-center justify-center overflow-hidden">
+                      <span className="text-3xl font-bold font-serif text-brand-textLight tracking-wider">KA</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xl font-bold font-serif text-slate-100">Ketan Arora</h4>
+                    <p className="text-xs text-brand-accent font-sans font-semibold mt-0.5">Lead Developer &amp; Creator</p>
+                  </div>
+
+                  <p className="text-xs text-slate-300 font-sans leading-relaxed">
+                    Passionate about building intelligent AI agents, robust full-stack applications, and polished user interfaces that prioritize speed and clarity.
+                  </p>
+
+                  <div className="w-full border-t border-brand-border/40 my-1"></div>
+
+                  <div className="w-full space-y-3">
+                    <span className="text-xs font-semibold text-brand-textMuted font-sans block text-left">Connect with me:</span>
+                    
+                    <div className="grid grid-cols-1 gap-2.5 w-full">
+                      {/* GitHub */}
+                      <a 
+                        href="https://github.com/Ketan2707" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
+                      >
+                        <Github className="h-4 w-4 text-slate-400 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">GitHub / Ketan2707</span>
+                      </a>
+
+                      {/* LinkedIn */}
+                      <a 
+                        href="https://linkedin.com/in/ketan-arora" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
+                      >
+                        <Linkedin className="h-4 w-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">LinkedIn / Ketan Arora</span>
+                      </a>
+
+                      {/* Instagram */}
+                      <a 
+                        href="https://instagram.com/ketan.arora_" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
+                      >
+                        <Instagram className="h-4 w-4 text-pink-400 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">Instagram / ketan.arora_</span>
+                      </a>
+
+                      {/* Gmail */}
+                      <a 
+                        href="mailto:aroraketan2707@gmail.com" 
+                        className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
+                      >
+                        <Mail className="h-4 w-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                        <span className="font-medium">Email / Contact Me</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
