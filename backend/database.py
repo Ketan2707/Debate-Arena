@@ -270,9 +270,11 @@ def save_score(debate_id: str, agent: str, logic: int, evidence: int, rebuttal: 
                 (score_id, debate_id, agent, logic, evidence, rebuttal, total, judge_reasoning)
             )
 
-def list_debates() -> list[dict]:
+def list_debates(user_id: str = None) -> list[dict]:
+    if not user_id:
+        return []
     if USE_SUPABASE:
-        res = supabase_client.table("debates").select("*").order("created_at", desc=True).execute()
+        res = supabase_client.table("debates").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
         debates = res.data or []
         for d in debates:
             debate_id = d["id"]
@@ -296,7 +298,7 @@ def list_debates() -> list[dict]:
         return debates
     else:
         with get_sqlite_conn() as conn:
-            cursor = conn.execute("SELECT * FROM debates ORDER BY created_at DESC")
+            cursor = conn.execute("SELECT * FROM debates WHERE user_id = ? ORDER BY created_at DESC", (user_id,))
             debates = [dict(row) for row in cursor.fetchall()]
             
             for debate in debates:

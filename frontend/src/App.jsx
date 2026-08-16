@@ -86,6 +86,7 @@ function App() {
     localStorage.removeItem('debate_arena_token');
     setAuthToken(null);
     setCurrentUser(null);
+    setHistoryList([]);
     setActiveView('landing');
   };
 
@@ -146,7 +147,11 @@ function App() {
   const loadHistory = async () => {
     setIsLoadingHistory(true);
     try {
-      const res = await fetch(`${API_BASE}/api/debates`);
+      const headers = {};
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      const res = await fetch(`${API_BASE}/api/debates`, { headers });
       if (res.ok) {
         const data = await res.json();
         setHistoryList(data);
@@ -1423,10 +1428,28 @@ function App() {
                   ))}
                 </div>
               </div>
+            ) : !currentUser ? (
+              <div className="glass rounded-2xl p-16 text-center flex flex-col items-center justify-center space-y-4 glow-accent">
+                <div className="p-5 rounded-2xl animate-float">
+                  <img src={logo} className="h-12 w-12 object-contain opacity-50" alt="Logo" />
+                </div>
+                <div>
+                  <h4 className="font-serif text-lg font-semibold text-slate-300">Sign in to view your archive</h4>
+                  <p className="text-xs text-brand-textMuted font-sans mt-1 max-w-xs mx-auto leading-relaxed">
+                    Completed debates and fact-checks are stored privately in your personal archive.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setActiveView('login')}
+                  className="mt-2 bg-white hover:bg-slate-200 text-black px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md"
+                >
+                  Sign In to Your Account
+                </button>
+              </div>
             ) : historyList.length === 0 ? (
               <div className="glass rounded-2xl p-16 text-center flex flex-col items-center justify-center space-y-4 glow-accent">
-                <div className="bg-brand-accent/5 p-5 rounded-2xl animate-float">
-                  <BookOpen className="h-12 w-12 text-brand-border" />
+                <div className="p-5 rounded-2xl animate-float">
+                  <img src={logo} className="h-12 w-12 object-contain opacity-50" alt="Logo" />
                 </div>
                 <div>
                   <h4 className="font-serif text-lg font-semibold text-slate-300">No entries in archive</h4>
