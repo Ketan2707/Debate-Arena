@@ -3,7 +3,8 @@ import {
   Play, Shield, RefreshCw, Award, BookOpen, AlertTriangle, 
   CheckCircle, HelpCircle, ChevronRight, History, ArrowLeft, 
   ExternalLink, Sparkles, MessageSquare, Info, Star,
-  Search, LogIn, LogOut, UserPlus, Lock, Mail, Eye, EyeOff
+  Search, LogIn, LogOut, UserPlus, Lock, Mail, Eye, EyeOff,
+  Zap, Crown, TrendingUp, Target, Globe
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -38,6 +39,9 @@ function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [pendingAction, setPendingAction] = useState(null); // 'debate' or 'factcheck'
 
+  // Score bar animation state
+  const [scoreBarsVisible, setScoreBarsVisible] = useState(false);
+
   // SSE event source ref
   const eventSourceRef = useRef(null);
   const turnsEndRef = useRef(null);
@@ -64,6 +68,15 @@ function App() {
         });
     }
   }, [authToken]);
+
+  // Animate score bars when scores appear
+  useEffect(() => {
+    if (scores && scores.length > 0) {
+      setTimeout(() => setScoreBarsVisible(true), 200);
+    } else {
+      setScoreBarsVisible(false);
+    }
+  }, [scores]);
 
   const handleLogout = () => {
     localStorage.removeItem('debate_arena_token');
@@ -547,18 +560,22 @@ function App() {
   // ─── RENDER ────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-brand-dark text-slate-100 flex flex-col antialiased">
+    <div className="min-h-screen bg-brand-dark text-slate-100 flex flex-col antialiased relative">
+      {/* Animated Background Effects */}
+      <div className="gradient-mesh"></div>
+      <div className="dot-grid"></div>
+
       {/* Top Header */}
-      <header className="border-b border-brand-border bg-brand-dark/95 backdrop-blur sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+      <header className="glass-strong sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-brand-border/60">
         <div 
-          className="flex items-center space-x-3 cursor-pointer"
+          className="flex items-center space-x-3 cursor-pointer group"
           onClick={() => {
             if (status.status === 'idle') {
               setActiveView('landing');
             }
           }}
         >
-          <div className="bg-brand-accent p-2 rounded-lg text-brand-dark font-extrabold flex items-center justify-center shadow-lg shadow-brand-accent/15">
+          <div className="bg-brand-accent p-2.5 rounded-xl text-brand-dark font-extrabold flex items-center justify-center animate-pulse-glow transition-transform group-hover:scale-105">
             <Shield className="h-5 w-5" />
           </div>
           <div>
@@ -577,7 +594,7 @@ function App() {
                   setActiveView('landing');
                 }
               }}
-              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors duration-200"
+              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-all duration-200 hover:bg-brand-panel/50 rounded-lg"
             >
               New Analysis
             </button>
@@ -591,7 +608,7 @@ function App() {
                 setActiveView('history');
               }
             }}
-            className="flex items-center space-x-2 bg-brand-panel hover:bg-brand-border border border-brand-border px-4 py-2 rounded-lg text-sm text-slate-300 hover:text-white transition-all duration-200"
+            className="flex items-center space-x-2 glass hover:bg-brand-border/50 px-4 py-2 rounded-xl text-sm text-slate-300 hover:text-white transition-all duration-200 hover-lift"
           >
             <History className="h-4 w-4 text-brand-accent" />
             <span>Archive</span>
@@ -600,10 +617,15 @@ function App() {
           {/* Auth Button */}
           {currentUser ? (
             <div className="flex items-center space-x-2">
-              <span className="text-xs text-brand-textMuted font-sans">{currentUser.email}</span>
+              <div className="flex items-center space-x-2 glass px-3 py-2 rounded-xl">
+                <div className="w-6 h-6 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-brand-accent">{currentUser.email?.[0]?.toUpperCase()}</span>
+                </div>
+                <span className="text-xs text-brand-textMuted font-sans hidden sm:inline">{currentUser.email}</span>
+              </div>
               <button 
                 onClick={handleLogout}
-                className="flex items-center space-x-1.5 bg-brand-panel hover:bg-brand-border border border-brand-border px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white transition-all duration-200"
+                className="flex items-center space-x-1.5 glass hover:bg-brand-border/50 px-3 py-2 rounded-xl text-sm text-slate-400 hover:text-white transition-all duration-200"
               >
                 <LogOut className="h-3.5 w-3.5" />
               </button>
@@ -611,7 +633,7 @@ function App() {
           ) : (
             <button 
               onClick={() => setActiveView('login')}
-              className="flex items-center space-x-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200"
+              className="flex items-center space-x-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 animate-shine glow-accent"
             >
               <LogIn className="h-4 w-4" />
               <span>Sign In</span>
@@ -621,15 +643,18 @@ function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col justify-center">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col justify-center relative z-10">
         
-        {/* ── LOGIN / REGISTER VIEW (Claude-like) ── */}
+        {/* ── LOGIN / REGISTER VIEW ── */}
         {(activeView === 'login' || activeView === 'register') && (
-          <div className="max-w-md mx-auto w-full py-16 animate-fade-in">
-            <div className="bg-brand-panel border border-brand-border rounded-2xl p-8 shadow-2xl">
+          <div className="max-w-md mx-auto w-full py-16 animate-slide-up">
+            {/* Background glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="glass rounded-2xl p-8 shadow-2xl glow-accent relative">
               {/* Logo */}
               <div className="flex flex-col items-center mb-8">
-                <div className="bg-brand-accent p-3 rounded-xl text-brand-dark mb-4 shadow-lg shadow-brand-accent/20">
+                <div className="bg-brand-accent p-3.5 rounded-2xl text-brand-dark mb-4 glow-accent-strong animate-float">
                   <Shield className="h-8 w-8" />
                 </div>
                 <h2 className="text-2xl font-bold font-serif text-brand-textLight">
@@ -654,7 +679,7 @@ function App() {
                       value={authEmail}
                       onChange={(e) => setAuthEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="w-full bg-brand-dark border border-brand-border rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-accent transition-colors font-sans text-sm"
+                      className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
                       required
                     />
                   </div>
@@ -669,7 +694,7 @@ function App() {
                       value={authPassword}
                       onChange={(e) => setAuthPassword(e.target.value)}
                       placeholder={activeView === 'register' ? "At least 6 characters" : "Enter your password"}
-                      className="w-full bg-brand-dark border border-brand-border rounded-xl pl-10 pr-10 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-accent transition-colors font-sans text-sm"
+                      className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-10 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
                       required
                       minLength={activeView === 'register' ? 6 : 1}
                     />
@@ -684,15 +709,16 @@ function App() {
                 </div>
 
                 {authError && (
-                  <div className="bg-rose-950/40 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-300 font-sans">
-                    {authError}
+                  <div className="bg-rose-950/40 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-300 font-sans flex items-center space-x-2">
+                    <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>{authError}</span>
                   </div>
                 )}
 
                 <button 
                   type="submit"
                   disabled={authLoading}
-                  className="w-full bg-brand-accent hover:bg-brand-accent/90 text-brand-dark py-3 rounded-xl font-bold text-sm transition-all duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+                  className="w-full bg-brand-accent hover:bg-brand-accent/90 text-brand-dark py-3.5 rounded-xl font-bold text-sm transition-all duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 animate-shine glow-accent"
                 >
                   {authLoading ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
@@ -736,33 +762,41 @@ function App() {
 
         {/* ── LANDING VIEW ── */}
         {activeView === 'landing' && (
-          <div className="max-w-2xl mx-auto w-full py-16 flex flex-col items-center justify-center text-center animate-fade-in">
-            <div className="inline-flex items-center justify-center bg-brand-accent/10 border border-brand-accent/20 px-3 py-1.5 rounded-full mb-6 text-xs text-brand-accent font-semibold tracking-wide uppercase">
+          <div className="max-w-2xl mx-auto w-full py-16 flex flex-col items-center justify-center text-center animate-slide-up">
+            {/* Badge */}
+            <div className="inline-flex items-center justify-center glass px-4 py-2 rounded-full mb-8 text-xs text-brand-accent font-semibold tracking-wide uppercase glow-accent animate-scale-in">
               <Sparkles className="h-3.5 w-3.5 mr-2 animate-pulse" />
               Fact-Checked AI Analysis Platform
+              <Zap className="h-3.5 w-3.5 ml-2 text-brand-accentAmber" />
             </div>
-            <h2 className="text-5xl font-bold font-serif mb-4 leading-tight text-brand-textLight">
-              Where AI debates.<br/>
-              Where <span className="underline decoration-brand-accent decoration-2 underline-offset-8">credible sources</span> settle claims.
+
+            {/* Hero Heading */}
+            <h2 className="text-5xl md:text-6xl font-bold font-serif mb-5 leading-tight">
+              <span className="text-brand-textLight">Where AI debates.</span><br/>
+              <span className="gradient-text">Where credible sources</span>
+              <br/>
+              <span className="text-brand-textLight">settle claims.</span>
             </h2>
-            <p className="text-brand-textMuted text-lg mb-10 max-w-lg font-sans font-light leading-relaxed">
+
+            <p className="text-brand-textMuted text-lg mb-12 max-w-lg font-sans font-light leading-relaxed">
               Submit any topic. Choose a full adversarial debate or a quick factual deep-dive. Every claim is verified against trusted sources with clickable references.
             </p>
             
+            {/* Search Bar */}
             <form onSubmit={(e) => handleStartDebate(e)} className="w-full relative group">
-              <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3 w-full bg-brand-panel/60 p-2.5 rounded-2xl border border-brand-border focus-within:border-brand-accent transition-all duration-300 shadow-2xl">
+              <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3 w-full glass p-3 rounded-2xl focus-within:glow-accent-strong transition-all duration-500 shadow-2xl">
                 <input 
                   type="text" 
                   value={topicInput}
                   onChange={(e) => setTopicInput(e.target.value)}
                   placeholder="Should electric vehicles be mandatory by 2035?"
-                  className="flex-1 bg-transparent px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none font-sans text-md"
+                  className="flex-1 bg-transparent px-4 py-3.5 text-slate-100 placeholder-slate-500 focus:outline-none font-sans text-md"
                 />
                 <div className="flex space-x-2">
                   <button 
                     type="submit"
                     onClick={() => setDebateMode('debate')}
-                    className="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-5 py-3.5 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-200"
+                    className="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-6 py-3.5 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-200 animate-shine glow-accent"
                   >
                     <Play className="h-4 w-4 fill-brand-dark" />
                     <span>Debate</span>
@@ -773,7 +807,7 @@ function App() {
                       setDebateMode('factcheck');
                       handleStartDebate(null, 'factcheck');
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3.5 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-200"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3.5 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-200 glow-emerald"
                   >
                     <Search className="h-4 w-4" />
                     <span>Fact-Check</span>
@@ -783,9 +817,9 @@ function App() {
             </form>
             
             {/* Stance Preference Selector */}
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 bg-brand-panel/40 border border-brand-border/60 px-5 py-3 rounded-2xl w-full max-w-lg">
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 glass px-5 py-3.5 rounded-2xl w-full max-w-lg">
               <span className="text-xs text-brand-textMuted font-sans font-bold uppercase tracking-wider">Analysis Focus:</span>
-              <div className="flex bg-brand-dark p-1 rounded-xl border border-brand-border/60">
+              <div className="flex bg-brand-dark/60 p-1 rounded-xl border border-brand-border/60">
                 {[
                   { value: 'both', label: 'Both Sides' },
                   { value: 'for', label: 'Supporting (FOR)' },
@@ -795,9 +829,9 @@ function App() {
                     key={opt.value}
                     type="button"
                     onClick={() => setStancePreference(opt.value)}
-                    className={`text-[11px] px-3.5 py-1.5 rounded-lg font-bold uppercase tracking-wide transition-all ${
+                    className={`text-[11px] px-3.5 py-2 rounded-lg font-bold uppercase tracking-wide transition-all duration-300 ${
                       stancePreference === opt.value
-                        ? 'bg-brand-accent text-brand-dark shadow-lg shadow-brand-accent/15'
+                        ? 'bg-brand-accent text-brand-dark shadow-lg glow-accent'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
@@ -807,20 +841,24 @@ function App() {
               </div>
             </div>
 
-            {/* Mode description */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-lg">
-              <div className="bg-brand-panel/40 border border-brand-border rounded-xl p-4 text-left">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Play className="h-4 w-4 text-brand-accent" />
+            {/* Mode description cards */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-lg">
+              <div className="glass rounded-xl p-5 text-left hover-lift group cursor-default">
+                <div className="flex items-center space-x-2.5 mb-3">
+                  <div className="bg-brand-accent/15 p-2 rounded-lg group-hover:glow-accent transition-all">
+                    <Play className="h-4 w-4 text-brand-accent" />
+                  </div>
                   <span className="text-sm font-bold text-slate-200">Full Debate</span>
                 </div>
                 <p className="text-xs text-brand-textMuted font-sans leading-relaxed">
                   Two AI agents debate 5 rounds. Every claim is fact-checked. A judge scores both sides.
                 </p>
               </div>
-              <div className="bg-brand-panel/40 border border-brand-border rounded-xl p-4 text-left">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Search className="h-4 w-4 text-emerald-400" />
+              <div className="glass rounded-xl p-5 text-left hover-lift group cursor-default">
+                <div className="flex items-center space-x-2.5 mb-3">
+                  <div className="bg-emerald-500/15 p-2 rounded-lg group-hover:glow-emerald transition-all">
+                    <Search className="h-4 w-4 text-emerald-400" />
+                  </div>
                   <span className="text-sm font-bold text-slate-200">Factual Deep-Dive</span>
                 </div>
                 <p className="text-xs text-brand-textMuted font-sans leading-relaxed">
@@ -830,21 +868,36 @@ function App() {
             </div>
 
             {/* Quick prefill examples */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-              <span className="text-xs text-brand-textMuted mr-2">Try examples:</span>
-              {["Should electric vehicles be mandatory by 2035?", "Is artificial intelligence a net benefit to public education?", "Should lab-grown meat be certified for commercial scale distribution?"].map((ex) => (
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
+              <span className="text-xs text-brand-textMuted mr-2 flex items-center"><Sparkles className="h-3 w-3 mr-1" />Try:</span>
+              {["Should electric vehicles be mandatory by 2035?", "Is artificial intelligence a net benefit to public education?", "Should lab-grown meat be certified for commercial scale distribution?"].map((ex, i) => (
                 <button 
                   key={ex}
                   onClick={() => setTopicInput(ex)}
-                  className="bg-brand-panel/40 border border-brand-border text-xs px-3.5 py-1.5 rounded-full text-slate-400 hover:text-white hover:border-brand-accent transition-colors"
+                  className={`glass text-xs px-4 py-2 rounded-full text-slate-400 hover:text-white hover:border-brand-accent/50 hover:glow-accent transition-all duration-300 stagger-${i+1} animate-fade-in`}
+                  style={{ animationDelay: `${i * 0.1}s`, opacity: 0 }}
                 >
                   {ex.length > 40 ? ex.substring(0, 40) + '...' : ex}
                 </button>
               ))}
             </div>
 
+            {/* Features grid */}
+            <div className="mt-12 grid grid-cols-3 gap-4 w-full max-w-lg">
+              {[
+                { icon: <Target className="h-4 w-4" />, label: 'Source Verified', color: 'text-emerald-400' },
+                { icon: <Globe className="h-4 w-4" />, label: 'Trusted Domains', color: 'text-brand-accent' },
+                { icon: <TrendingUp className="h-4 w-4" />, label: 'Bias-Free Judge', color: 'text-brand-accentAmber' }
+              ].map((feat) => (
+                <div key={feat.label} className="flex flex-col items-center space-y-2 py-3">
+                  <div className={`${feat.color}`}>{feat.icon}</div>
+                  <span className="text-[11px] text-brand-textMuted font-sans font-semibold">{feat.label}</span>
+                </div>
+              ))}
+            </div>
+
             {!currentUser && (
-              <div className="mt-8 bg-brand-panel/30 border border-brand-border/60 rounded-xl p-4 max-w-md">
+              <div className="mt-8 glass rounded-xl p-4 max-w-md">
                 <p className="text-xs text-brand-textMuted font-sans text-center">
                   <Lock className="h-3 w-3 inline mr-1" />
                   <button onClick={() => setActiveView('login')} className="text-brand-accent hover:text-brand-accent/80 font-semibold">Sign in</button> to start debates and fact-checks. Browse the archive as a guest.
@@ -861,26 +914,34 @@ function App() {
             <div className="lg:col-span-3 flex flex-col space-y-6">
               
               {/* Active topic display card */}
-              <div className="bg-brand-panel border border-brand-border rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 h-40 w-40 bg-brand-accent/5 rounded-full filter blur-2xl pointer-events-none"></div>
-                <div className="flex items-center space-x-2 text-xs font-semibold mb-2">
+              <div className="glass rounded-2xl p-6 shadow-xl relative overflow-hidden gradient-border">
+                <div className="absolute top-0 right-0 h-48 w-48 bg-brand-accent/5 rounded-full filter blur-3xl pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 h-32 w-32 bg-brand-accentAmber/3 rounded-full filter blur-2xl pointer-events-none"></div>
+                
+                <div className="flex items-center space-x-2 text-xs font-semibold mb-3">
                   {debateMode === 'factcheck' ? (
-                    <><Search className="h-4 w-4 text-emerald-400" /><span className="text-emerald-400">FACTUAL DEEP-DIVE</span></>
+                    <><div className="flex items-center space-x-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full"><div className="h-2 w-2 bg-emerald-400 rounded-full animate-pulse"></div><Search className="h-3.5 w-3.5 text-emerald-400" /><span className="text-emerald-400">FACTUAL DEEP-DIVE</span></div></>
                   ) : (
-                    <><MessageSquare className="h-4 w-4 text-brand-accent" /><span className="text-brand-accent">ACTIVE DEBATE ROOM</span></>
+                    <><div className="flex items-center space-x-1.5 bg-brand-accent/10 border border-brand-accent/20 px-3 py-1.5 rounded-full"><div className="h-2 w-2 bg-brand-accent rounded-full animate-pulse"></div><MessageSquare className="h-3.5 w-3.5 text-brand-accent" /><span className="text-brand-accent">ACTIVE DEBATE ROOM</span></div></>
                   )}
                 </div>
-                <h3 className="text-3xl font-bold font-serif mb-4 leading-snug">{debateTopic}</h3>
+                <h3 className="text-3xl font-bold font-serif mb-4 leading-snug text-brand-textLight">{debateTopic}</h3>
                 
                 {/* Show stances only for debate mode */}
                 {debateMode === 'debate' && stances.stance_a && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-brand-border/60">
-                    <div className="bg-brand-dark/50 p-4 rounded-xl border border-brand-border/60">
-                      <div className="text-xs text-brand-accent font-semibold mb-1 uppercase tracking-wider">Agent A (Affirmative)</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-brand-border/40">
+                    <div className="glass rounded-xl p-4 agent-a-border">
+                      <div className="text-xs text-brand-accent font-semibold mb-1.5 uppercase tracking-wider flex items-center space-x-1.5">
+                        <div className="h-2 w-2 bg-brand-accent rounded-full"></div>
+                        <span>Agent A (Affirmative)</span>
+                      </div>
                       <p className="text-sm text-slate-300 font-sans">{stances.stance_a}</p>
                     </div>
-                    <div className="bg-brand-dark/50 p-4 rounded-xl border border-brand-border/60">
-                      <div className="text-xs text-brand-accentAmber font-semibold mb-1 uppercase tracking-wider">Agent B (Negative)</div>
+                    <div className="glass rounded-xl p-4 agent-b-border">
+                      <div className="text-xs text-brand-accentAmber font-semibold mb-1.5 uppercase tracking-wider flex items-center space-x-1.5">
+                        <div className="h-2 w-2 bg-brand-accentAmber rounded-full"></div>
+                        <span>Agent B (Negative)</span>
+                      </div>
                       <p className="text-sm text-slate-300 font-sans">{stances.stance_b}</p>
                     </div>
                   </div>
@@ -892,9 +953,11 @@ function App() {
                 <div className="space-y-6">
                   {/* FOR section */}
                   {turns.filter(t => t.agent === 'FOR').map(turn => (
-                    <div key={turn.id} className="bg-brand-panel border border-emerald-500/20 rounded-2xl p-6 shadow-md animate-fade-in">
+                    <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up" style={{ borderLeft: '3px solid rgba(16, 185, 129, 0.6)' }}>
                       <div className="flex items-center space-x-2 mb-3">
-                        <CheckCircle className="h-5 w-5 text-emerald-400" />
+                        <div className="bg-emerald-500/15 p-1.5 rounded-lg">
+                          <CheckCircle className="h-4.5 w-4.5 text-emerald-400" />
+                        </div>
                         <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Supporting Case (FOR)</span>
                       </div>
                       {renderContentWithClaims(turn.content, turn.claims)}
@@ -903,9 +966,11 @@ function App() {
 
                   {/* AGAINST section */}
                   {turns.filter(t => t.agent === 'AGAINST').map(turn => (
-                    <div key={turn.id} className="bg-brand-panel border border-rose-500/20 rounded-2xl p-6 shadow-md animate-fade-in">
+                    <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up" style={{ borderLeft: '3px solid rgba(244, 63, 94, 0.6)' }}>
                       <div className="flex items-center space-x-2 mb-3">
-                        <AlertTriangle className="h-5 w-5 text-rose-400" />
+                        <div className="bg-rose-500/15 p-1.5 rounded-lg">
+                          <AlertTriangle className="h-4.5 w-4.5 text-rose-400" />
+                        </div>
                         <span className="text-sm font-bold text-rose-400 uppercase tracking-wider">Opposing Case (AGAINST)</span>
                       </div>
                       {renderContentWithClaims(turn.content, turn.claims)}
@@ -914,9 +979,11 @@ function App() {
 
                   {/* VERDICT section */}
                   {turns.filter(t => t.agent === 'VERDICT').map(turn => (
-                    <div key={turn.id} className="bg-brand-panel border border-indigo-500/20 rounded-2xl p-6 shadow-md animate-fade-in">
+                    <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up glow-accent" style={{ borderLeft: '3px solid rgba(99, 102, 241, 0.6)' }}>
                       <div className="flex items-center space-x-2 mb-3">
-                        <Award className="h-5 w-5 text-indigo-400" />
+                        <div className="bg-indigo-500/15 p-1.5 rounded-lg">
+                          <Award className="h-4.5 w-4.5 text-indigo-400" />
+                        </div>
                         <span className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Balanced Verdict</span>
                       </div>
                       {renderContentWithClaims(turn.content, turn.claims)}
@@ -930,9 +997,10 @@ function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[450px]">
                   {/* Agent A Column */}
                   <div className="flex flex-col space-y-4">
-                    <div className="flex items-center space-x-2 px-3 py-1 bg-brand-accent/15 border border-brand-accent/30 rounded-full self-start">
-                      <div className="h-2 w-2 bg-brand-accent rounded-full animate-pulse"></div>
+                    <div className="flex items-center space-x-2.5 px-4 py-2 bg-brand-accent/10 border border-brand-accent/25 rounded-full self-start glow-accent">
+                      <div className="h-2.5 w-2.5 bg-brand-accent rounded-full animate-pulse"></div>
                       <span className="text-xs font-bold text-slate-100 tracking-wider">AGENT A</span>
+                      <span className="text-[10px] text-brand-accent font-mono">T:0.6</span>
                     </div>
 
                     {turns
@@ -940,19 +1008,22 @@ function App() {
                       .map((turn) => (
                         <div 
                           key={turn.id} 
-                          className="bg-brand-panel border border-brand-border/80 rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-fade-in relative hover:border-brand-accent/30 transition-colors"
+                          className="glass rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-slide-up agent-a-border hover-lift transition-all"
                         >
                           <div className="flex items-center justify-between text-[11px] text-brand-textMuted border-b border-brand-border/40 pb-2">
-                            <span className="font-semibold tracking-wider font-sans uppercase">Round {turn.round_number} ({turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'})</span>
+                            <span className="font-semibold tracking-wider font-sans uppercase flex items-center space-x-1.5">
+                              <span className="bg-brand-accent/15 text-brand-accent px-2 py-0.5 rounded-md text-[10px] font-bold">R{turn.round_number}</span>
+                              <span>{turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'}</span>
+                            </span>
                           </div>
                           {renderContentWithClaims(turn.content, turn.claims)}
                         </div>
                       ))}
 
                     {status.agent === 'Agent A' && (
-                      <div className="bg-brand-panel/40 border border-brand-border border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
-                        <div className="bg-brand-accent/10 p-3 rounded-full text-brand-accent animate-spin duration-3000">
-                          <RefreshCw className="h-5 w-5" />
+                      <div className="glass border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
+                        <div className="bg-brand-accent/10 p-3 rounded-full text-brand-accent animate-pulse-glow">
+                          <RefreshCw className="h-5 w-5 animate-spin" />
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-slate-300">
@@ -962,15 +1033,22 @@ function App() {
                             {status.status === 'writing' ? "Citing verified sources inline" : "Verifying claims against whitelist domains..."}
                           </span>
                         </div>
+                        {/* Skeleton preview */}
+                        <div className="w-full space-y-2 mt-2">
+                          <div className="skeleton h-3 w-full rounded"></div>
+                          <div className="skeleton h-3 w-4/5 rounded"></div>
+                          <div className="skeleton h-3 w-3/5 rounded"></div>
+                        </div>
                       </div>
                     )}
                   </div>
 
                   {/* Agent B Column */}
                   <div className="flex flex-col space-y-4">
-                    <div className="flex items-center space-x-2 px-3 py-1 bg-brand-accentAmber/15 border border-brand-accentAmber/30 rounded-full self-start">
-                      <div className="h-2 w-2 bg-brand-accentAmber rounded-full animate-pulse"></div>
+                    <div className="flex items-center space-x-2.5 px-4 py-2 bg-brand-accentAmber/10 border border-brand-accentAmber/25 rounded-full self-start glow-amber">
+                      <div className="h-2.5 w-2.5 bg-brand-accentAmber rounded-full animate-pulse"></div>
                       <span className="text-xs font-bold text-slate-100 tracking-wider">AGENT B</span>
+                      <span className="text-[10px] text-brand-accentAmber font-mono">T:0.8</span>
                     </div>
 
                     {turns
@@ -978,19 +1056,22 @@ function App() {
                       .map((turn) => (
                         <div 
                           key={turn.id} 
-                          className="bg-brand-panel border border-brand-border/80 rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-fade-in relative hover:border-brand-accentAmber/30 transition-colors"
+                          className="glass rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-slide-up agent-b-border hover-lift transition-all"
                         >
                           <div className="flex items-center justify-between text-[11px] text-brand-textMuted border-b border-brand-border/40 pb-2">
-                            <span className="font-semibold tracking-wider font-sans uppercase">Round {turn.round_number} ({turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'})</span>
+                            <span className="font-semibold tracking-wider font-sans uppercase flex items-center space-x-1.5">
+                              <span className="bg-brand-accentAmber/15 text-brand-accentAmber px-2 py-0.5 rounded-md text-[10px] font-bold">R{turn.round_number}</span>
+                              <span>{turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'}</span>
+                            </span>
                           </div>
                           {renderContentWithClaims(turn.content, turn.claims)}
                         </div>
                       ))}
 
                     {status.agent === 'Agent B' && (
-                      <div className="bg-brand-panel/40 border border-brand-border border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
-                        <div className="bg-brand-accentAmber/10 p-3 rounded-full text-brand-accentAmber animate-spin duration-3000">
-                          <RefreshCw className="h-5 w-5" />
+                      <div className="glass border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
+                        <div className="bg-brand-accentAmber/10 p-3 rounded-full text-brand-accentAmber animate-pulse-glow">
+                          <RefreshCw className="h-5 w-5 animate-spin" />
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-slate-300">
@@ -999,6 +1080,11 @@ function App() {
                           <span className="text-xs text-brand-textMuted font-sans">
                             {status.status === 'writing' ? "Analyzing opponent arguments and citing sources" : "Verifying claims against whitelist domains..."}
                           </span>
+                        </div>
+                        <div className="w-full space-y-2 mt-2">
+                          <div className="skeleton h-3 w-full rounded"></div>
+                          <div className="skeleton h-3 w-4/5 rounded"></div>
+                          <div className="skeleton h-3 w-3/5 rounded"></div>
                         </div>
                       </div>
                     )}
@@ -1010,8 +1096,8 @@ function App() {
 
               {/* Status display for analysis / judging */}
               {(status.agent === 'Judge' || status.agent === 'Analyst' || status.agent === 'FOR' || status.agent === 'AGAINST' || status.agent === 'VERDICT') && (
-                <div className="bg-brand-panel border border-brand-border rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-4 shadow-xl">
-                  <div className="bg-indigo-500/10 border border-indigo-500/30 p-4 rounded-full text-indigo-400 animate-pulse">
+                <div className="glass rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-4 shadow-xl glow-accent">
+                  <div className="bg-indigo-500/10 border border-indigo-500/30 p-4 rounded-2xl text-indigo-400 animate-pulse-glow">
                     {debateMode === 'factcheck' ? <Search className="h-8 w-8" /> : <Award className="h-8 w-8" />}
                   </div>
                   <div>
@@ -1028,12 +1114,17 @@ function App() {
                       }
                     </p>
                   </div>
+                  {/* Progress skeletons */}
+                  <div className="w-full max-w-sm space-y-2 mt-2">
+                    <div className="skeleton h-2 w-full rounded-full"></div>
+                    <div className="skeleton h-2 w-3/4 rounded-full"></div>
+                  </div>
                 </div>
               )}
 
               {/* Error Callout */}
               {error && (
-                <div className="bg-rose-950/40 border border-rose-500/30 rounded-2xl p-5 flex items-start space-x-3.5 text-rose-200">
+                <div className="bg-rose-950/40 border border-rose-500/30 rounded-2xl p-5 flex items-start space-x-3.5 text-rose-200 animate-scale-in">
                   <AlertTriangle className="h-6 w-6 text-rose-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <h5 className="font-bold text-sm">Analysis Engine Interrupted</h5>
@@ -1050,49 +1141,67 @@ function App() {
 
               {/* Scorecard Panel (Debate mode only) */}
               {debateMode === 'debate' && scores && scores.length > 0 && (
-                <div className="bg-brand-panel border border-brand-border rounded-2xl p-6 shadow-2xl space-y-6 animate-fade-in">
+                <div className="glass rounded-2xl p-6 shadow-2xl space-y-6 animate-scale-in gradient-border glow-accent">
                   <div className="flex items-center space-x-2 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
                     <Award className="h-4 w-4" />
                     <span>Official Scorecard</span>
                   </div>
                   
-                  <h4 className="text-2xl font-bold font-serif text-brand-textLight">Judge's Final Verdict</h4>
+                  <h4 className="text-2xl font-bold font-serif gradient-text">Judge's Final Verdict</h4>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-brand-border/60">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-brand-border/40">
                     {scores.map((score) => {
                       const isA = score.agent === 'Agent A';
+                      const winner = getWinner(scores);
+                      const isWinner = score.agent === winner;
                       return (
-                        <div key={score.agent} className={`p-5 rounded-xl border ${isA ? 'border-brand-accent/20 bg-brand-accent/5' : 'border-brand-accentAmber/20 bg-brand-accentAmber/5'} flex flex-col space-y-4`}>
+                        <div key={score.agent} className={`p-5 rounded-xl border relative overflow-hidden ${
+                          isA 
+                            ? 'border-brand-accent/25 bg-brand-accent/5' 
+                            : 'border-brand-accentAmber/25 bg-brand-accentAmber/5'
+                        } ${isWinner ? (isA ? 'glow-accent' : 'glow-amber') : ''} flex flex-col space-y-4`}>
+                          {/* Winner badge */}
+                          {isWinner && winner !== 'Tie' && (
+                            <div className="absolute top-3 right-3">
+                              <Crown className={`h-5 w-5 ${isA ? 'text-brand-accent' : 'text-brand-accentAmber'} animate-float`} />
+                            </div>
+                          )}
+                          
                           <div className="flex justify-between items-center">
-                            <span className="font-bold font-serif text-lg text-slate-200">{score.agent}</span>
+                            <span className="font-bold font-serif text-lg text-slate-200 flex items-center space-x-2">
+                              <span>{score.agent}</span>
+                              {isWinner && winner !== 'Tie' && (
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isA ? 'bg-brand-accent/20 text-brand-accent' : 'bg-brand-accentAmber/20 text-brand-accentAmber'}`}>WINNER</span>
+                              )}
+                            </span>
                             <div className="flex items-baseline space-x-1">
                               <span className="text-3xl font-extrabold text-white">{score.total}</span>
                               <span className="text-xs text-slate-400">/ 10</span>
                             </div>
                           </div>
 
-                          <div className="space-y-2 text-sm">
+                          <div className="space-y-3 text-sm">
                             {[
                               { label: 'Logic Validity', key: 'logic' },
-                              { label: 'Evidence Quality (Fact-Checker Grounded)', key: 'evidence' },
+                              { label: 'Evidence Quality', key: 'evidence' },
                               { label: 'Rebuttal Effectiveness', key: 'rebuttal' }
                             ].map(({ label, key }) => (
                               <div key={key}>
-                                <div className="flex justify-between text-xs text-slate-400 mb-1">
+                                <div className="flex justify-between text-xs text-slate-400 mb-1.5">
                                   <span>{label}</span>
                                   <span className="font-bold text-slate-200">{score[key]}/10</span>
                                 </div>
-                                <div className="h-2 w-full bg-brand-dark rounded-full overflow-hidden">
+                                <div className="h-2.5 w-full bg-brand-dark/60 rounded-full overflow-hidden">
                                   <div 
-                                    className={`h-full ${isA ? 'bg-brand-accent' : 'bg-brand-accentAmber'}`} 
-                                    style={{ width: `${score[key] * 10}%` }}
+                                    className={`h-full rounded-full score-bar-fill ${isA ? 'bg-brand-accent' : 'bg-brand-accentAmber'}`} 
+                                    style={{ width: scoreBarsVisible ? `${score[key] * 10}%` : '0%' }}
                                   ></div>
                                 </div>
                               </div>
                             ))}
                           </div>
 
-                          <div className="bg-brand-dark/40 p-4 rounded-lg border border-brand-border/60 text-xs text-slate-300 font-sans leading-relaxed">
+                          <div className="glass p-4 rounded-lg text-xs text-slate-300 font-sans leading-relaxed">
                             <strong className="block text-brand-textLight mb-1.5 font-serif text-[13px]">Judge Reasoning:</strong>
                             {score.judge_reasoning}
                           </div>
@@ -1105,7 +1214,7 @@ function App() {
 
               {/* Factcheck completion banner */}
               {debateMode === 'factcheck' && status.status === 'idle' && turns.length > 0 && !error && (
-                <div className="bg-brand-panel border border-emerald-500/20 rounded-2xl p-6 text-center animate-fade-in">
+                <div className="glass rounded-2xl p-6 text-center animate-scale-in glow-emerald" style={{ borderLeft: '3px solid rgba(16, 185, 129, 0.6)' }}>
                   <div className="flex items-center justify-center space-x-2 text-emerald-400 mb-2">
                     <CheckCircle className="h-5 w-5" />
                     <span className="text-sm font-bold uppercase tracking-wider">Analysis Complete</span>
@@ -1119,10 +1228,12 @@ function App() {
 
             {/* Right Side Column: Claims Inspection Panel */}
             <div className="lg:col-span-1 flex flex-col space-y-6">
-              <div className="bg-brand-panel border border-brand-border rounded-2xl p-5 shadow-xl flex flex-col space-y-4 sticky top-24">
+              <div className="glass-strong rounded-2xl p-5 shadow-xl flex flex-col space-y-4 sticky top-24">
                 <div className="flex items-center justify-between text-brand-textMuted border-b border-brand-border/40 pb-3">
                   <div className="flex items-center space-x-2">
-                    <Shield className="h-4.5 w-4.5 text-brand-accent" />
+                    <div className="bg-brand-accent/15 p-1.5 rounded-lg">
+                      <Shield className="h-4 w-4 text-brand-accent" />
+                    </div>
                     <h4 className="text-sm font-bold tracking-wider uppercase font-sans">
                       {selectedClaim?.ref_number ? `Reference [${selectedClaim.ref_number}]` : "Fact-Checker Log"}
                     </h4>
@@ -1130,7 +1241,7 @@ function App() {
                   {selectedClaim && (
                     <button 
                       onClick={() => setSelectedClaim(null)} 
-                      className="text-xs hover:text-white text-slate-500 font-semibold transition-colors"
+                      className="text-xs hover:text-white text-slate-500 font-semibold transition-colors bg-brand-border/30 px-2 py-1 rounded-md"
                     >
                       Clear
                     </button>
@@ -1139,7 +1250,9 @@ function App() {
 
                 {!selectedClaim ? (
                   <div className="py-12 px-4 text-center flex flex-col items-center justify-center space-y-3">
-                    <Info className="h-10 w-10 text-brand-border/80" />
+                    <div className="bg-brand-accent/5 p-4 rounded-2xl animate-pulse-glow">
+                      <Shield className="h-10 w-10 text-brand-border/60" />
+                    </div>
                     <div>
                       <h5 className="font-serif text-slate-300 font-semibold">Inspect Claims</h5>
                       <p className="text-xs text-brand-textMuted font-sans mt-1 leading-relaxed">
@@ -1148,10 +1261,10 @@ function App() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col space-y-4 animate-fade-in">
+                  <div className="flex flex-col space-y-4 animate-scale-in">
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-bold ${
+                        <span className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold ${
                           selectedClaim.verdict === 'Confirmed' 
                             ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' 
                             : selectedClaim.verdict === 'Disputed' 
@@ -1166,13 +1279,13 @@ function App() {
                         
                         {selectedClaim.source_tier && (
                           <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded">
-                            Tier {selectedClaim.source_tier} Source
+                            Tier {selectedClaim.source_tier}
                           </span>
                         )}
                       </div>
                       
                       <h5 className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans mb-1">FACTUAL CLAIM:</h5>
-                      <p className="text-sm font-sans font-medium text-slate-200 leading-relaxed bg-brand-dark/50 p-3 rounded-lg border border-brand-border/40">
+                      <p className="text-sm font-sans font-medium text-slate-200 leading-relaxed glass p-3 rounded-lg">
                         "{selectedClaim.claim_text}"
                       </p>
                     </div>
@@ -1205,7 +1318,7 @@ function App() {
                           </span>
                         </div>
                       ) : (
-                        <div className="bg-slate-900/40 p-3 rounded border border-brand-border/40 text-[10px] text-brand-textMuted font-sans leading-relaxed">
+                        <div className="glass p-3 rounded-lg text-[10px] text-brand-textMuted font-sans leading-relaxed">
                           No source link verified. Under source-integrity rules, claims without a verifiable whitelisted domain citation must be labeled Unverifiable.
                         </div>
                       )}
@@ -1234,15 +1347,15 @@ function App() {
 
         {/* ── PAST DEBATES HISTORY ── */}
         {activeView === 'history' && (
-          <div className="max-w-4xl mx-auto w-full py-8 space-y-6 animate-fade-in">
+          <div className="max-w-4xl mx-auto w-full py-8 space-y-6 animate-slide-up">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-3xl font-bold font-serif text-brand-textLight">Archive</h3>
+                <h3 className="text-3xl font-bold font-serif gradient-text">Archive</h3>
                 <p className="text-sm text-brand-textMuted font-sans mt-1">Review past debates, fact-checks, and scoring cards.</p>
               </div>
               <button 
                 onClick={() => setActiveView('landing')}
-                className="flex items-center space-x-2 bg-brand-panel hover:bg-brand-border border border-brand-border px-4 py-2 rounded-lg text-sm transition-colors text-slate-300 hover:text-white"
+                className="flex items-center space-x-2 glass hover:bg-brand-border/50 px-4 py-2 rounded-xl text-sm transition-all text-slate-300 hover:text-white hover-lift"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back Home</span>
@@ -1250,23 +1363,42 @@ function App() {
             </div>
 
             {isLoadingHistory ? (
-              <div className="py-24 text-center flex flex-col items-center justify-center space-y-3">
-                <RefreshCw className="h-8 w-8 text-brand-accent animate-spin" />
+              <div className="py-24 text-center flex flex-col items-center justify-center space-y-4">
+                <div className="animate-pulse-glow p-4 rounded-2xl">
+                  <RefreshCw className="h-8 w-8 text-brand-accent animate-spin" />
+                </div>
                 <span className="text-sm text-brand-textMuted">Loading archive...</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mt-4">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="glass rounded-xl p-5 space-y-3">
+                      <div className="skeleton h-3 w-1/3 rounded"></div>
+                      <div className="skeleton h-5 w-full rounded"></div>
+                      <div className="skeleton h-3 w-2/3 rounded"></div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : historyList.length === 0 ? (
-              <div className="bg-brand-panel border border-brand-border rounded-2xl p-16 text-center flex flex-col items-center justify-center space-y-4">
-                <BookOpen className="h-12 w-12 text-brand-border" />
+              <div className="glass rounded-2xl p-16 text-center flex flex-col items-center justify-center space-y-4 glow-accent">
+                <div className="bg-brand-accent/5 p-5 rounded-2xl animate-float">
+                  <BookOpen className="h-12 w-12 text-brand-border" />
+                </div>
                 <div>
                   <h4 className="font-serif text-lg font-semibold text-slate-300">No entries in archive</h4>
                   <p className="text-xs text-brand-textMuted font-sans mt-1 max-w-xs mx-auto leading-relaxed">
                     Create your first debate or fact-check. Completed analyses are saved here automatically.
                   </p>
                 </div>
+                <button 
+                  onClick={() => setActiveView('landing')}
+                  className="mt-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-5 py-2.5 rounded-xl text-sm font-bold transition-all animate-shine"
+                >
+                  Start Your First Debate
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {historyList.map((debate) => {
+                {historyList.map((debate, index) => {
                   const winner = getWinner(debate.scores);
                   const confCount = debate.claim_stats?.Confirmed || 0;
                   const dispCount = debate.claim_stats?.Disputed || 0;
@@ -1277,7 +1409,8 @@ function App() {
                     <div 
                       key={debate.id}
                       onClick={() => handleViewPastDebate(debate.id)}
-                      className="bg-brand-panel border border-brand-border rounded-xl p-5 hover:border-brand-accent hover:scale-[1.01] cursor-pointer transition-all duration-200 flex flex-col justify-between space-y-4 group"
+                      className="glass rounded-xl p-5 hover:border-brand-accent/40 cursor-pointer transition-all duration-300 flex flex-col justify-between space-y-4 group hover-lift animate-fade-in"
+                      style={{ animationDelay: `${index * 0.05}s`, opacity: 0 }}
                     >
                       <div className="space-y-2">
                         <div className="flex justify-between items-center text-[10px] text-brand-textMuted font-sans font-semibold">
@@ -1307,12 +1440,12 @@ function App() {
                       </div>
 
                       {debate.status === 'completed' && (
-                        <div className="pt-3 border-t border-brand-border/60 flex items-center justify-between text-xs">
+                        <div className="pt-3 border-t border-brand-border/40 flex items-center justify-between text-xs">
                           {mode === 'debate' && debate.scores?.length > 0 && (
                             <span className="text-brand-textMuted font-sans flex items-center">
                               Winner: <strong className="text-indigo-400 ml-1 font-serif font-bold flex items-center">
                                 {winner === 'Tie' ? 'Tie' : winner}
-                                {winner !== 'Tie' && <Star className="h-3 w-3 fill-indigo-400 ml-0.5" />}
+                                {winner !== 'Tie' && <Crown className="h-3 w-3 text-brand-accentAmber ml-0.5" />}
                               </strong>
                             </span>
                           )}
@@ -1321,9 +1454,9 @@ function App() {
                           )}
                           
                           <div className="flex items-center space-x-2 text-[10px] font-sans font-bold">
-                            <span className="text-emerald-400">✓ {confCount}</span>
-                            <span className="text-amber-400">⚠️ {dispCount}</span>
-                            <span className="text-slate-400">? {unverCount}</span>
+                            <span className="text-emerald-400 bg-emerald-950/30 px-1.5 py-0.5 rounded">✓ {confCount}</span>
+                            <span className="text-amber-400 bg-amber-950/30 px-1.5 py-0.5 rounded">⚠️ {dispCount}</span>
+                            <span className="text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded">? {unverCount}</span>
                           </div>
                         </div>
                       )}
@@ -1338,15 +1471,18 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-brand-border bg-brand-dark/50 py-6 px-6 text-center text-xs text-brand-textMuted font-sans flex flex-col sm:flex-row items-center justify-between max-w-7xl w-full mx-auto">
-        <p>&copy; {new Date().getFullYear()} ArguForge AI — Fact-Checked AI Analysis Platform.</p>
-        <p className="mt-2 sm:mt-0 flex items-center space-x-3">
-          <span>Tier 1: AP / Reuters / PIB</span>
-          <span>&middot;</span>
-          <span>Tier 2: BBC / NYT / Guardian</span>
-          <span>&middot;</span>
-          <span>Tier 3: CFR / Brookings</span>
-        </p>
+      <footer className="border-t border-brand-border/40 bg-brand-dark/30 backdrop-blur-sm py-8 px-6 text-center text-xs text-brand-textMuted font-sans relative z-10">
+        <div className="max-w-7xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
+          <p className="flex items-center space-x-2">
+            <Shield className="h-3.5 w-3.5 text-brand-accent" />
+            <span>&copy; {new Date().getFullYear()} ArguForge AI — Fact-Checked AI Analysis Platform.</span>
+          </p>
+          <div className="flex items-center space-x-2">
+            <span className="bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Tier 1: AP / Reuters / PIB</span>
+            <span className="bg-brand-accent/10 text-brand-accent border border-brand-accent/20 px-2 py-0.5 rounded text-[10px] font-bold">Tier 2: BBC / NYT / Guardian</span>
+            <span className="bg-slate-800/60 text-slate-400 border border-slate-700/50 px-2 py-0.5 rounded text-[10px] font-bold">Tier 3: CFR / Brookings</span>
+          </div>
+        </div>
       </footer>
     </div>
   );
