@@ -786,15 +786,16 @@ function App() {
               Submit any topic. Settle claims with verified sources. Choose a full adversarial AI debate or a quick factual deep-dive analysis.
             </p>
             
-            {/* Search Bar - Glassmorphic design */}
+            {/* Search Bar - Highlighted Glassmorphic design */}
             <form onSubmit={(e) => handleStartDebate(e)} className="w-full max-w-2xl relative group">
-              <div className="flex flex-col w-full bg-white/5 border border-white/10 backdrop-blur-md p-3 rounded-2xl focus-within:border-white/20 transition-all duration-300 shadow-2xl">
+              <div className="flex items-center w-full bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 backdrop-blur-xl px-5 py-2.5 rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.02)] focus-within:border-white/40 focus-within:shadow-[0_0_30px_rgba(255,255,255,0.08)] transition-all duration-300">
+                <Search className="h-5 w-5 text-slate-400 mr-3 flex-shrink-0" />
                 <input 
                   type="text" 
                   value={topicInput}
                   onChange={(e) => setTopicInput(e.target.value)}
                   placeholder="Should electric vehicles be mandatory by 2035?"
-                  className="w-full bg-transparent px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none font-sans text-md text-center"
+                  className="w-full bg-transparent py-3 text-slate-100 placeholder-slate-500 focus:outline-none font-sans text-md"
                 />
               </div>
 
@@ -823,14 +824,15 @@ function App() {
                 </div>
               </div>
 
-              {/* Action Buttons - matching Get Started & Learn More buttons in image */}
+              {/* Action Buttons - clearly differentiated features with symbols and names */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
                 <button 
                   type="submit"
                   onClick={() => setDebateMode('debate')}
-                  className="bg-white hover:bg-slate-200 text-black font-semibold px-8 py-3.5 rounded-xl transition duration-200 shadow-lg text-sm w-full sm:w-auto font-sans"
+                  className="bg-white hover:bg-slate-200 text-black font-bold px-8 py-3.5 rounded-xl transition duration-200 shadow-lg text-sm w-full sm:w-auto font-sans flex items-center justify-center space-x-2 hover-lift"
                 >
-                  Get started
+                  <Play className="h-4 w-4 fill-black text-black" />
+                  <span>Start AI Debate</span>
                 </button>
                 <button 
                   type="button"
@@ -838,9 +840,10 @@ function App() {
                     setDebateMode('factcheck');
                     handleStartDebate(null, 'factcheck');
                   }}
-                  className="bg-transparent text-white border border-white/10 hover:bg-white/5 font-semibold px-8 py-3.5 rounded-xl transition duration-200 text-sm w-full sm:w-auto font-sans"
+                  className="bg-transparent text-white border border-white/15 hover:bg-white/5 font-bold px-8 py-3.5 rounded-xl transition duration-200 text-sm w-full sm:w-auto font-sans flex items-center justify-center space-x-2 hover-lift"
                 >
-                  Learn more
+                  <Shield className="h-4 w-4 text-white" />
+                  <span>Run Fact-Check</span>
                 </button>
               </div>
             </form>
