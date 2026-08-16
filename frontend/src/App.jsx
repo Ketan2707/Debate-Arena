@@ -888,7 +888,31 @@ function App() {
         {activeView === 'debate' && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 animate-fade-in">
             {/* Left Side */}
-            <div className="lg:col-span-3 flex flex-col space-y-6">
+            <div className="lg:col-span-3 flex flex-col space-y-4">
+              
+              {/* Back / Cancel Button */}
+              <div className="flex items-center justify-between">
+                <button 
+                  onClick={() => {
+                    if (status.status === 'idle' || confirm("Cancel active analysis and return home?")) {
+                      if (eventSourceRef.current) eventSourceRef.current.close();
+                      setStatus({ status: 'idle' });
+                      setActiveView('landing');
+                    }
+                  }}
+                  className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200 hover-lift"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 text-slate-400" />
+                  <span>{status.status === 'idle' ? "Back to Home" : "Cancel & Return Home"}</span>
+                </button>
+                
+                {status.status !== 'idle' && (
+                  <span className="flex items-center space-x-2 text-[11px] text-brand-textMuted font-mono bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
+                    <RefreshCw className="h-3 w-3 animate-spin text-brand-accent" />
+                    <span>Processing...</span>
+                  </span>
+                )}
+              </div>
               
               {/* Active topic display card */}
               <div className="glass rounded-2xl p-6 shadow-xl relative overflow-hidden gradient-border">
