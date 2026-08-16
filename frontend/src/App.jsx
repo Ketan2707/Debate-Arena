@@ -1813,7 +1813,7 @@ function App() {
 
                       {/* LinkedIn */}
                       <a 
-                        href="https://linkedin.com/in/ketan-arora" 
+                        href="https://www.linkedin.com/in/ketan-karan-arora-5a729b28b/" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
@@ -1824,22 +1824,22 @@ function App() {
 
                       {/* Instagram */}
                       <a 
-                        href="https://instagram.com/ketan.arora_" 
+                        href="https://www.instagram.com/ketannarora/" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
                       >
                         <InstagramIcon className="h-4 w-4 text-pink-400 group-hover:scale-110 transition-transform" />
-                        <span className="font-medium">Instagram / ketan.arora_</span>
+                        <span className="font-medium">Instagram / ketannarora</span>
                       </a>
 
                       {/* Gmail */}
                       <a 
-                        href="mailto:aroraketan2707@gmail.com" 
+                        href="mailto:ketanarora7890@gmail.com" 
                         className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
                       >
                         <Mail className="h-4 w-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                        <span className="font-medium">Email / Contact Me</span>
+                        <span className="font-medium">Email / ketanarora7890@gmail.com</span>
                       </a>
                     </div>
                   </div>
