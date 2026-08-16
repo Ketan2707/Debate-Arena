@@ -6,6 +6,7 @@ import {
   Search, LogIn, LogOut, UserPlus, Lock, Mail, Eye, EyeOff,
   Zap, Crown, TrendingUp, Target, Globe
 } from 'lucide-react';
+import DarkVeil from './DarkVeil';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -562,85 +563,88 @@ function App() {
   return (
     <div className="min-h-screen bg-brand-dark text-slate-100 flex flex-col antialiased relative">
       {/* Animated Background Effects */}
-      <div className="gradient-mesh"></div>
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <DarkVeil
+          scanlineIntensity={0.64}
+          speed={0.7}
+          scanlineFrequency={1.4}
+          hueShift={280}
+        />
+      </div>
       <div className="dot-grid"></div>
 
-      {/* Top Header */}
-      <header className="glass-strong sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-brand-border/60">
-        <div 
-          className="flex items-center space-x-3 cursor-pointer group"
-          onClick={() => {
-            if (status.status === 'idle') {
-              setActiveView('landing');
-            }
-          }}
-        >
-          <div className="bg-brand-accent p-2.5 rounded-xl text-brand-dark font-extrabold flex items-center justify-center animate-pulse-glow transition-transform group-hover:scale-105">
-            <Shield className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight font-serif text-brand-textLight">ArguForge AI</h1>
-            <span className="text-[10px] text-brand-textMuted tracking-wider uppercase font-semibold font-sans">Fact-Checked AI Analysis</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          {activeView !== 'landing' && activeView !== 'login' && activeView !== 'register' && (
-            <button 
-              onClick={() => {
-                if (status.status === 'idle' || confirm("A session is currently active. Stop and return home?")) {
-                  if (eventSourceRef.current) eventSourceRef.current.close();
-                  setStatus({ status: 'idle' });
-                  setActiveView('landing');
-                }
-              }}
-              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-all duration-200 hover:bg-brand-panel/50 rounded-lg"
-            >
-              New Analysis
-            </button>
-          )}
-          <button 
+      {/* Top Header - Floating design matching the screenshot */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-4 relative z-40">
+        <header className="glass rounded-2xl px-6 py-3 flex items-center justify-between border border-white/10 shadow-2xl">
+          <div 
+            className="flex items-center space-x-3 cursor-pointer group"
             onClick={() => {
-              if (status.status === 'idle' || confirm("Leave active session?")) {
-                if (eventSourceRef.current) eventSourceRef.current.close();
-                setStatus({ status: 'idle' });
-                loadHistory();
-                setActiveView('history');
+              if (status.status === 'idle') {
+                setActiveView('landing');
               }
             }}
-            className="flex items-center space-x-2 glass hover:bg-brand-border/50 px-4 py-2 rounded-xl text-sm text-slate-300 hover:text-white transition-all duration-200 hover-lift"
           >
-            <History className="h-4 w-4 text-brand-accent" />
-            <span>Archive</span>
-          </button>
-
-          {/* Auth Button */}
-          {currentUser ? (
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2 glass px-3 py-2 rounded-xl">
-                <div className="w-6 h-6 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center">
-                  <span className="text-[10px] font-bold text-brand-accent">{currentUser.email?.[0]?.toUpperCase()}</span>
-                </div>
-                <span className="text-xs text-brand-textMuted font-sans hidden sm:inline">{currentUser.email}</span>
-              </div>
-              <button 
-                onClick={handleLogout}
-                className="flex items-center space-x-1.5 glass hover:bg-brand-border/50 px-3 py-2 rounded-xl text-sm text-slate-400 hover:text-white transition-all duration-200"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-              </button>
+            <div className="text-white font-extrabold flex items-center justify-center transition-transform group-hover:scale-105">
+              <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+              </svg>
             </div>
-          ) : (
+            <div>
+              <h1 className="text-lg font-bold tracking-tight font-sans text-brand-textLight">ArguForge AI</h1>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-6">
             <button 
-              onClick={() => setActiveView('login')}
-              className="flex items-center space-x-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 animate-shine glow-accent"
+              onClick={() => {
+                if (status.status === 'idle' || confirm("Leave active session?")) {
+                  if (eventSourceRef.current) eventSourceRef.current.close();
+                  setStatus({ status: 'idle' });
+                  loadHistory();
+                  setActiveView('history');
+                }
+              }}
+              className="text-sm text-slate-400 hover:text-white transition-colors font-sans"
             >
-              <LogIn className="h-4 w-4" />
-              <span>Sign In</span>
+              Archive
             </button>
-          )}
-        </div>
-      </header>
+            <a 
+              href="https://github.com/Ketan2707/Debate-Arena" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-sm text-slate-400 hover:text-white transition-colors font-sans"
+            >
+              About
+            </a>
+
+            {/* Auth Button */}
+            {currentUser ? (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 glass px-3 py-1.5 rounded-xl border border-white/10">
+                  <div className="w-5 h-5 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-brand-accent">{currentUser.email?.[0]?.toUpperCase()}</span>
+                  </div>
+                  <span className="text-xs text-brand-textMuted font-sans hidden sm:inline">{currentUser.email}</span>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="text-xs text-slate-400 hover:text-white transition-colors font-sans"
+                >
+                  Log Out
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setActiveView('login')}
+                className="bg-white hover:bg-slate-200 text-black px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-md font-sans"
+              >
+                Sign up
+              </button>
+            )}
+          </div>
+        </header>
+      </div>
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col justify-center relative z-10">
@@ -762,145 +766,114 @@ function App() {
 
         {/* ── LANDING VIEW ── */}
         {activeView === 'landing' && (
-          <div className="max-w-2xl mx-auto w-full py-16 flex flex-col items-center justify-center text-center animate-slide-up">
-            {/* Badge */}
-            <div className="inline-flex items-center justify-center glass px-4 py-2 rounded-full mb-8 text-xs text-brand-accent font-semibold tracking-wide uppercase glow-accent animate-scale-in">
-              <Sparkles className="h-3.5 w-3.5 mr-2 animate-pulse" />
-              Fact-Checked AI Analysis Platform
-              <Zap className="h-3.5 w-3.5 ml-2 text-brand-accentAmber" />
+          <div className="max-w-4xl mx-auto w-full py-16 flex flex-col items-center justify-center text-center animate-slide-up">
+            {/* Pill Badge from image */}
+            <div className="inline-flex items-center justify-center border border-white/10 bg-white/5 backdrop-blur-md px-4 py-1.5 rounded-full mb-8 text-xs text-slate-300 font-sans tracking-wide animate-scale-in">
+              <span className="bg-white text-black px-2.5 py-0.5 rounded-full font-bold mr-2 text-[9px]">NEW</span>
+              <span>Just shipped v2.0</span>
             </div>
 
-            {/* Hero Heading */}
-            <h2 className="text-5xl md:text-6xl font-bold font-serif mb-5 leading-tight">
-              <span className="text-brand-textLight">Where AI debates.</span><br/>
-              <span className="gradient-text">Where credible sources</span>
-              <br/>
-              <span className="text-brand-textLight">settle claims.</span>
+            {/* Hero Heading - matching font and text style */}
+            <h2 className="text-5xl md:text-7xl font-extrabold tracking-tight font-sans text-white mb-6 leading-tight max-w-4xl mx-auto">
+              Become emboldened by the flame of truth
             </h2>
 
-            <p className="text-brand-textMuted text-lg mb-12 max-w-lg font-sans font-light leading-relaxed">
-              Submit any topic. Choose a full adversarial debate or a quick factual deep-dive. Every claim is verified against trusted sources with clickable references.
+            <p className="text-slate-400 text-lg mb-10 max-w-xl font-sans font-light leading-relaxed">
+              Submit any topic. Settle claims with verified sources. Choose a full adversarial AI debate or a quick factual deep-dive analysis.
             </p>
             
-            {/* Search Bar */}
-            <form onSubmit={(e) => handleStartDebate(e)} className="w-full relative group">
-              <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3 w-full glass p-3 rounded-2xl focus-within:glow-accent-strong transition-all duration-500 shadow-2xl">
+            {/* Search Bar - Glassmorphic design */}
+            <form onSubmit={(e) => handleStartDebate(e)} className="w-full max-w-2xl relative group">
+              <div className="flex flex-col w-full bg-white/5 border border-white/10 backdrop-blur-md p-3 rounded-2xl focus-within:border-white/20 transition-all duration-300 shadow-2xl">
                 <input 
                   type="text" 
                   value={topicInput}
                   onChange={(e) => setTopicInput(e.target.value)}
                   placeholder="Should electric vehicles be mandatory by 2035?"
-                  className="flex-1 bg-transparent px-4 py-3.5 text-slate-100 placeholder-slate-500 focus:outline-none font-sans text-md"
+                  className="w-full bg-transparent px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none font-sans text-md text-center"
                 />
-                <div className="flex space-x-2">
-                  <button 
-                    type="submit"
-                    onClick={() => setDebateMode('debate')}
-                    className="bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-6 py-3.5 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-200 animate-shine glow-accent"
-                  >
-                    <Play className="h-4 w-4 fill-brand-dark" />
-                    <span>Debate</span>
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setDebateMode('factcheck');
-                      handleStartDebate(null, 'factcheck');
-                    }}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3.5 rounded-xl font-bold flex items-center justify-center space-x-2 transition-all duration-200 glow-emerald"
-                  >
-                    <Search className="h-4 w-4" />
-                    <span>Fact-Check</span>
-                  </button>
+              </div>
+
+              {/* Stance Preference Selector - styled as glassmorphic slider */}
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 bg-white/5 border border-white/10 backdrop-blur-md px-5 py-3 rounded-2xl mx-auto w-full max-w-lg">
+                <span className="text-xs text-slate-400 font-sans font-bold uppercase tracking-wider">Analysis Focus:</span>
+                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
+                  {[
+                    { value: 'both', label: 'Both Sides' },
+                    { value: 'for', label: 'Supporting' },
+                    { value: 'against', label: 'Opposing' }
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setStancePreference(opt.value)}
+                      className={`text-[11px] px-4 py-1.5 rounded-lg font-bold uppercase tracking-wide transition-all ${
+                        stancePreference === opt.value
+                          ? 'bg-white text-black shadow-lg'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
+              </div>
+
+              {/* Action Buttons - matching Get Started & Learn More buttons in image */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
+                <button 
+                  type="submit"
+                  onClick={() => setDebateMode('debate')}
+                  className="bg-white hover:bg-slate-200 text-black font-semibold px-8 py-3.5 rounded-xl transition duration-200 shadow-lg text-sm w-full sm:w-auto font-sans"
+                >
+                  Get started
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setDebateMode('factcheck');
+                    handleStartDebate(null, 'factcheck');
+                  }}
+                  className="bg-transparent text-white border border-white/10 hover:bg-white/5 font-semibold px-8 py-3.5 rounded-xl transition duration-200 text-sm w-full sm:w-auto font-sans"
+                >
+                  Learn more
+                </button>
               </div>
             </form>
             
-            {/* Stance Preference Selector */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 glass px-5 py-3.5 rounded-2xl w-full max-w-lg">
-              <span className="text-xs text-brand-textMuted font-sans font-bold uppercase tracking-wider">Analysis Focus:</span>
-              <div className="flex bg-brand-dark/60 p-1 rounded-xl border border-brand-border/60">
-                {[
-                  { value: 'both', label: 'Both Sides' },
-                  { value: 'for', label: 'Supporting (FOR)' },
-                  { value: 'against', label: 'Opposing (AGAINST)' }
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setStancePreference(opt.value)}
-                    className={`text-[11px] px-3.5 py-2 rounded-lg font-bold uppercase tracking-wide transition-all duration-300 ${
-                      stancePreference === opt.value
-                        ? 'bg-brand-accent text-brand-dark shadow-lg glow-accent'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Mode description cards */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-lg">
-              <div className="glass rounded-xl p-5 text-left hover-lift group cursor-default">
-                <div className="flex items-center space-x-2.5 mb-3">
-                  <div className="bg-brand-accent/15 p-2 rounded-lg group-hover:glow-accent transition-all">
-                    <Play className="h-4 w-4 text-brand-accent" />
-                  </div>
-                  <span className="text-sm font-bold text-slate-200">Full Debate</span>
-                </div>
-                <p className="text-xs text-brand-textMuted font-sans leading-relaxed">
-                  Two AI agents debate 5 rounds. Every claim is fact-checked. A judge scores both sides.
-                </p>
-              </div>
-              <div className="glass rounded-xl p-5 text-left hover-lift group cursor-default">
-                <div className="flex items-center space-x-2.5 mb-3">
-                  <div className="bg-emerald-500/15 p-2 rounded-lg group-hover:glow-emerald transition-all">
-                    <Search className="h-4 w-4 text-emerald-400" />
-                  </div>
-                  <span className="text-sm font-bold text-slate-200">Factual Deep-Dive</span>
-                </div>
-                <p className="text-xs text-brand-textMuted font-sans leading-relaxed">
-                  Structured FOR / AGAINST analysis with a balanced verdict. All claims cited and verified.
-                </p>
-              </div>
-            </div>
-
             {/* Quick prefill examples */}
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
-              <span className="text-xs text-brand-textMuted mr-2 flex items-center"><Sparkles className="h-3 w-3 mr-1" />Try:</span>
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-2 max-w-2xl">
+              <span className="text-xs text-slate-500 mr-2 flex items-center font-sans"><Sparkles className="h-3 w-3 mr-1 text-slate-400" />Try:</span>
               {["Should electric vehicles be mandatory by 2035?", "Is artificial intelligence a net benefit to public education?", "Should lab-grown meat be certified for commercial scale distribution?"].map((ex, i) => (
                 <button 
                   key={ex}
                   onClick={() => setTopicInput(ex)}
-                  className={`glass text-xs px-4 py-2 rounded-full text-slate-400 hover:text-white hover:border-brand-accent/50 hover:glow-accent transition-all duration-300 stagger-${i+1} animate-fade-in`}
-                  style={{ animationDelay: `${i * 0.1}s`, opacity: 0 }}
+                  className="bg-white/5 border border-white/10 text-xs px-4 py-2 rounded-full text-slate-400 hover:text-white hover:border-white/20 transition-all duration-300 font-sans"
                 >
                   {ex.length > 40 ? ex.substring(0, 40) + '...' : ex}
                 </button>
               ))}
             </div>
 
-            {/* Features grid */}
-            <div className="mt-12 grid grid-cols-3 gap-4 w-full max-w-lg">
+            {/* Features row */}
+            <div className="mt-12 grid grid-cols-3 gap-4 w-full max-w-lg border-t border-white/10 pt-8">
               {[
-                { icon: <Target className="h-4 w-4" />, label: 'Source Verified', color: 'text-emerald-400' },
-                { icon: <Globe className="h-4 w-4" />, label: 'Trusted Domains', color: 'text-brand-accent' },
-                { icon: <TrendingUp className="h-4 w-4" />, label: 'Bias-Free Judge', color: 'text-brand-accentAmber' }
+                { icon: <Target className="h-4 w-4" />, label: 'Source Verified', color: 'text-slate-400' },
+                { icon: <Globe className="h-4 w-4" />, label: 'Trusted Domains', color: 'text-slate-400' },
+                { icon: <TrendingUp className="h-4 w-4" />, label: 'Bias-Free Judge', color: 'text-slate-400' }
               ].map((feat) => (
-                <div key={feat.label} className="flex flex-col items-center space-y-2 py-3">
+                <div key={feat.label} className="flex flex-col items-center space-y-2 py-1">
                   <div className={`${feat.color}`}>{feat.icon}</div>
-                  <span className="text-[11px] text-brand-textMuted font-sans font-semibold">{feat.label}</span>
+                  <span className="text-[11px] text-slate-500 font-sans font-semibold">{feat.label}</span>
                 </div>
               ))}
             </div>
 
             {!currentUser && (
-              <div className="mt-8 glass rounded-xl p-4 max-w-md">
-                <p className="text-xs text-brand-textMuted font-sans text-center">
+              <div className="mt-8 bg-white/5 border border-white/10 rounded-xl p-4 max-w-md">
+                <p className="text-xs text-slate-400 font-sans text-center">
                   <Lock className="h-3 w-3 inline mr-1" />
-                  <button onClick={() => setActiveView('login')} className="text-brand-accent hover:text-brand-accent/80 font-semibold">Sign in</button> to start debates and fact-checks. Browse the archive as a guest.
+                  <button onClick={() => setActiveView('login')} className="text-white hover:underline font-semibold">Sign in</button> to start debates and fact-checks. Browse the archive as a guest.
                 </p>
               </div>
             )}
