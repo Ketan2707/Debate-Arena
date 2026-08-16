@@ -586,7 +586,7 @@ function App() {
             }}
           >
             <div className="text-white font-extrabold flex items-center justify-center transition-transform group-hover:scale-105">
-              <img src={logo} className="h-6 w-6 object-contain" alt="Logo" />
+              <img src={logo} className="h-9 w-9 object-contain" alt="Logo" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight font-sans text-brand-textLight">ArguForge AI</h1>
@@ -1445,7 +1445,7 @@ function App() {
       <footer className="border-t border-brand-border/40 bg-brand-dark/30 backdrop-blur-sm py-8 px-6 text-center text-xs text-brand-textMuted font-sans relative z-10">
         <div className="max-w-7xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
           <p className="flex items-center space-x-2">
-            <img src={logo} className="h-3.5 w-3.5 object-contain" alt="Logo" />
+            <img src={logo} className="h-5 w-5 object-contain" alt="Logo" />
             <span>&copy; {new Date().getFullYear()} ArguForge AI — Fact-Checked AI Analysis Platform.</span>
           </p>
           <div className="flex items-center space-x-2">
