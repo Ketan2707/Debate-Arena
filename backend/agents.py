@@ -164,6 +164,7 @@ def generate_debate_turn(
     • You may ONLY use facts, statistics, dates, and claims that appear in the research sources above.
     • For EVERY factual claim you make, you MUST include an inline citation using the format: [Source Name](URL)
       Example: "EV sales grew 35% in 2023 [Reuters](https://www.reuters.com/article/ev-sales-growth)"
+    • NEVER use numbered footnotes or plain bracketed numbers like [1], [2], [3], [6], etc. You MUST write out [Source Name](URL) instead.
     • If no research source supports a claim, DO NOT make that claim. Omit it entirely.
     • NEVER invent or fabricate statistics, URLs, percentages, or dates that do not appear in the sources above.
     • NEVER write a URL that is not listed in the research sources above.
@@ -292,6 +293,7 @@ def generate_factcheck_analysis(topic: str, research_context: str = "", stance_p
     • ONLY cite facts that appear in the research sources above. Do not invent any outside facts.
     • Every factual claim needs an inline citation: [Source Name](URL)
       Example: "EV sales grew 35% in 2023 [Reuters](https://www.reuters.com/article/ev-sales-growth)"
+    • NEVER use numbered footnotes or plain bracketed numbers like [1], [2], [3], [6], etc. You MUST use the exact markdown link format [Source Name](URL) for every citation.
     • NEVER write a URL that is not listed in the research sources above.
     
     {output_format}

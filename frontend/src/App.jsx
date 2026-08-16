@@ -341,12 +341,15 @@ function App() {
   // Helper to parse claims and apply dynamic underlines + inline reference icons
   const renderContentWithClaims = (content, claims) => {
     if (!content) return null;
+
+    // Clean up plain unclickable footnotes like [1], [2], [6], [7], etc.
+    const cleanedContent = content.replace(/\s*\[\d+\](?!\()/g, '');
     
     // 1. Find all inline citations e.g. [Source: https...] or [Name](https...)
     const citationRegex = /\[Source:\s*(https?:\/\/[^\s\]]+)\]|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
     let citations = [];
     let match;
-    while ((match = citationRegex.exec(content)) !== null) {
+    while ((match = citationRegex.exec(cleanedContent)) !== null) {
       const rawText = match[0];
       const url = match[1] || match[3];
       const name = match[2] || "Source";
@@ -364,10 +367,13 @@ function App() {
     let claimMatches = [];
     if (claims && claims.length > 0) {
       claims.forEach((claim) => {
+        // Skip Unverifiable claims so we remove unknown sources from underlines/badges
+        if (claim.verdict === 'Unverifiable') return;
+
         const claimClean = stripLinks(claim.claim_text);
         if (!claimClean) return;
         
-        let index = content.toLowerCase().indexOf(claimClean.toLowerCase());
+        let index = cleanedContent.toLowerCase().indexOf(claimClean.toLowerCase());
         if (index !== -1) {
           claimMatches.push({
             start: index,
@@ -379,9 +385,9 @@ function App() {
           const words = claimClean.split(/\s+/).slice(0, 4).join('\\s+');
           try {
             const regex = new RegExp(words.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-            const m = content.match(regex);
+            const m = cleanedContent.match(regex);
             if (m) {
-              let endPos = content.indexOf('.', m.index);
+              let endPos = cleanedContent.indexOf('.', m.index);
               if (endPos === -1 || endPos - m.index > claimClean.length * 3) {
                 endPos = m.index + claimClean.length + 30;
               } else {
@@ -389,7 +395,7 @@ function App() {
               }
               claimMatches.push({
                 start: m.index,
-                end: Math.min(endPos, content.length),
+                end: Math.min(endPos, cleanedContent.length),
                 claim: claim
               });
             }
@@ -416,7 +422,7 @@ function App() {
     }
     
     if (filteredSegments.length === 0) {
-      return <p className="text-slate-300 leading-relaxed font-sans whitespace-pre-wrap">{parseMarkdownLinks(content)}</p>;
+      return <p className="text-slate-300 leading-relaxed font-sans whitespace-pre-wrap">{parseMarkdownLinks(cleanedContent)}</p>;
     }
     
     // 4. Map unique URLs to reference numbers
@@ -437,7 +443,7 @@ function App() {
       if (seg.start > idx) {
         parts.push(
           <React.Fragment key={`text-${idx}`}>
-            {parseMarkdownLinks(content.substring(idx, seg.start))}
+            {parseMarkdownLinks(cleanedContent.substring(idx, seg.start))}
           </React.Fragment>
         );
       }
@@ -478,7 +484,7 @@ function App() {
           </sup>
         );
       } else if (seg.type === 'claim') {
-        const claimText = content.substring(seg.start, seg.end);
+        const claimText = cleanedContent.substring(seg.start, seg.end);
         const verdict = seg.claim.verdict;
         
         let borderStyle = 'border-slate-500 text-slate-100 hover:bg-slate-800/40';
@@ -509,10 +515,10 @@ function App() {
       idx = seg.end;
     });
     
-    if (idx < content.length) {
+    if (idx < cleanedContent.length) {
       parts.push(
         <React.Fragment key="text-end">
-          {parseMarkdownLinks(content.substring(idx))}
+          {parseMarkdownLinks(cleanedContent.substring(idx))}
         </React.Fragment>
       );
     }
