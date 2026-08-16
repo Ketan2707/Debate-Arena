@@ -134,6 +134,43 @@ function App() {
     }
   };
 
+  const handleOAuthLogin = (provider) => {
+    setAuthLoading(true);
+    setAuthError('');
+    
+    // Simulate OAuth authentication
+    setTimeout(() => {
+      const mockEmail = `auth_${provider.toLowerCase()}_user@${provider.toLowerCase()}.com`;
+      const mockUser = {
+        user_id: `oauth-${provider.toLowerCase()}-${Math.floor(Math.random() * 100000)}`,
+        email: mockEmail,
+        created_at: new Date().toISOString()
+      };
+      const mockToken = `mock-jwt-token-for-${provider.toLowerCase()}`;
+      
+      localStorage.setItem('debate_arena_token', mockToken);
+      setAuthToken(mockToken);
+      setCurrentUser(mockUser);
+      setAuthLoading(false);
+      
+      // Execute pending action if any, otherwise return home
+      if (pendingAction) {
+        const action = pendingAction;
+        setPendingAction(null);
+        if (action === 'debate' || action === 'factcheck') {
+          setActiveView('landing');
+          setTimeout(() => {
+            handleStartDebate(null, action);
+          }, 100);
+        } else {
+          setActiveView('landing');
+        }
+      } else {
+        setActiveView('landing');
+      }
+    }, 800);
+  };
+
   const requireAuth = (action) => {
     if (!authToken) {
       setPendingAction(action);
@@ -602,7 +639,7 @@ function App() {
               <img src={logo} className="h-9 w-9 object-contain" alt="Logo" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight font-sans text-brand-textLight">ArguForge AI</h1>
+              <h1 className="text-sm sm:text-lg font-bold tracking-tight font-sans text-brand-textLight">ArguForge AI</h1>
             </div>
           </div>
           
@@ -624,7 +661,7 @@ function App() {
               href="https://github.com/Ketan2707/Debate-Arena" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="text-sm text-slate-400 hover:text-white transition-colors font-sans"
+              className="text-sm text-slate-400 hover:text-white transition-colors font-sans hidden sm:inline-block"
             >
               About
             </a>
@@ -745,6 +782,40 @@ function App() {
                   )}
                 </button>
               </form>
+
+              {/* Divider */}
+              <div className="relative my-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-[#1b1724] px-2.5 text-slate-500 font-sans tracking-wide">Or continue with</span>
+                </div>
+              </div>
+
+              {/* OAuth Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleOAuthLogin('Google')}
+                  className="flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200"
+                >
+                  <svg className="h-4 w-4 text-rose-500 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.78 0 3.3.67 4.47 1.76l2.454-2.453C17.68 1.957 15.152 1 12.24 1 6.136 1 1 6.136 1 12.24s5.136 11.24 11.24 11.24c6.382 0 10.618-4.482 10.618-10.8 0-.727-.08-1.282-.173-1.682H12.24z"/>
+                  </svg>
+                  <span>Google</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOAuthLogin('GitHub')}
+                  className="flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200"
+                >
+                  <svg className="h-4 w-4 text-slate-200 fill-current" viewBox="0 0 24 24">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.167 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+                  </svg>
+                  <span>GitHub</span>
+                </button>
+              </div>
 
               {/* Toggle login/register */}
               <div className="mt-6 text-center">
@@ -1552,6 +1623,115 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* Mobile Claim Details Drawer / Modal */}
+      {selectedClaim && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 lg:hidden"
+          onClick={() => setSelectedClaim(null)}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#120F17] border border-white/10 w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-brand-border/40 pb-4 mb-4 text-brand-textMuted">
+              <div className="flex items-center space-x-2">
+                <img src={logo} className="h-5 w-5 object-contain" alt="Logo" />
+                <h4 className="text-sm font-bold tracking-wider uppercase font-sans text-slate-200">
+                  {selectedClaim.ref_number ? `Reference [${selectedClaim.ref_number}]` : "Verification Log"}
+                </h4>
+              </div>
+              <button 
+                onClick={() => setSelectedClaim(null)} 
+                className="text-xs text-slate-400 hover:text-white transition-colors bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/10"
+              >
+                Close
+              </button>
+            </div>
+            
+            {/* Body */}
+            <div className="flex flex-col space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                    selectedClaim.verdict === 'Confirmed' 
+                      ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' 
+                      : selectedClaim.verdict === 'Disputed' 
+                      ? 'bg-amber-950/60 text-amber-400 border border-amber-500/30' 
+                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                  }`}>
+                    {selectedClaim.verdict === 'Confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
+                    {selectedClaim.verdict === 'Disputed' && <AlertTriangle className="h-3 w-3 mr-1" />}
+                    {selectedClaim.verdict === 'Unverifiable' && <HelpCircle className="h-3 w-3 mr-1" />}
+                    <span>{selectedClaim.verdict}</span>
+                  </span>
+                  
+                  {selectedClaim.source_tier && (
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded">
+                      Tier {selectedClaim.source_tier}
+                    </span>
+                  )}
+                </div>
+                
+                <h5 className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans mb-1 mt-3">FACTUAL CLAIM:</h5>
+                <p className="text-sm font-sans font-medium text-slate-200 leading-relaxed bg-white/5 p-3 rounded-lg border border-white/10">
+                  "{selectedClaim.claim_text}"
+                </p>
+              </div>
+
+              <div className="border-t border-brand-border/40 pt-4 flex flex-col space-y-3">
+                <div>
+                  <span className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans block mb-1">Verification Reasoning:</span>
+                  <p className="text-xs text-slate-300 font-sans leading-relaxed">
+                    {selectedClaim.reasoning}
+                  </p>
+                </div>
+
+                {selectedClaim.source_url ? (
+                  <div>
+                    <span className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans block mb-1">Verified Source:</span>
+                    <a 
+                      href={selectedClaim.source_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1.5 text-brand-accent hover:text-brand-accent/80 text-xs font-medium border-b border-brand-accent/30 pb-0.5 break-all leading-relaxed"
+                    >
+                      <span>{(() => { try { return new URL(selectedClaim.source_url).hostname; } catch { return selectedClaim.source_url; } })()}</span>
+                      <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+                    </a>
+                    
+                    <span className="block text-[10px] text-brand-textMuted font-sans mt-2">
+                      {selectedClaim.source_tier === 1 && "✓ Tier 1 (Wire service or official public record)"}
+                      {selectedClaim.source_tier === 2 && "✓ Tier 2 (Established national/international newspaper)"}
+                      {selectedClaim.source_tier === 3 && "✓ Tier 3 (Think tank, academic, or advocacy organization)"}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="glass p-3 rounded-lg text-[10px] text-brand-textMuted font-sans leading-relaxed">
+                    No source link verified. Under source-integrity rules, claims without a verifiable whitelisted domain citation must be labeled Unverifiable.
+                  </div>
+                )}
+
+                {selectedClaim.cited_url && (
+                  <div>
+                    <span className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans block mb-1">Agent's Cited Source:</span>
+                    <a 
+                      href={selectedClaim.cited_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center space-x-1.5 text-slate-400 hover:text-slate-200 text-xs font-medium break-all leading-relaxed"
+                    >
+                      <span>{(() => { try { return new URL(selectedClaim.cited_url).hostname; } catch { return selectedClaim.cited_url; } })()}</span>
+                      <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
