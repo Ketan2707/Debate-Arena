@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import DarkVeil from './DarkVeil';
 import logo from './assets/logo.png';
+import { ParticleCard, GlobalSpotlight } from './MagicBento';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -47,6 +48,7 @@ function App() {
   // SSE event source ref
   const eventSourceRef = useRef(null);
   const turnsEndRef = useRef(null);
+  const bentoGridRef = useRef(null);
 
   // Auto-scroll when new turns arrive
   useEffect(() => {
@@ -770,7 +772,9 @@ function App() {
 
         {/* ── LANDING VIEW ── */}
         {activeView === 'landing' && (
-          <div className="max-w-4xl mx-auto w-full py-16 flex flex-col items-center justify-center text-center animate-slide-up">
+          <div ref={bentoGridRef} className="max-w-4xl mx-auto w-full py-16 flex flex-col items-center justify-center text-center animate-slide-up bento-section">
+            <GlobalSpotlight gridRef={bentoGridRef} spotlightRadius={300} glowColor="168, 85, 247" />
+
             {/* Pill Badge from image */}
             <div className="inline-flex items-center justify-center border border-white/10 bg-white/5 backdrop-blur-md px-4 py-1.5 rounded-full mb-8 text-xs text-slate-300 font-sans tracking-wide animate-scale-in">
               <span className="bg-white text-black px-2.5 py-0.5 rounded-full font-bold mr-2 text-[9px]">NEW</span>
@@ -786,65 +790,102 @@ function App() {
               Submit any topic. Settle claims with verified sources. Choose a full adversarial AI debate or a quick factual deep-dive analysis.
             </p>
             
-            {/* Search Bar - Highlighted Glassmorphic design */}
-            <form onSubmit={(e) => handleStartDebate(e)} className="w-full max-w-2xl relative group">
-              <div className="flex items-center w-full bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 backdrop-blur-xl px-5 py-2.5 rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.02)] focus-within:border-white/40 focus-within:shadow-[0_0_30px_rgba(255,255,255,0.08)] transition-all duration-300">
-                <Search className="h-5 w-5 text-slate-400 mr-3 flex-shrink-0" />
-                <input 
-                  type="text" 
-                  value={topicInput}
-                  onChange={(e) => setTopicInput(e.target.value)}
-                  placeholder="Should electric vehicles be mandatory by 2035?"
-                  className="w-full bg-transparent py-3 text-slate-100 placeholder-slate-500 focus:outline-none font-sans text-md"
-                />
-              </div>
+            {/* Search Bar - Highlighted Glassmorphic design with Spotlight support */}
+            <form onSubmit={(e) => handleStartDebate(e)} className="w-full max-w-2xl flex flex-col items-center relative group">
+              <ParticleCard
+                enableStars={false}
+                enableTilt={true}
+                enableMagnetism={false}
+                clickEffect={false}
+                glowColor="168, 85, 247"
+                className="w-full magic-bento-card rounded-2xl"
+              >
+                <div className="flex items-center w-full bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 backdrop-blur-xl px-5 py-2.5 rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.02)] focus-within:border-white/40 focus-within:shadow-[0_0_30px_rgba(255,255,255,0.08)] transition-all duration-300">
+                  <Search className="h-5 w-5 text-slate-400 mr-3 flex-shrink-0" />
+                  <input 
+                    type="text" 
+                    value={topicInput}
+                    onChange={(e) => setTopicInput(e.target.value)}
+                    placeholder="Should electric vehicles be mandatory by 2035?"
+                    className="w-full bg-transparent py-3 text-slate-100 placeholder-slate-500 focus:outline-none font-sans text-md"
+                  />
+                </div>
+              </ParticleCard>
 
               {/* Stance Preference Selector - styled as glassmorphic slider */}
-              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 bg-white/5 border border-white/10 backdrop-blur-md px-5 py-3 rounded-2xl mx-auto w-full max-w-lg">
-                <span className="text-xs text-slate-400 font-sans font-bold uppercase tracking-wider">Analysis Focus:</span>
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
-                  {[
-                    { value: 'both', label: 'Both Sides' },
-                    { value: 'for', label: 'Supporting' },
-                    { value: 'against', label: 'Opposing' }
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setStancePreference(opt.value)}
-                      className={`text-[11px] px-4 py-1.5 rounded-lg font-bold uppercase tracking-wide transition-all ${
-                        stancePreference === opt.value
-                          ? 'bg-white text-black shadow-lg'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+              <ParticleCard
+                enableStars={false}
+                enableTilt={false}
+                enableMagnetism={false}
+                clickEffect={false}
+                glowColor="168, 85, 247"
+                className="mt-6 w-full max-w-lg magic-bento-card rounded-2xl"
+              >
+                <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 bg-white/5 border border-white/10 backdrop-blur-md px-5 py-3 rounded-2xl">
+                  <span className="text-xs text-slate-400 font-sans font-bold uppercase tracking-wider">Analysis Focus:</span>
+                  <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
+                    {[
+                      { value: 'both', label: 'Both Sides' },
+                      { value: 'for', label: 'Supporting' },
+                      { value: 'against', label: 'Opposing' }
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setStancePreference(opt.value)}
+                        className={`text-[11px] px-4 py-1.5 rounded-lg font-bold uppercase tracking-wide transition-all ${
+                          stancePreference === opt.value
+                            ? 'bg-white text-black shadow-lg'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </ParticleCard>
 
-              {/* Action Buttons - clearly differentiated features with symbols and names */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-                <button 
-                  type="submit"
-                  onClick={() => setDebateMode('debate')}
-                  className="bg-white hover:bg-slate-200 text-black font-bold px-8 py-3.5 rounded-xl transition duration-200 shadow-lg text-sm w-full sm:w-auto font-sans flex items-center justify-center space-x-2 hover-lift"
+              {/* Action Buttons - clearly differentiated features with React Bits magic animations */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8 w-full max-w-2xl">
+                <ParticleCard
+                  enableStars={true}
+                  enableTilt={true}
+                  enableMagnetism={true}
+                  clickEffect={true}
+                  glowColor="255, 255, 255"
+                  className="magic-bento-card w-full sm:w-auto rounded-xl"
                 >
-                  <Play className="h-4 w-4 fill-black text-black" />
-                  <span>Start AI Debate</span>
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setDebateMode('factcheck');
-                    handleStartDebate(null, 'factcheck');
-                  }}
-                  className="bg-transparent text-white border border-white/15 hover:bg-white/5 font-bold px-8 py-3.5 rounded-xl transition duration-200 text-sm w-full sm:w-auto font-sans flex items-center justify-center space-x-2 hover-lift"
+                  <button 
+                    type="submit"
+                    onClick={() => setDebateMode('debate')}
+                    className="bg-white hover:bg-slate-200 text-black font-bold px-8 py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200"
+                  >
+                    <Play className="h-4 w-4 fill-black text-black" />
+                    <span>Start AI Debate</span>
+                  </button>
+                </ParticleCard>
+
+                <ParticleCard
+                  enableStars={true}
+                  enableTilt={true}
+                  enableMagnetism={true}
+                  clickEffect={true}
+                  glowColor="168, 85, 247"
+                  className="magic-bento-card w-full sm:w-auto rounded-xl"
                 >
-                  <Shield className="h-4 w-4 text-white" />
-                  <span>Run Fact-Check</span>
-                </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setDebateMode('factcheck');
+                      handleStartDebate(null, 'factcheck');
+                    }}
+                    className="bg-transparent text-white border border-white/15 hover:bg-white/5 font-bold px-8 py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200"
+                  >
+                    <Shield className="h-4 w-4 text-white" />
+                    <span>Run Fact-Check</span>
+                  </button>
+                </ParticleCard>
               </div>
             </form>
             
