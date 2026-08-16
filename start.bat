@@ -1,21 +1,21 @@
 @echo off
-title DebateArena Launcher
+title Dialectica AI Launcher
 
 echo ==========================================
-echo        DebateArena - Starting App
+echo        Dialectica AI - Starting App
 echo ==========================================
 echo.
 
 :: Start the backend in a new terminal window
 echo [1/2] Starting Backend (FastAPI)...
-start "DebateArena Backend" cmd /k "cd /d %~dp0 && call venv\Scripts\activate && uvicorn backend.main:app --reload --port 8080"
+start "Dialectica AI Backend" cmd /k "cd /d %~dp0 && call venv\Scripts\activate && uvicorn backend.main:app --reload --port 8080"
 
 :: Give the backend a moment to start
 timeout /t 3 /nobreak >nul
 
 :: Start the frontend in a new terminal window
 echo [2/2] Starting Frontend (Vite)...
-start "DebateArena Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
+start "Dialectica AI Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
 echo.
 echo ==========================================

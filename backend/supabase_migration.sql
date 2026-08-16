@@ -1,5 +1,5 @@
 -- ============================================
--- Debate Arena — Supabase Table Migration
+-- Dialectica AI — Supabase Table Migration
 -- Run this in your Supabase SQL Editor:
 -- https://supabase.com/dashboard → SQL Editor → New Query → Paste & Run
 -- ============================================

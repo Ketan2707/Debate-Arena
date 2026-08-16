@@ -10,7 +10,7 @@ from backend.config import (
     hash_password, verify_password, create_session_token, verify_session_token
 )
 
-app = FastAPI(title="Debate Arena API")
+app = FastAPI(title="Dialectica AI API")
 
 # Configure CORS for local development
 app.add_middleware(

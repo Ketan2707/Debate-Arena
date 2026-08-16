@@ -562,7 +562,7 @@ function App() {
             <Shield className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight font-serif text-brand-textLight">Debate Arena</h1>
+            <h1 className="text-xl font-bold tracking-tight font-serif text-brand-textLight">Dialectica AI</h1>
             <span className="text-[10px] text-brand-textMuted tracking-wider uppercase font-semibold font-sans">Fact-Checked AI Analysis</span>
           </div>
         </div>
@@ -638,7 +638,7 @@ function App() {
                 <p className="text-sm text-brand-textMuted font-sans mt-2 text-center">
                   {activeView === 'login' 
                     ? 'Sign in to start fact-checked debates and deep-dive analyses.'
-                    : 'Join Debate Arena to access AI-powered fact-checking.'
+                    : 'Join Dialectica AI to access AI-powered fact-checking.'
                   }
                 </p>
               </div>
@@ -1339,7 +1339,7 @@ function App() {
 
       {/* Footer */}
       <footer className="border-t border-brand-border bg-brand-dark/50 py-6 px-6 text-center text-xs text-brand-textMuted font-sans flex flex-col sm:flex-row items-center justify-between max-w-7xl w-full mx-auto">
-        <p>&copy; {new Date().getFullYear()} Debate Arena — Fact-Checked AI Analysis Platform.</p>
+        <p>&copy; {new Date().getFullYear()} Dialectica AI — Fact-Checked AI Analysis Platform.</p>
         <p className="mt-2 sm:mt-0 flex items-center space-x-3">
           <span>Tier 1: AP / Reuters / PIB</span>
           <span>&middot;</span>

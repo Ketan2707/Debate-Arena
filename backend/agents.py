@@ -170,7 +170,7 @@ def generate_debate_turn(
     """
 
     prompt = f"""
-    You are a professional debater in a formal Fact-Checked Debate Arena.
+    You are a professional debater in a formal Fact-Checked Dialectica AI debate.
     
     Topic: {topic}
     Your Name: {agent_name}
@@ -500,7 +500,7 @@ def run_single_judge_evaluation(
     Runs a single judge evaluation with strengthened scoring criteria.
     """
     prompt = f"""
-    You are an expert Debate Judge in a Fact-Checked Debate Arena.
+    You are an expert Debate Judge in a Fact-Checked Dialectica AI debate.
     Analyze the following debate and score both participants.
     
     Topic: {topic}
