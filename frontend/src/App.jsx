@@ -7,6 +7,7 @@ import {
   Zap, Crown, TrendingUp, Target, Globe
 } from 'lucide-react';
 import DarkVeil from './DarkVeil';
+import logo from './assets/logo.png';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -585,10 +586,7 @@ function App() {
             }}
           >
             <div className="text-white font-extrabold flex items-center justify-center transition-transform group-hover:scale-105">
-              <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-              </svg>
+              <img src={logo} className="h-6 w-6 object-contain" alt="Logo" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight font-sans text-brand-textLight">ArguForge AI</h1>
@@ -658,8 +656,8 @@ function App() {
             <div className="glass rounded-2xl p-8 shadow-2xl glow-accent relative">
               {/* Logo */}
               <div className="flex flex-col items-center mb-8">
-                <div className="bg-brand-accent p-3.5 rounded-2xl text-brand-dark mb-4 glow-accent-strong animate-float">
-                  <Shield className="h-8 w-8" />
+                <div className="mb-4 animate-float">
+                  <img src={logo} className="h-16 w-16 object-contain" alt="Logo" />
                 </div>
                 <h2 className="text-2xl font-bold font-serif text-brand-textLight">
                   {activeView === 'login' ? 'Welcome back' : 'Create your account'}
@@ -1204,8 +1202,8 @@ function App() {
               <div className="glass-strong rounded-2xl p-5 shadow-xl flex flex-col space-y-4 sticky top-24">
                 <div className="flex items-center justify-between text-brand-textMuted border-b border-brand-border/40 pb-3">
                   <div className="flex items-center space-x-2">
-                    <div className="bg-brand-accent/15 p-1.5 rounded-lg">
-                      <Shield className="h-4 w-4 text-brand-accent" />
+                    <div className="p-1.5 rounded-lg flex items-center justify-center">
+                      <img src={logo} className="h-4 w-4 object-contain" alt="Logo" />
                     </div>
                     <h4 className="text-sm font-bold tracking-wider uppercase font-sans">
                       {selectedClaim?.ref_number ? `Reference [${selectedClaim.ref_number}]` : "Fact-Checker Log"}
@@ -1223,8 +1221,8 @@ function App() {
 
                 {!selectedClaim ? (
                   <div className="py-12 px-4 text-center flex flex-col items-center justify-center space-y-3">
-                    <div className="bg-brand-accent/5 p-4 rounded-2xl animate-pulse-glow">
-                      <Shield className="h-10 w-10 text-brand-border/60" />
+                    <div className="p-4 rounded-2xl animate-pulse-glow">
+                      <img src={logo} className="h-10 w-10 object-contain opacity-50" alt="Logo" />
                     </div>
                     <div>
                       <h5 className="font-serif text-slate-300 font-semibold">Inspect Claims</h5>
@@ -1447,7 +1445,7 @@ function App() {
       <footer className="border-t border-brand-border/40 bg-brand-dark/30 backdrop-blur-sm py-8 px-6 text-center text-xs text-brand-textMuted font-sans relative z-10">
         <div className="max-w-7xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
           <p className="flex items-center space-x-2">
-            <Shield className="h-3.5 w-3.5 text-brand-accent" />
+            <img src={logo} className="h-3.5 w-3.5 object-contain" alt="Logo" />
             <span>&copy; {new Date().getFullYear()} ArguForge AI — Fact-Checked AI Analysis Platform.</span>
           </p>
           <div className="flex items-center space-x-2">
