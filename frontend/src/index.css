@@ -294,3 +294,58 @@
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 8px;
 }
+
+/* ─── Battle Arena Loader Animations ─── */
+
+@utility animate-clash-left {
+  animation: clashLeft 2s ease-in-out infinite alternate;
+}
+@keyframes clashLeft {
+  0% { transform: translateX(0) scale(1); box-shadow: 0 0 20px rgba(99, 102, 241, 0.1); }
+  100% { transform: translateX(15px) scale(1.02); box-shadow: 0 0 35px rgba(99, 102, 241, 0.35); }
+}
+
+@utility animate-clash-right {
+  animation: clashRight 2s ease-in-out infinite alternate;
+}
+@keyframes clashRight {
+  0% { transform: translateX(0) scale(1); box-shadow: 0 0 20px rgba(245, 158, 11, 0.1); }
+  100% { transform: translateX(-15px) scale(1.02); box-shadow: 0 0 35px rgba(245, 158, 11, 0.35); }
+}
+
+@utility animate-vs-pulse {
+  animation: vsPulse 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes vsPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.3)); }
+  50% { transform: scale(1.15); filter: drop-shadow(0 0 25px rgba(139, 92, 246, 0.7)); }
+}
+
+@utility animate-energy-flow-left {
+  animation: energyFlowLeft 3s linear infinite;
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), transparent);
+  background-size: 200% 100%;
+}
+@keyframes energyFlowLeft {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@utility animate-energy-flow-right {
+  animation: energyFlowRight 3s linear infinite;
+  background: linear-gradient(270deg, transparent, rgba(245, 158, 11, 0.4), transparent);
+  background-size: 200% 100%;
+}
+@keyframes energyFlowRight {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@utility animate-scan-pulse {
+  animation: scanPulse 2.5s ease-in-out infinite;
+}
+@keyframes scanPulse {
+  0%, 100% { transform: scale(0.95); opacity: 0.5; }
+  50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 30px rgba(16, 185, 129, 0.4)); }
+}
+

@@ -62,6 +62,168 @@ const InstagramIcon = ({ className }) => (
   </svg>
 );
 
+const BattleArenaLoader = ({ mode, topic }) => {
+  const [dots, setDots] = useState('.');
+  const [currentStep, setCurrentStep] = useState(0);
+
+  useEffect(() => {
+    const dotsInterval = setInterval(() => {
+      setDots(prev => (prev.length >= 3 ? '.' : prev + '.'));
+    }, 500);
+
+    const steps = mode === 'factcheck' 
+      ? [
+          "Resolving whitelisted domain index...",
+          "Checking Tier 1 resources (AP News, Reuters, PIB)...",
+          "Analyzing claims against Tier 2 publications (BBC, NYT)...",
+          "Connecting to secure fact-checking database...",
+          "Compiling support and opposition case briefs..."
+        ]
+      : [
+          "Orchestrating AI agents in the arena...",
+          "Tuning Agent A (Affirmative) parameters...",
+          "Tuning Agent B (Negative) parameters...",
+          "Generating initial stances & boundaries...",
+          "Forging arguments and source integrity filters..."
+        ];
+
+    const stepsInterval = setInterval(() => {
+      setCurrentStep(prev => (prev + 1) % steps.length);
+    }, 3000);
+
+    return () => {
+      clearInterval(dotsInterval);
+      clearInterval(stepsInterval);
+    };
+  }, [mode]);
+
+  const steps = mode === 'factcheck' 
+    ? [
+        "Resolving whitelisted domain index...",
+        "Checking Tier 1 resources (AP News, Reuters, PIB)...",
+        "Analyzing claims against Tier 2 publications (BBC, NYT)...",
+        "Connecting to secure fact-checking database...",
+        "Compiling support and opposition case briefs..."
+      ]
+    : [
+        "Orchestrating AI agents in the arena...",
+        "Tuning Agent A (Affirmative) parameters...",
+        "Tuning Agent B (Negative) parameters...",
+        "Generating initial stances & boundaries...",
+        "Forging arguments and source integrity filters..."
+      ];
+
+  if (mode === 'factcheck') {
+    return (
+      <div className="glass rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-6 shadow-2xl relative overflow-hidden min-h-[400px] border border-white/10 glow-emerald">
+        {/* Particle effect container */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.05)_0%,transparent_60%)] pointer-events-none"></div>
+        
+        {/* Animated radar/scanner core */}
+        <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/30 animate-scan-pulse">
+          <div className="absolute w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-ping"></div>
+          <Search className="h-10 w-10 text-emerald-400" />
+        </div>
+
+        <div className="space-y-2 z-10">
+          <h4 className="text-xl font-bold font-serif text-slate-100 uppercase tracking-widest">
+            Factual Integrity Core Active
+          </h4>
+          <p className="text-sm text-brand-textMuted max-w-md mx-auto font-sans">
+            Auditing claims for "{topic}"
+          </p>
+        </div>
+
+        {/* Dynamic status ticker */}
+        <div className="bg-slate-900/60 border border-white/5 px-6 py-3 rounded-xl min-w-[280px] text-xs font-mono text-emerald-400 z-10 flex items-center justify-center space-x-2">
+          <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+          <span>{steps[currentStep]}{dots}</span>
+        </div>
+
+        {/* High tech progress scanner */}
+        <div className="w-full max-w-md space-y-2 z-10 pt-4">
+          <div className="h-1.5 bg-white/5 border border-white/10 rounded-full overflow-hidden relative">
+            <div className="h-full bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full animate-shimmer w-full"></div>
+          </div>
+          <div className="flex justify-between text-[10px] text-brand-textMuted font-mono uppercase tracking-wider">
+            <span>Scan Rate: 100%</span>
+            <span>Integrity Tier: Whitelist Only</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Debate Mode - Adversarial Clash Animation
+  return (
+    <div className="glass rounded-2xl p-8 md:p-12 shadow-2xl relative overflow-hidden min-h-[400px] border border-white/10 flex flex-col justify-between space-y-8">
+      {/* Background gradients */}
+      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-48 h-48 bg-brand-accent/5 rounded-full filter blur-3xl pointer-events-none"></div>
+      <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-48 h-48 bg-brand-accentAmber/5 rounded-full filter blur-3xl pointer-events-none"></div>
+
+      {/* Header info */}
+      <div className="text-center z-10 space-y-1">
+        <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 bg-indigo-950/40 border border-indigo-500/20 px-3 py-1 rounded-full">
+          Preparing Debate Arena
+        </span>
+        <h4 className="text-base md:text-lg font-serif text-brand-textMuted italic pt-2 max-w-lg mx-auto">
+          "{topic}"
+        </h4>
+      </div>
+
+      {/* The Clash Row */}
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 relative z-10 py-4">
+        {/* Agent A Card (Affirmative) */}
+        <div className="w-full max-w-[240px] glass rounded-2xl p-5 border border-brand-accent/30 text-center animate-clash-left glow-accent bg-gradient-to-b from-brand-accent/5 to-transparent">
+          <div className="w-12 h-12 rounded-full bg-brand-accent/20 border border-brand-accent/40 flex items-center justify-center mx-auto mb-3 text-brand-accent">
+            <Shield className="h-6 w-6" />
+          </div>
+          <h5 className="font-bold text-sm text-slate-200">AGENT A</h5>
+          <p className="text-[10px] text-brand-accent font-semibold tracking-widest uppercase mt-0.5">Affirmative</p>
+          <div className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 mt-4 text-[10px] text-brand-textMuted font-mono leading-relaxed">
+            Formulating logical stance constraints...
+          </div>
+        </div>
+
+        {/* VS Badge */}
+        <div className="relative flex items-center justify-center">
+          <div className="absolute w-20 h-20 bg-indigo-500/10 rounded-full blur-xl animate-vs-pulse"></div>
+          <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-accent to-brand-accentAmber p-[2px] shadow-2xl relative z-20 animate-vs-pulse">
+            <div className="w-full h-full rounded-full bg-[#0e1013] flex items-center justify-center">
+              <span className="text-lg font-black font-serif italic text-white tracking-wider">VS</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Agent B Card (Negative) */}
+        <div className="w-full max-w-[240px] glass rounded-2xl p-5 border border-brand-accentAmber/30 text-center animate-clash-right glow-amber bg-gradient-to-b from-brand-accentAmber/5 to-transparent">
+          <div className="w-12 h-12 rounded-full bg-brand-accentAmber/20 border border-brand-accentAmber/40 flex items-center justify-center mx-auto mb-3 text-brand-accentAmber">
+            <Zap className="h-6 w-6" />
+          </div>
+          <h5 className="font-bold text-sm text-slate-200">AGENT B</h5>
+          <p className="text-[10px] text-brand-accentAmber font-semibold tracking-widest uppercase mt-0.5">Negative</p>
+          <div className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 mt-4 text-[10px] text-brand-textMuted font-mono leading-relaxed">
+            Structuring adversarial counter-arguments...
+          </div>
+        </div>
+      </div>
+
+      {/* Charging Progress / Footer */}
+      <div className="w-full max-w-lg mx-auto space-y-3 z-10">
+        <div className="bg-slate-900/60 border border-white/5 px-6 py-2.5 rounded-xl text-center text-xs font-mono text-indigo-300 flex items-center justify-center space-x-2">
+          <RefreshCw className="h-3 w-3 animate-spin text-brand-accent" />
+          <span>{steps[currentStep]}{dots}</span>
+        </div>
+        
+        {/* Animated charging bar */}
+        <div className="h-1.5 bg-white/5 border border-white/10 rounded-full overflow-hidden relative">
+          <div className="h-full bg-gradient-to-r from-brand-accent to-brand-accentAmber rounded-full animate-shimmer w-full"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [activeView, setActiveView] = useState('landing'); // 'landing', 'debate', 'history', 'login', 'register'
   const [topicInput, setTopicInput] = useState('');
@@ -1123,148 +1285,154 @@ function App() {
                 )}
               </div>
 
-              {/* ── FACTCHECK MODE LAYOUT ── */}
-              {debateMode === 'factcheck' && (
-                <div className="space-y-6">
-                  {/* FOR section */}
-                  {turns.filter(t => t.agent === 'FOR').map(turn => (
-                    <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up" style={{ borderLeft: '3px solid rgba(16, 185, 129, 0.6)' }}>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="bg-emerald-500/15 p-1.5 rounded-lg">
-                          <CheckCircle className="h-4.5 w-4.5 text-emerald-400" />
-                        </div>
-                        <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Supporting Case (FOR)</span>
-                      </div>
-                      {renderContentWithClaims(turn.content, turn.claims)}
-                    </div>
-                  ))}
-
-                  {/* AGAINST section */}
-                  {turns.filter(t => t.agent === 'AGAINST').map(turn => (
-                    <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up" style={{ borderLeft: '3px solid rgba(244, 63, 94, 0.6)' }}>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="bg-rose-500/15 p-1.5 rounded-lg">
-                          <AlertTriangle className="h-4.5 w-4.5 text-rose-400" />
-                        </div>
-                        <span className="text-sm font-bold text-rose-400 uppercase tracking-wider">Opposing Case (AGAINST)</span>
-                      </div>
-                      {renderContentWithClaims(turn.content, turn.claims)}
-                    </div>
-                  ))}
-
-                  {/* VERDICT section */}
-                  {turns.filter(t => t.agent === 'VERDICT').map(turn => (
-                    <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up glow-accent" style={{ borderLeft: '3px solid rgba(99, 102, 241, 0.6)' }}>
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="bg-indigo-500/15 p-1.5 rounded-lg">
-                          <Award className="h-4.5 w-4.5 text-indigo-400" />
-                        </div>
-                        <span className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Balanced Verdict</span>
-                      </div>
-                      {renderContentWithClaims(turn.content, turn.claims)}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* ── DEBATE MODE LAYOUT ── */}
-              {debateMode === 'debate' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[450px]">
-                  {/* Agent A Column */}
-                  <div className="flex flex-col space-y-4">
-                    <div className="flex items-center space-x-2.5 px-4 py-2 bg-brand-accent/10 border border-brand-accent/25 rounded-full self-start glow-accent">
-                      <div className="h-2.5 w-2.5 bg-brand-accent rounded-full animate-pulse"></div>
-                      <span className="text-xs font-bold text-slate-100 tracking-wider">AGENT A</span>
-                      <span className="text-[10px] text-brand-accent font-mono">T:0.6</span>
-                    </div>
-
-                    {turns
-                      .filter((t) => t.agent === 'Agent A')
-                      .map((turn) => (
-                        <div 
-                          key={turn.id} 
-                          className="glass rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-slide-up agent-a-border hover-lift transition-all"
-                        >
-                          <div className="flex items-center justify-between text-[11px] text-brand-textMuted border-b border-brand-border/40 pb-2">
-                            <span className="font-semibold tracking-wider font-sans uppercase flex items-center space-x-1.5">
-                              <span className="bg-brand-accent/15 text-brand-accent px-2 py-0.5 rounded-md text-[10px] font-bold">R{turn.round_number}</span>
-                              <span>{turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'}</span>
-                            </span>
+              {turns.length === 0 && status.status !== 'idle' && !error ? (
+                <BattleArenaLoader mode={debateMode} topic={debateTopic} />
+              ) : (
+                <>
+                  {/* ── FACTCHECK MODE LAYOUT ── */}
+                  {debateMode === 'factcheck' && (
+                    <div className="space-y-6">
+                      {/* FOR section */}
+                      {turns.filter(t => t.agent === 'FOR').map(turn => (
+                        <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up" style={{ borderLeft: '3px solid rgba(16, 185, 129, 0.6)' }}>
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="bg-emerald-500/15 p-1.5 rounded-lg">
+                              <CheckCircle className="h-4.5 w-4.5 text-emerald-400" />
+                            </div>
+                            <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Supporting Case (FOR)</span>
                           </div>
                           {renderContentWithClaims(turn.content, turn.claims)}
                         </div>
                       ))}
 
-                    {status.agent === 'Agent A' && (
-                      <div className="glass border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
-                        <div className="bg-brand-accent/10 p-3 rounded-full text-brand-accent animate-pulse-glow">
-                          <RefreshCw className="h-5 w-5 animate-spin" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-300">
-                            {status.status === 'writing' ? "Agent A is formulating statement..." : "Fact-checking Agent A's claims..."}
-                          </p>
-                          <span className="text-xs text-brand-textMuted font-sans">
-                            {status.status === 'writing' ? "Citing verified sources inline" : "Verifying claims against whitelist domains..."}
-                          </span>
-                        </div>
-                        {/* Skeleton preview */}
-                        <div className="w-full space-y-2 mt-2">
-                          <div className="skeleton h-3 w-full rounded"></div>
-                          <div className="skeleton h-3 w-4/5 rounded"></div>
-                          <div className="skeleton h-3 w-3/5 rounded"></div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Agent B Column */}
-                  <div className="flex flex-col space-y-4">
-                    <div className="flex items-center space-x-2.5 px-4 py-2 bg-brand-accentAmber/10 border border-brand-accentAmber/25 rounded-full self-start glow-amber">
-                      <div className="h-2.5 w-2.5 bg-brand-accentAmber rounded-full animate-pulse"></div>
-                      <span className="text-xs font-bold text-slate-100 tracking-wider">AGENT B</span>
-                      <span className="text-[10px] text-brand-accentAmber font-mono">T:0.8</span>
-                    </div>
-
-                    {turns
-                      .filter((t) => t.agent === 'Agent B')
-                      .map((turn) => (
-                        <div 
-                          key={turn.id} 
-                          className="glass rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-slide-up agent-b-border hover-lift transition-all"
-                        >
-                          <div className="flex items-center justify-between text-[11px] text-brand-textMuted border-b border-brand-border/40 pb-2">
-                            <span className="font-semibold tracking-wider font-sans uppercase flex items-center space-x-1.5">
-                              <span className="bg-brand-accentAmber/15 text-brand-accentAmber px-2 py-0.5 rounded-md text-[10px] font-bold">R{turn.round_number}</span>
-                              <span>{turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'}</span>
-                            </span>
+                      {/* AGAINST section */}
+                      {turns.filter(t => t.agent === 'AGAINST').map(turn => (
+                        <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up" style={{ borderLeft: '3px solid rgba(244, 63, 94, 0.6)' }}>
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="bg-rose-500/15 p-1.5 rounded-lg">
+                              <AlertTriangle className="h-4.5 w-4.5 text-rose-400" />
+                            </div>
+                            <span className="text-sm font-bold text-rose-400 uppercase tracking-wider">Opposing Case (AGAINST)</span>
                           </div>
                           {renderContentWithClaims(turn.content, turn.claims)}
                         </div>
                       ))}
 
-                    {status.agent === 'Agent B' && (
-                      <div className="glass border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
-                        <div className="bg-brand-accentAmber/10 p-3 rounded-full text-brand-accentAmber animate-pulse-glow">
-                          <RefreshCw className="h-5 w-5 animate-spin" />
+                      {/* VERDICT section */}
+                      {turns.filter(t => t.agent === 'VERDICT').map(turn => (
+                        <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up glow-accent" style={{ borderLeft: '3px solid rgba(99, 102, 241, 0.6)' }}>
+                          <div className="flex items-center space-x-2 mb-3">
+                            <div className="bg-indigo-500/15 p-1.5 rounded-lg">
+                              <Award className="h-4.5 w-4.5 text-indigo-400" />
+                            </div>
+                            <span className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Balanced Verdict</span>
+                          </div>
+                          {renderContentWithClaims(turn.content, turn.claims)}
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-300">
-                            {status.status === 'writing' ? "Agent B is formulating statement..." : "Fact-checking Agent B's claims..."}
-                          </p>
-                          <span className="text-xs text-brand-textMuted font-sans">
-                            {status.status === 'writing' ? "Analyzing opponent arguments and citing sources" : "Verifying claims against whitelist domains..."}
-                          </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ── DEBATE MODE LAYOUT ── */}
+                  {debateMode === 'debate' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[450px]">
+                      {/* Agent A Column */}
+                      <div className="flex flex-col space-y-4">
+                        <div className="flex items-center space-x-2.5 px-4 py-2 bg-brand-accent/10 border border-brand-accent/25 rounded-full self-start glow-accent">
+                          <div className="h-2.5 w-2.5 bg-brand-accent rounded-full animate-pulse"></div>
+                          <span className="text-xs font-bold text-slate-100 tracking-wider">AGENT A</span>
+                          <span className="text-[10px] text-brand-accent font-mono">T:0.6</span>
                         </div>
-                        <div className="w-full space-y-2 mt-2">
-                          <div className="skeleton h-3 w-full rounded"></div>
-                          <div className="skeleton h-3 w-4/5 rounded"></div>
-                          <div className="skeleton h-3 w-3/5 rounded"></div>
-                        </div>
+
+                        {turns
+                          .filter((t) => t.agent === 'Agent A')
+                          .map((turn) => (
+                            <div 
+                              key={turn.id} 
+                              className="glass rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-slide-up agent-a-border hover-lift transition-all"
+                            >
+                              <div className="flex items-center justify-between text-[11px] text-brand-textMuted border-b border-brand-border/40 pb-2">
+                                <span className="font-semibold tracking-wider font-sans uppercase flex items-center space-x-1.5">
+                                  <span className="bg-brand-accent/15 text-brand-accent px-2 py-0.5 rounded-md text-[10px] font-bold">R{turn.round_number}</span>
+                                  <span>{turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'}</span>
+                                </span>
+                              </div>
+                              {renderContentWithClaims(turn.content, turn.claims)}
+                            </div>
+                          ))}
+
+                        {status.agent === 'Agent A' && (
+                          <div className="glass border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
+                            <div className="bg-brand-accent/10 p-3 rounded-full text-brand-accent animate-pulse-glow">
+                              <RefreshCw className="h-5 w-5 animate-spin" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-300">
+                                {status.status === 'writing' ? "Agent A is formulating statement..." : "Fact-checking Agent A's claims..."}
+                              </p>
+                              <span className="text-xs text-brand-textMuted font-sans">
+                                {status.status === 'writing' ? "Citing verified sources inline" : "Verifying claims against whitelist domains..."}
+                              </span>
+                            </div>
+                            {/* Skeleton preview */}
+                            <div className="w-full space-y-2 mt-2">
+                              <div className="skeleton h-3 w-full rounded"></div>
+                              <div className="skeleton h-3 w-4/5 rounded"></div>
+                              <div className="skeleton h-3 w-3/5 rounded"></div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
+
+                      {/* Agent B Column */}
+                      <div className="flex flex-col space-y-4">
+                        <div className="flex items-center space-x-2.5 px-4 py-2 bg-brand-accentAmber/10 border border-brand-accentAmber/25 rounded-full self-start glow-amber">
+                          <div className="h-2.5 w-2.5 bg-brand-accentAmber rounded-full animate-pulse"></div>
+                          <span className="text-xs font-bold text-slate-100 tracking-wider">AGENT B</span>
+                          <span className="text-[10px] text-brand-accentAmber font-mono">T:0.8</span>
+                        </div>
+
+                        {turns
+                          .filter((t) => t.agent === 'Agent B')
+                          .map((turn) => (
+                            <div 
+                              key={turn.id} 
+                              className="glass rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-slide-up agent-b-border hover-lift transition-all"
+                            >
+                              <div className="flex items-center justify-between text-[11px] text-brand-textMuted border-b border-brand-border/40 pb-2">
+                                <span className="font-semibold tracking-wider font-sans uppercase flex items-center space-x-1.5">
+                                  <span className="bg-brand-accentAmber/15 text-brand-accentAmber px-2 py-0.5 rounded-md text-[10px] font-bold">R{turn.round_number}</span>
+                                  <span>{turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'}</span>
+                                </span>
+                              </div>
+                              {renderContentWithClaims(turn.content, turn.claims)}
+                            </div>
+                          ))}
+
+                        {status.agent === 'Agent B' && (
+                          <div className="glass border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
+                            <div className="bg-brand-accentAmber/10 p-3 rounded-full text-brand-accentAmber animate-pulse-glow">
+                              <RefreshCw className="h-5 w-5 animate-spin" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-300">
+                                {status.status === 'writing' ? "Agent B is formulating statement..." : "Fact-checking Agent B's claims..."}
+                              </p>
+                              <span className="text-xs text-brand-textMuted font-sans">
+                                {status.status === 'writing' ? "Analyzing opponent arguments and citing sources" : "Verifying claims against whitelist domains..."}
+                              </span>
+                            </div>
+                            <div className="w-full space-y-2 mt-2">
+                              <div className="skeleton h-3 w-full rounded"></div>
+                              <div className="skeleton h-3 w-4/5 rounded"></div>
+                              <div className="skeleton h-3 w-3/5 rounded"></div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               <div ref={turnsEndRef} />
