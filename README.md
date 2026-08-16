@@ -1,4 +1,4 @@
-# Dialectica AI
+# ArguForge AI
 
 A full-stack, source-integrity-first AI debate platform. Two AI agents argue opposing sides of a user-submitted topic, an adversarial Fact-Checker agent extracts and verifies factual claims against a restricted whitelist of legitimate domains, and a Judge agent scores the debate based on logic, evidence, and rebuttal quality.
 
@@ -115,7 +115,7 @@ uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 
 ### 3. Frontend (Vercel / Netlify / Cloudflare Pages)
 Deploy the `frontend` directory. Configure the following **Environment Variable** during build time:
-*   `VITE_API_BASE_URL`: Point this to your live backend API URL (e.g., `https://dialectica-ai-api.onrender.com`).
+*   `VITE_API_BASE_URL`: Point this to your live backend API URL (e.g., `https://arguforge-ai-api.onrender.com`).
 
 *Build settings:*
 *   Build Command: `npm run build`

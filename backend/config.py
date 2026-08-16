@@ -135,7 +135,7 @@ import time
 # A secret key derived from the Groq API key — unique per deployment.
 # In production, use a dedicated SECRET_KEY env variable.
 _AUTH_SECRET = hashlib.sha256(
-    (settings.GROQ_API_KEY or "dialectica-ai-default-secret-key-2026").encode()
+    (settings.GROQ_API_KEY or "arguforge-ai-default-secret-key-2026").encode()
 ).hexdigest()
 
 def hash_password(password: str) -> str:

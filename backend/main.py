@@ -10,7 +10,7 @@ from backend.config import (
     hash_password, verify_password, create_session_token, verify_session_token
 )
 
-app = FastAPI(title="Dialectica AI API")
+app = FastAPI(title="ArguForge AI API")
 
 # Configure CORS for local development
 app.add_middleware(

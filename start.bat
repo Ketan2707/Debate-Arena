@@ -1,21 +1,21 @@
 @echo off
-title Dialectica AI Launcher
+title ArguForge AI Launcher
 
 echo ==========================================
-echo        Dialectica AI - Starting App
+echo        ArguForge AI - Starting App
 echo ==========================================
 echo.
 
 :: Start the backend in a new terminal window
 echo [1/2] Starting Backend (FastAPI)...
-start "Dialectica AI Backend" cmd /k "cd /d %~dp0 && call venv\Scripts\activate && uvicorn backend.main:app --reload --port 8080"
+start "ArguForge AI Backend" cmd /k "cd /d %~dp0 && call venv\Scripts\activate && uvicorn backend.main:app --reload --port 8080"
 
 :: Give the backend a moment to start
 timeout /t 3 /nobreak >nul
 
 :: Start the frontend in a new terminal window
 echo [2/2] Starting Frontend (Vite)...
-start "Dialectica AI Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
+start "ArguForge AI Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 
 echo.
 echo ==========================================
