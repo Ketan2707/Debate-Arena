@@ -276,21 +276,25 @@ function App() {
     }
   }, [turns, status]);
 
-  // Verify token on mount
+  // Verify token once on mount
   useEffect(() => {
-    if (authToken) {
+    const token = localStorage.getItem('debate_arena_token');
+    if (token) {
       fetch(`${API_BASE}/api/auth/me`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.ok ? res.json() : Promise.reject())
-        .then(data => setCurrentUser(data.user))
+        .then(data => {
+          setAuthToken(token);
+          setCurrentUser(data.user);
+        })
         .catch(() => {
           localStorage.removeItem('debate_arena_token');
           setAuthToken(null);
           setCurrentUser(null);
         });
     }
-  }, [authToken]);
+  }, []);
 
   // Animate score bars when scores appear
   useEffect(() => {
@@ -396,13 +400,13 @@ function App() {
   };
 
   const handleOAuthLogin = (provider) => {
-    setAuthLoading(true);
     const redirectUri = window.location.origin;
     
     if (provider === 'Google') {
       const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
       if (!googleClientId) {
         console.warn("Google Client ID not configured. Using sandbox fallback.");
+        setAuthLoading(true);
         setTimeout(() => {
           handleOAuthCallback(provider, 'mock-google-token');
         }, 600);
@@ -413,6 +417,7 @@ function App() {
       const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID || '';
       if (!githubClientId) {
         console.warn("GitHub Client ID not configured. Using sandbox fallback.");
+        setAuthLoading(true);
         setTimeout(() => {
           handleOAuthCallback(provider, 'mock-github-code');
         }, 600);
