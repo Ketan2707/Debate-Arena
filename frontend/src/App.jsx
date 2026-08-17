@@ -247,11 +247,18 @@ function App() {
   // Auth state
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('debate_arena_token'));
   const [currentUser, setCurrentUser] = useState(null);
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authError, setAuthError] = useState('');
+  // Separated Auth States to prevent cross-contamination
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginShowPassword, setLoginShowPassword] = useState(false);
+
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerError, setRegisterError] = useState('');
+  const [registerShowPassword, setRegisterShowPassword] = useState(false);
+
   const [authLoading, setAuthLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [pendingAction, setPendingAction] = useState(null); // 'debate' or 'factcheck'
 
   // Score bar animation state
@@ -302,26 +309,26 @@ function App() {
     setActiveView('landing');
   };
 
-  const handleAuthSubmit = async (isRegister) => {
-    setAuthError('');
+  const handleLoginSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setLoginError('');
     setAuthLoading(true);
     try {
-      const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
-      const res = await fetch(`${API_BASE}${endpoint}`, {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: authEmail, password: authPassword })
+        body: JSON.stringify({ email: loginEmail, password: loginPassword })
       });
       const data = await res.json();
       if (!res.ok) {
-        setAuthError(data.detail || 'Authentication failed');
+        setLoginError(data.detail || 'Invalid email or password');
         return;
       }
       localStorage.setItem('debate_arena_token', data.token);
       setAuthToken(data.token);
       setCurrentUser(data.user);
-      setAuthEmail('');
-      setAuthPassword('');
+      setLoginEmail('');
+      setLoginPassword('');
       
       // Execute pending action
       if (pendingAction) {
@@ -329,7 +336,6 @@ function App() {
         setPendingAction(null);
         if (action === 'debate' || action === 'factcheck') {
           setActiveView('landing');
-          // Small delay to let state settle
           setTimeout(() => {
             handleStartDebate(null, action);
           }, 100);
@@ -340,32 +346,34 @@ function App() {
         setActiveView('landing');
       }
     } catch (err) {
-      setAuthError('Network error. Make sure backend is running.');
+      setLoginError('Network error. Make sure backend is running.');
     } finally {
       setAuthLoading(false);
     }
   };
 
-  const handleOAuthLogin = (provider) => {
+  const handleRegisterSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setRegisterError('');
     setAuthLoading(true);
-    setAuthError('');
-    
-    // Simulate OAuth authentication
-    setTimeout(() => {
-      const mockEmail = `auth_${provider.toLowerCase()}_user@${provider.toLowerCase()}.com`;
-      const mockUser = {
-        user_id: `oauth-${provider.toLowerCase()}-${Math.floor(Math.random() * 100000)}`,
-        email: mockEmail,
-        created_at: new Date().toISOString()
-      };
-      const mockToken = `mock-jwt-token-for-${provider.toLowerCase()}`;
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registerEmail, password: registerPassword })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRegisterError(data.detail || 'Registration failed');
+        return;
+      }
+      localStorage.setItem('debate_arena_token', data.token);
+      setAuthToken(data.token);
+      setCurrentUser(data.user);
+      setRegisterEmail('');
+      setRegisterPassword('');
       
-      localStorage.setItem('debate_arena_token', mockToken);
-      setAuthToken(mockToken);
-      setCurrentUser(mockUser);
-      setAuthLoading(false);
-      
-      // Execute pending action if any, otherwise return home
+      // Execute pending action
       if (pendingAction) {
         const action = pendingAction;
         setPendingAction(null);
@@ -380,8 +388,112 @@ function App() {
       } else {
         setActiveView('landing');
       }
-    }, 800);
+    } catch (err) {
+      setRegisterError('Network error. Make sure backend is running.');
+    } finally {
+      setAuthLoading(false);
+    }
   };
+
+  const handleOAuthLogin = (provider) => {
+    setAuthLoading(true);
+    const redirectUri = window.location.origin;
+    
+    if (provider === 'Google') {
+      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+      if (!googleClientId) {
+        console.warn("Google Client ID not configured. Using sandbox fallback.");
+        setTimeout(() => {
+          handleOAuthCallback(provider, 'mock-google-token');
+        }, 600);
+        return;
+      }
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent('email profile')}`;
+    } else if (provider === 'GitHub') {
+      const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID || '';
+      if (!githubClientId) {
+        console.warn("GitHub Client ID not configured. Using sandbox fallback.");
+        setTimeout(() => {
+          handleOAuthCallback(provider, 'mock-github-code');
+        }, 600);
+        return;
+      }
+      window.location.href = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent('user:email')}`;
+    }
+  };
+
+  const handleOAuthCallback = async (provider, tokenOrCode) => {
+    setAuthLoading(true);
+    try {
+      const endpoint = provider === 'Google' ? '/api/auth/google/callback' : '/api/auth/github/callback';
+      const body = provider === 'Google' ? { access_token: tokenOrCode } : { code: tokenOrCode };
+      
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const errorMsg = data.detail || `${provider} authentication failed`;
+        if (activeView === 'register') setRegisterError(errorMsg);
+        else setLoginError(errorMsg);
+        return;
+      }
+      
+      localStorage.setItem('debate_arena_token', data.token);
+      setAuthToken(data.token);
+      setCurrentUser(data.user);
+      
+      if (pendingAction) {
+        const action = pendingAction;
+        setPendingAction(null);
+        if (action === 'debate' || action === 'factcheck') {
+          setActiveView('landing');
+          setTimeout(() => {
+            handleStartDebate(null, action);
+          }, 100);
+        } else {
+          setActiveView('landing');
+        }
+      } else {
+        setActiveView('landing');
+      }
+    } catch (err) {
+      const errorMsg = 'OAuth callback connection error.';
+      if (activeView === 'register') setRegisterError(errorMsg);
+      else setLoginError(errorMsg);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // Detect OAuth redirect callbacks on mount
+  useEffect(() => {
+    const handleCallbackDetection = async () => {
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token=')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        if (accessToken) {
+          window.history.replaceState(null, null, window.location.pathname + window.location.search);
+          await handleOAuthCallback('Google', accessToken);
+        }
+      }
+      
+      const search = window.location.search;
+      if (search && search.includes('code=')) {
+        const params = new URLSearchParams(search);
+        const code = params.get('code');
+        if (code) {
+          window.history.replaceState(null, null, window.location.pathname);
+          await handleOAuthCallback('GitHub', code);
+        }
+      }
+    };
+    
+    handleCallbackDetection();
+  }, []);
 
   const requireAuth = (action) => {
     if (!authToken) {
@@ -901,9 +1013,9 @@ function App() {
             ) : (
               <button 
                 onClick={() => setActiveView('login')}
-                className="bg-white hover:bg-slate-200 text-black px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-md font-sans"
+                className="bg-white hover:bg-slate-200 text-black px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-md font-sans cursor-pointer"
               >
-                Sign up
+                Sign In
               </button>
             )}
           </div>
@@ -914,7 +1026,8 @@ function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col justify-center relative z-10">
         
         {/* ── LOGIN / REGISTER VIEW ── */}
-        {(activeView === 'login' || activeView === 'register') && (
+        {/* ── LOGIN VIEW ── */}
+        {activeView === 'login' && (
           <div className="max-w-md mx-auto w-full py-16 animate-slide-up">
             {/* Background glow */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -926,26 +1039,23 @@ function App() {
                   <img src={logo} className="h-16 w-16 object-contain" alt="Logo" />
                 </div>
                 <h2 className="text-2xl font-bold font-serif text-brand-textLight">
-                  {activeView === 'login' ? 'Welcome back' : 'Create your account'}
+                  Welcome back
                 </h2>
                 <p className="text-sm text-brand-textMuted font-sans mt-2 text-center">
-                  {activeView === 'login' 
-                    ? 'Sign in to start fact-checked debates and deep-dive analyses.'
-                    : 'Join ArguForge AI to access AI-powered fact-checking.'
-                  }
+                  Sign in to start fact-checked debates and deep-dive analyses.
                 </p>
               </div>
 
               {/* Auth Form */}
-              <form onSubmit={(e) => { e.preventDefault(); handleAuthSubmit(activeView === 'register'); }} className="space-y-4">
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs text-brand-textMuted font-sans font-semibold mb-1.5 uppercase tracking-wider">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                     <input 
                       type="email"
-                      value={authEmail}
-                      onChange={(e) => setAuthEmail(e.target.value)}
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
                       placeholder="you@example.com"
                       className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
                       required
@@ -958,28 +1068,27 @@ function App() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                     <input 
-                      type={showPassword ? "text" : "password"}
-                      value={authPassword}
-                      onChange={(e) => setAuthPassword(e.target.value)}
-                      placeholder={activeView === 'register' ? "At least 6 characters" : "Enter your password"}
+                      type={loginShowPassword ? "text" : "password"}
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="Enter your password"
                       className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-10 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
                       required
-                      minLength={activeView === 'register' ? 6 : 1}
                     />
                     <button 
                       type="button" 
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() => setLoginShowPassword(!loginShowPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {loginShowPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
 
-                {authError && (
+                {loginError && (
                   <div className="bg-rose-950/40 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-300 font-sans flex items-center space-x-2">
                     <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>{authError}</span>
+                    <span>{loginError}</span>
                   </div>
                 )}
 
@@ -992,8 +1101,8 @@ function App() {
                     <RefreshCw className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      {activeView === 'login' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                      <span>{activeView === 'login' ? 'Sign In' : 'Create Account'}</span>
+                      <LogIn className="h-4 w-4" />
+                      <span>Sign In</span>
                     </>
                   )}
                 </button>
@@ -1036,15 +1145,161 @@ function App() {
               {/* Toggle login/register */}
               <div className="mt-6 text-center">
                 <p className="text-xs text-brand-textMuted font-sans">
-                  {activeView === 'login' ? "Don't have an account? " : "Already have an account? "}
+                  Don't have an account?{' '}
                   <button 
                     onClick={() => {
-                      setAuthError('');
-                      setActiveView(activeView === 'login' ? 'register' : 'login');
+                      setLoginError('');
+                      setActiveView('register');
                     }}
                     className="text-brand-accent hover:text-brand-accent/80 font-semibold transition-colors"
                   >
-                    {activeView === 'login' ? 'Sign up' : 'Sign in'}
+                    Sign up
+                  </button>
+                </p>
+              </div>
+
+              {/* Back to home */}
+              <div className="mt-4 text-center">
+                <button 
+                  onClick={() => { setActiveView('landing'); setPendingAction(null); }}
+                  className="text-xs text-brand-textMuted hover:text-slate-300 font-sans transition-colors"
+                >
+                  ← Continue browsing as guest
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── REGISTER VIEW ── */}
+        {activeView === 'register' && (
+          <div className="max-w-md mx-auto w-full py-16 animate-slide-up">
+            {/* Background glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="glass rounded-2xl p-8 shadow-2xl glow-accent relative">
+              {/* Logo */}
+              <div className="flex flex-col items-center mb-8">
+                <div className="mb-4 animate-float">
+                  <img src={logo} className="h-16 w-16 object-contain" alt="Logo" />
+                </div>
+                <h2 className="text-2xl font-bold font-serif text-brand-textLight">
+                  Create your account
+                </h2>
+                <p className="text-sm text-brand-textMuted font-sans mt-2 text-center">
+                  Join ArguForge AI to access AI-powered fact-checking.
+                </p>
+              </div>
+
+              {/* Auth Form */}
+              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs text-brand-textMuted font-sans font-semibold mb-1.5 uppercase tracking-wider">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <input 
+                      type="email"
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-xs text-brand-textMuted font-sans font-semibold mb-1.5 uppercase tracking-wider">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <input 
+                      type={registerShowPassword ? "text" : "password"}
+                      value={registerPassword}
+                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      placeholder="At least 6 characters"
+                      className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-10 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
+                      required
+                      minLength={6}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setRegisterShowPassword(!registerShowPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                      {registerShowPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {registerError && (
+                  <div className="bg-rose-950/40 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-300 font-sans flex items-center space-x-2">
+                    <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>{registerError}</span>
+                  </div>
+                )}
+
+                <button 
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full bg-brand-accent hover:bg-brand-accent/90 text-brand-dark py-3.5 rounded-xl font-bold text-sm transition-all duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 animate-shine glow-accent"
+                >
+                  {authLoading ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4" />
+                      <span>Create Account</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Divider */}
+              <div className="relative my-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-[#1b1724] px-2.5 text-slate-500 font-sans tracking-wide">Or continue with</span>
+                </div>
+              </div>
+
+              {/* OAuth Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleOAuthLogin('Google')}
+                  className="flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200"
+                >
+                  <svg className="h-4 w-4 text-rose-500 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.78 0 3.3.67 4.47 1.76l2.454-2.453C17.68 1.957 15.152 1 12.24 1 6.136 1 1 6.136 1 12.24s5.136 11.24 11.24 11.24c6.382 0 10.618-4.482 10.618-10.8 0-.727-.08-1.282-.173-1.682H12.24z"/>
+                  </svg>
+                  <span>Google</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOAuthLogin('GitHub')}
+                  className="flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200"
+                >
+                  <svg className="h-4 w-4 text-slate-200 fill-current" viewBox="0 0 24 24">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.167 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+                  </svg>
+                  <span>GitHub</span>
+                </button>
+              </div>
+
+              {/* Toggle login/register */}
+              <div className="mt-6 text-center">
+                <p className="text-xs text-brand-textMuted font-sans">
+                  Already have an account?{' '}
+                  <button 
+                    onClick={() => {
+                      setRegisterError('');
+                      setActiveView('login');
+                    }}
+                    className="text-brand-accent hover:text-brand-accent/80 font-semibold transition-colors"
+                  >
+                    Sign in
                   </button>
                 </p>
               </div>

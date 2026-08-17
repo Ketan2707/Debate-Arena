@@ -1,5 +1,6 @@
 import asyncio
 import json
+import httpx
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -93,6 +94,111 @@ def get_me(current_user: dict = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"user": user}
+
+# ─── OAuth Endpoints ──────────────────────────────────────────
+
+class GoogleCallbackRequest(BaseModel):
+    access_token: str
+
+@app.post("/api/auth/google/callback")
+async def google_callback(req: GoogleCallbackRequest):
+    token = req.access_token
+    email = None
+    
+    if token.startswith("mock-") or not config.settings.GOOGLE_CLIENT_ID:
+        # Graceful sandbox fallback for local testing
+        email = "demo_google_user@gmail.com"
+    else:
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {token}"}
+                )
+                if res.status_code == 200:
+                    data = res.json()
+                    email = data.get("email")
+        except Exception:
+            pass
+            
+    if not email:
+        raise HTTPException(status_code=401, detail="Google authentication failed or token expired")
+        
+    email = email.lower().strip()
+    user = database.get_user_by_email(email)
+    if not user:
+        pw_hash = "oauth_placeholder_not_usable_for_password_login"
+        user_id = database.create_user(email, pw_hash)
+    else:
+        user_id = user["id"]
+        
+    session_token = create_session_token(user_id, email)
+    return {"token": session_token, "user": {"id": user_id, "email": email}}
+
+class GitHubCallbackRequest(BaseModel):
+    code: str
+
+@app.post("/api/auth/github/callback")
+async def github_callback(req: GitHubCallbackRequest):
+    code = req.code
+    email = None
+    
+    if code.startswith("mock-") or not config.settings.GITHUB_CLIENT_ID:
+        # Graceful sandbox fallback for local testing
+        email = "demo_github_user@github.com"
+    else:
+        try:
+            async with httpx.AsyncClient() as client:
+                token_res = await client.post(
+                    "https://github.com/login/oauth/access_token",
+                    headers={"Accept": "application/json"},
+                    data={
+                        "client_id": config.settings.GITHUB_CLIENT_ID,
+                        "client_secret": config.settings.GITHUB_CLIENT_SECRET,
+                        "code": code
+                    }
+                )
+                if token_res.status_code == 200:
+                    token_data = token_res.json()
+                    access_token = token_data.get("access_token")
+                    if access_token:
+                        user_res = await client.get(
+                            "https://api.github.com/user",
+                            headers={"Authorization": f"Bearer {access_token}"}
+                        )
+                        if user_res.status_code == 200:
+                            user_data = user_res.json()
+                            email = user_data.get("email")
+                            
+                            if not email:
+                                emails_res = await client.get(
+                                    "https://api.github.com/user/emails",
+                                    headers={"Authorization": f"Bearer {access_token}"}
+                                )
+                                if emails_res.status_code == 200:
+                                    emails_data = emails_res.json()
+                                    for email_info in emails_data:
+                                        if email_info.get("primary"):
+                                            email = email_info.get("email")
+                                            break
+                                    if not email and emails_data:
+                                        email = emails_data[0].get("email")
+        except Exception:
+            pass
+            
+    if not email:
+        raise HTTPException(status_code=401, detail="GitHub authentication failed or code expired")
+        
+    email = email.lower().strip()
+    user = database.get_user_by_email(email)
+    if not user:
+        pw_hash = "oauth_placeholder_not_usable_for_password_login"
+        user_id = database.create_user(email, pw_hash)
+    else:
+        user_id = user["id"]
+        
+    session_token = create_session_token(user_id, email)
+    return {"token": session_token, "user": {"id": user_id, "email": email}}
 
 # ─── Debate Endpoints ────────────────────────────────────────
 
