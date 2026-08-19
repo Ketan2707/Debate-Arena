@@ -405,22 +405,16 @@ function App() {
     if (provider === 'Google') {
       const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
       if (!googleClientId) {
-        console.warn("Google Client ID not configured. Using sandbox fallback.");
-        setAuthLoading(true);
-        setTimeout(() => {
-          handleOAuthCallback(provider, 'mock-google-token');
-        }, 600);
+        setLoginError('Google Sign-In is not configured. Please add VITE_GOOGLE_CLIENT_ID.');
+        setRegisterError('Google Sign-In is not configured. Please add VITE_GOOGLE_CLIENT_ID.');
         return;
       }
       window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent('email profile')}&state=google&access_type=offline&prompt=consent`;
     } else if (provider === 'GitHub') {
       const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID || '';
       if (!githubClientId) {
-        console.warn("GitHub Client ID not configured. Using sandbox fallback.");
-        setAuthLoading(true);
-        setTimeout(() => {
-          handleOAuthCallback(provider, 'mock-github-code');
-        }, 600);
+        setLoginError('GitHub Sign-In is not configured. Please add VITE_GITHUB_CLIENT_ID.');
+        setRegisterError('GitHub Sign-In is not configured. Please add VITE_GITHUB_CLIENT_ID.');
         return;
       }
       window.location.href = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent('user:email')}&state=github`;

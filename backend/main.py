@@ -107,41 +107,40 @@ async def google_callback(req: GoogleCallbackRequest):
     redirect_uri = req.redirect_uri
     email = None
     
-    if code.startswith("mock-") or not config.settings.GOOGLE_CLIENT_ID:
-        # Graceful sandbox fallback for local testing
-        email = "demo_google_user@gmail.com"
-    else:
-        try:
-            # Exchange authorization code for access token
-            async with httpx.AsyncClient() as client:
-                token_res = await client.post(
-                    "https://oauth2.googleapis.com/token",
-                    data={
-                        "code": code,
-                        "client_id": config.settings.GOOGLE_CLIENT_ID,
-                        "client_secret": config.settings.GOOGLE_CLIENT_SECRET,
-                        "redirect_uri": redirect_uri,
-                        "grant_type": "authorization_code",
-                    }
-                )
-                if token_res.status_code != 200:
-                    raise HTTPException(status_code=401, detail="Failed to exchange Google auth code")
-                
-                token_data = token_res.json()
-                access_token = token_data.get("access_token")
-                
-                # Fetch user profile using the access token
-                user_res = await client.get(
-                    "https://www.googleapis.com/oauth2/v3/userinfo",
-                    headers={"Authorization": f"Bearer {access_token}"}
-                )
-                if user_res.status_code == 200:
-                    data = user_res.json()
-                    email = data.get("email")
-        except HTTPException:
-            raise
-        except Exception:
-            pass
+    if not config.settings.GOOGLE_CLIENT_ID or not config.settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="Google OAuth is not configured on the server.")
+    
+    try:
+        # Exchange authorization code for access token
+        async with httpx.AsyncClient() as client:
+            token_res = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": config.settings.GOOGLE_CLIENT_ID,
+                    "client_secret": config.settings.GOOGLE_CLIENT_SECRET,
+                    "redirect_uri": redirect_uri,
+                    "grant_type": "authorization_code",
+                }
+            )
+            if token_res.status_code != 200:
+                raise HTTPException(status_code=401, detail="Failed to exchange Google auth code")
+            
+            token_data = token_res.json()
+            access_token = token_data.get("access_token")
+            
+            # Fetch user profile using the access token
+            user_res = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if user_res.status_code == 200:
+                data = user_res.json()
+                email = data.get("email")
+    except HTTPException:
+        raise
+    except Exception:
+        pass
             
     if not email:
         raise HTTPException(status_code=401, detail="Google authentication failed or token expired")
@@ -165,49 +164,48 @@ async def github_callback(req: GitHubCallbackRequest):
     code = req.code
     email = None
     
-    if code.startswith("mock-") or not config.settings.GITHUB_CLIENT_ID:
-        # Graceful sandbox fallback for local testing
-        email = "demo_github_user@github.com"
-    else:
-        try:
-            async with httpx.AsyncClient() as client:
-                token_res = await client.post(
-                    "https://github.com/login/oauth/access_token",
-                    headers={"Accept": "application/json"},
-                    data={
-                        "client_id": config.settings.GITHUB_CLIENT_ID,
-                        "client_secret": config.settings.GITHUB_CLIENT_SECRET,
-                        "code": code
-                    }
-                )
-                if token_res.status_code == 200:
-                    token_data = token_res.json()
-                    access_token = token_data.get("access_token")
-                    if access_token:
-                        user_res = await client.get(
-                            "https://api.github.com/user",
-                            headers={"Authorization": f"Bearer {access_token}"}
-                        )
-                        if user_res.status_code == 200:
-                            user_data = user_res.json()
-                            email = user_data.get("email")
-                            
-                            if not email:
-                                emails_res = await client.get(
-                                    "https://api.github.com/user/emails",
-                                    headers={"Authorization": f"Bearer {access_token}"}
-                                )
-                                if emails_res.status_code == 200:
-                                    emails_data = emails_res.json()
-                                    for email_info in emails_data:
-                                        if email_info.get("primary"):
-                                            email = email_info.get("email")
-                                            break
-                                    if not email and emails_data:
-                                        email = emails_data[0].get("email")
-        except Exception:
-            pass
-            
+    if not config.settings.GITHUB_CLIENT_ID or not config.settings.GITHUB_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="GitHub OAuth is not configured on the server.")
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            token_res = await client.post(
+                "https://github.com/login/oauth/access_token",
+                headers={"Accept": "application/json"},
+                data={
+                    "client_id": config.settings.GITHUB_CLIENT_ID,
+                    "client_secret": config.settings.GITHUB_CLIENT_SECRET,
+                    "code": code
+                }
+            )
+            if token_res.status_code == 200:
+                token_data = token_res.json()
+                access_token = token_data.get("access_token")
+                if access_token:
+                    user_res = await client.get(
+                        "https://api.github.com/user",
+                        headers={"Authorization": f"Bearer {access_token}"}
+                    )
+                    if user_res.status_code == 200:
+                        user_data = user_res.json()
+                        email = user_data.get("email")
+                        
+                        if not email:
+                            emails_res = await client.get(
+                                "https://api.github.com/user/emails",
+                                headers={"Authorization": f"Bearer {access_token}"}
+                            )
+                            if emails_res.status_code == 200:
+                                emails_data = emails_res.json()
+                                for email_info in emails_data:
+                                    if email_info.get("primary"):
+                                        email = email_info.get("email")
+                                        break
+                                if not email and emails_data:
+                                    email = emails_data[0].get("email")
+    except Exception:
+        pass
+        
     if not email:
         raise HTTPException(status_code=401, detail="GitHub authentication failed or code expired")
         
