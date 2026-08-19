@@ -124,7 +124,12 @@ async def google_callback(req: GoogleCallbackRequest):
                 }
             )
             if token_res.status_code != 200:
-                raise HTTPException(status_code=401, detail="Failed to exchange Google auth code")
+                error_detail = token_res.json() if token_res.headers.get("content-type", "").startswith("application/json") else token_res.text
+                print(f"[Google OAuth ERROR] Status: {token_res.status_code}, Response: {error_detail}, redirect_uri sent: {redirect_uri}")
+                raise HTTPException(
+                    status_code=401, 
+                    detail=f"Google auth code exchange failed: {error_detail}"
+                )
             
             token_data = token_res.json()
             access_token = token_data.get("access_token")
@@ -139,7 +144,8 @@ async def google_callback(req: GoogleCallbackRequest):
                 email = data.get("email")
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
+        print(f"[Google OAuth EXCEPTION] {e}")
         pass
             
     if not email:
