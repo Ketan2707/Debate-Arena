@@ -412,7 +412,7 @@ function App() {
         }, 600);
         return;
       }
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent('email profile')}`;
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent('email profile')}&state=google&access_type=offline&prompt=consent`;
     } else if (provider === 'GitHub') {
       const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID || '';
       if (!githubClientId) {
@@ -423,15 +423,17 @@ function App() {
         }, 600);
         return;
       }
-      window.location.href = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent('user:email')}`;
+      window.location.href = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent('user:email')}&state=github`;
     }
   };
 
-  const handleOAuthCallback = async (provider, tokenOrCode) => {
+  const handleOAuthCallback = async (provider, codeOrToken) => {
     setAuthLoading(true);
     try {
       const endpoint = provider === 'Google' ? '/api/auth/google/callback' : '/api/auth/github/callback';
-      const body = provider === 'Google' ? { access_token: tokenOrCode } : { code: tokenOrCode };
+      const body = provider === 'Google' 
+        ? { code: codeOrToken, redirect_uri: window.location.origin } 
+        : { code: codeOrToken };
       
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
@@ -476,23 +478,15 @@ function App() {
   // Detect OAuth redirect callbacks on mount
   useEffect(() => {
     const handleCallbackDetection = async () => {
-      const hash = window.location.hash;
-      if (hash && hash.includes('access_token=')) {
-        const params = new URLSearchParams(hash.substring(1));
-        const accessToken = params.get('access_token');
-        if (accessToken) {
-          window.history.replaceState(null, null, window.location.pathname + window.location.search);
-          await handleOAuthCallback('Google', accessToken);
-        }
-      }
-      
       const search = window.location.search;
       if (search && search.includes('code=')) {
         const params = new URLSearchParams(search);
         const code = params.get('code');
+        const state = params.get('state');
         if (code) {
           window.history.replaceState(null, null, window.location.pathname);
-          await handleOAuthCallback('GitHub', code);
+          const provider = state === 'google' ? 'Google' : 'GitHub';
+          await handleOAuthCallback(provider, code);
         }
       }
     };

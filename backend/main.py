@@ -98,26 +98,48 @@ def get_me(current_user: dict = Depends(get_current_user)):
 # ─── OAuth Endpoints ──────────────────────────────────────────
 
 class GoogleCallbackRequest(BaseModel):
-    access_token: str
+    code: str
+    redirect_uri: str = ""
 
 @app.post("/api/auth/google/callback")
 async def google_callback(req: GoogleCallbackRequest):
-    token = req.access_token
+    code = req.code
+    redirect_uri = req.redirect_uri
     email = None
     
-    if token.startswith("mock-") or not config.settings.GOOGLE_CLIENT_ID:
+    if code.startswith("mock-") or not config.settings.GOOGLE_CLIENT_ID:
         # Graceful sandbox fallback for local testing
         email = "demo_google_user@gmail.com"
     else:
         try:
+            # Exchange authorization code for access token
             async with httpx.AsyncClient() as client:
-                res = await client.get(
-                    "https://www.googleapis.com/oauth2/v3/userinfo",
-                    headers={"Authorization": f"Bearer {token}"}
+                token_res = await client.post(
+                    "https://oauth2.googleapis.com/token",
+                    data={
+                        "code": code,
+                        "client_id": config.settings.GOOGLE_CLIENT_ID,
+                        "client_secret": config.settings.GOOGLE_CLIENT_SECRET,
+                        "redirect_uri": redirect_uri,
+                        "grant_type": "authorization_code",
+                    }
                 )
-                if res.status_code == 200:
-                    data = res.json()
+                if token_res.status_code != 200:
+                    raise HTTPException(status_code=401, detail="Failed to exchange Google auth code")
+                
+                token_data = token_res.json()
+                access_token = token_data.get("access_token")
+                
+                # Fetch user profile using the access token
+                user_res = await client.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {access_token}"}
+                )
+                if user_res.status_code == 200:
+                    data = user_res.json()
                     email = data.get("email")
+        except HTTPException:
+            raise
         except Exception:
             pass
             
