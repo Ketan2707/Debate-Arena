@@ -111,14 +111,18 @@ async def google_callback(req: GoogleCallbackRequest):
         raise HTTPException(status_code=500, detail="Google OAuth is not configured on the server.")
     
     try:
+        # Clean credentials in case of trailing spaces or quotes from env config
+        client_id = config.settings.GOOGLE_CLIENT_ID.strip().strip('"\'')
+        client_secret = config.settings.GOOGLE_CLIENT_SECRET.strip().strip('"\'')
+        
         # Exchange authorization code for access token
         async with httpx.AsyncClient() as client:
             token_res = await client.post(
                 "https://oauth2.googleapis.com/token",
                 data={
                     "code": code,
-                    "client_id": config.settings.GOOGLE_CLIENT_ID,
-                    "client_secret": config.settings.GOOGLE_CLIENT_SECRET,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
                     "redirect_uri": redirect_uri,
                     "grant_type": "authorization_code",
                 }
