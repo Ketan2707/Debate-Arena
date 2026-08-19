@@ -317,33 +317,39 @@ async def debate_stream_generator(debate_id: str):
                 # Extract and verify claims from this section
                 extracted_claims = await run_in_threadpool(agents.extract_claims, section_content)
                 
-                async def verify_and_save_claim(claim_item, t_id):
-                    claim_text = claim_item["claim_text"]
-                    cited_url = claim_item.get("cited_url")
-                    search_results = await run_in_threadpool(search.search_whitelist, claim_text)
-                    verdict_data = await run_in_threadpool(agents.verify_claim, claim_text, search_results, cited_url)
-                    source_url = verdict_data.get("source_url")
-                    source_tier = None
-                    if source_url:
-                        source_tier = config.get_domain_tier(source_url)
-                    await run_in_threadpool(
-                        database.save_claim,
-                        t_id, claim_text, verdict_data["verdict"], source_url, source_tier,
-                        verdict_data.get("reasoning", ""), cited_url
-                    )
-                    return {
-                        "claim_text": claim_text,
-                        "verdict": verdict_data["verdict"],
-                        "source_url": source_url,
-                        "source_tier": source_tier,
-                        "reasoning": verdict_data.get("reasoning", ""),
-                        "cited_url": cited_url,
-                    }
-                
                 verified_claims = []
                 if extracted_claims:
-                    tasks = [verify_and_save_claim(c, turn_id) for c in extracted_claims]
-                    verified_claims = await asyncio.gather(*tasks)
+                    search_tasks = [run_in_threadpool(search.search_whitelist, c["claim_text"]) for c in extracted_claims]
+                    search_results_list = await asyncio.gather(*search_tasks)
+                    
+                    verdict_data_list = await run_in_threadpool(
+                        agents.verify_claims_batch, extracted_claims, search_results_list
+                    )
+                    
+                    for idx, claim_item in enumerate(extracted_claims):
+                        claim_text = claim_item["claim_text"]
+                        cited_url = claim_item.get("cited_url")
+                        verdict_data = verdict_data_list[idx] if idx < len(verdict_data_list) else {
+                            "verdict": "Unverifiable", "source_url": None, "reasoning": "Not processed"
+                        }
+                        source_url = verdict_data.get("source_url")
+                        source_tier = None
+                        if source_url:
+                            source_tier = config.get_domain_tier(source_url)
+                            
+                        await run_in_threadpool(
+                            database.save_claim,
+                            turn_id, claim_text, verdict_data["verdict"], source_url, source_tier,
+                            verdict_data.get("reasoning", ""), cited_url
+                        )
+                        verified_claims.append({
+                            "claim_text": claim_text,
+                            "verdict": verdict_data["verdict"],
+                            "source_url": source_url,
+                            "source_tier": source_tier,
+                            "reasoning": verdict_data.get("reasoning", ""),
+                            "cited_url": cited_url,
+                        })
                 
                 new_turn = {
                     "id": turn_id,
@@ -433,44 +439,39 @@ async def debate_stream_generator(debate_id: str):
             # Extract checkable claims
             extracted_claims = await run_in_threadpool(agents.extract_claims, content)
             
-            async def verify_and_save_claim(claim_item):
-                claim_text = claim_item["claim_text"]
-                cited_url = claim_item.get("cited_url")
+            verified_claims = []
+            if extracted_claims:
+                search_tasks = [run_in_threadpool(search.search_whitelist, c["claim_text"]) for c in extracted_claims]
+                search_results_list = await asyncio.gather(*search_tasks)
                 
-                # Query whitelisted search results
-                search_results = await run_in_threadpool(search.search_whitelist, claim_text)
-                
-                # Perform claim verification
-                verdict_data = await run_in_threadpool(agents.verify_claim, claim_text, search_results, cited_url)
-                
-                # Classify source domain tier
-                source_url = verdict_data.get("source_url")
-                source_tier = None
-                if source_url:
-                    source_tier = config.get_domain_tier(source_url)
-                    
-                # Save the claim and verdict to the DB
-                await run_in_threadpool(
-                    database.save_claim,
-                    turn_id, claim_text, verdict_data["verdict"], source_url, source_tier,
-                    verdict_data.get("reasoning", ""), cited_url
+                verdict_data_list = await run_in_threadpool(
+                    agents.verify_claims_batch, extracted_claims, search_results_list
                 )
                 
-                return {
-                    "claim_text": claim_text,
-                    "verdict": verdict_data["verdict"],
-                    "source_url": source_url,
-                    "source_tier": source_tier,
-                    "reasoning": verdict_data.get("reasoning", ""),
-                    "cited_url": cited_url,
-                }
-            
-            # Verify and save all claims in parallel
-            if extracted_claims:
-                tasks = [verify_and_save_claim(c) for c in extracted_claims]
-                verified_claims = await asyncio.gather(*tasks)
-            else:
-                verified_claims = []
+                for idx, claim_item in enumerate(extracted_claims):
+                    claim_text = claim_item["claim_text"]
+                    cited_url = claim_item.get("cited_url")
+                    verdict_data = verdict_data_list[idx] if idx < len(verdict_data_list) else {
+                        "verdict": "Unverifiable", "source_url": None, "reasoning": "Not processed"
+                    }
+                    source_url = verdict_data.get("source_url")
+                    source_tier = None
+                    if source_url:
+                        source_tier = config.get_domain_tier(source_url)
+                        
+                    await run_in_threadpool(
+                        database.save_claim,
+                        turn_id, claim_text, verdict_data["verdict"], source_url, source_tier,
+                        verdict_data.get("reasoning", ""), cited_url
+                    )
+                    verified_claims.append({
+                        "claim_text": claim_text,
+                        "verdict": verdict_data["verdict"],
+                        "source_url": source_url,
+                        "source_tier": source_tier,
+                        "reasoning": verdict_data.get("reasoning", ""),
+                        "cited_url": cited_url,
+                    })
                 
             claims_by_turn[turn_id] = verified_claims
             

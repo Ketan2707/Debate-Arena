@@ -355,6 +355,7 @@ def extract_claims(turn_content: str) -> list[dict]:
     2. Ignore subjective/opinion statements, interpretations, value judgments, or rhetoric.
     3. For each claim, rewrite it as a short, clear, self-contained sentence. Replace pronouns with actual subjects.
     4. If the claim has an inline citation link like [Source](URL), extract that URL as "cited_url".
+    5. Extract at most 4 of the most critical and prominent checkable factual claims. If there are fewer, extract only those.
     
     Output MUST be a JSON object:
     {{
@@ -476,6 +477,156 @@ def verify_claim(claim_text: str, search_results: list[dict], cited_url: str | N
             "source_url": None,
             "reasoning": f"Fact-checker error: {e}"
         }
+
+def verify_claims_batch(claims_list: list[dict], search_results_list: list[list[dict]]) -> list[dict]:
+    """
+    Verifies a batch of claims against their respective search results in a SINGLE LLM call.
+    This saves multiple parallel API calls and avoids hitting Groq rate limits (429).
+    """
+    if MOCK_MODE:
+        results = []
+        for i, claim in enumerate(claims_list):
+            s_res = search_results_list[i] if i < len(search_results_list) else []
+            if s_res:
+                results.append({
+                    "verdict": "Confirmed",
+                    "source_url": s_res[0]["url"],
+                    "reasoning": "Source matches claim content."
+                })
+            else:
+                results.append({
+                    "verdict": "Unverifiable",
+                    "source_url": None,
+                    "reasoning": "No matching source found."
+                })
+        return results
+
+    if not claims_list:
+        return []
+
+    # Build the prompt with all claims and their search results
+    formatted_claims = []
+    for idx, claim in enumerate(claims_list):
+        claim_text = claim["claim_text"]
+        cited_url = claim.get("cited_url")
+        search_results = search_results_list[idx] if idx < len(search_results_list) else []
+
+        # If cited_url is present, ensure it's in search results
+        cited_url_in_results = False
+        if cited_url:
+            from backend.config import get_domain_tier
+            cited_tier = get_domain_tier(cited_url)
+            if cited_tier is not None:
+                cited_url_in_results = True
+                if not any(r["url"] == cited_url for r in search_results):
+                    search_results = [{"url": cited_url, "title": "Agent-cited source", "snippet": "", "tier": cited_tier}] + search_results
+
+        formatted_res = ""
+        for s_idx, res in enumerate(search_results):
+            formatted_res += f"  [{s_idx+1}] URL: {res['url']}\n  Title: {res.get('title', '')}\n  Snippet: {res.get('snippet', '')}\n  Tier: {res.get('tier', 'N/A')}\n\n"
+
+        cited_note = ""
+        if cited_url and cited_url_in_results:
+            cited_note = f" (Priority Cited URL: {cited_url})"
+
+        formatted_claims.append({
+            "claim_index": idx + 1,
+            "claim_text": claim_text,
+            "cited_note": cited_note,
+            "search_results": formatted_res or "No search results found.\n"
+        })
+
+    prompt_items = ""
+    for fc in formatted_claims:
+        prompt_items += f"""
+---
+CLAIM #{fc['claim_index']}: "{fc['claim_text']}"{fc['cited_note']}
+SEARCH RESULTS:
+{fc['search_results']}
+"""
+
+    prompt = f"""
+    You are a Source-Integrity Fact-Checker. Evaluate the following claims against their respective search results.
+    {prompt_items}
+    
+    VERDICT CRITERIA:
+    - 'Confirmed': The search results directly and unambiguously support the claim. The snippet text must clearly validate the key facts (numbers, dates, events) in the claim.
+    - 'Disputed': Credible whitelisted sources in the results directly contradict or disprove the claim with specific counter-evidence.
+    - 'Unverifiable': The search results do not contain enough specific details to confirm or contradict the claim. Do not guess.
+    
+    IMPORTANT RULES:
+    1. No source link = no 'Confirmed' or 'Disputed' label allowed. 'source_url' MUST be one of the exact URLs from the search results for that claim.
+    2. If the verdict is 'Unverifiable', the 'source_url' MUST be null.
+    3. Write a 2-3 sentence explanation of your reasoning based strictly on the snippets. Quote specific text from the snippets.
+    4. Be STRICT: only mark as Confirmed if the snippet clearly validates the specific numbers/facts in the claim.
+    
+    Output MUST be a JSON object with a single key "verifications", which is an array of objects matching the claim order. Each object must have keys "claim_index", "verdict", "source_url", and "reasoning".
+    
+    Example Output JSON Format:
+    {{
+      "verifications": [
+        {{
+          "claim_index": 1,
+          "verdict": "Confirmed",
+          "source_url": "https://example.com/source1",
+          "reasoning": "Snippet states '...' which confirms the claim."
+        }},
+        {{
+          "claim_index": 2,
+          "verdict": "Unverifiable",
+          "source_url": null,
+          "reasoning": "No details found in search results to verify this statement."
+        }}
+      ]
+    }}
+    """
+    
+    try:
+        response_text = generate_content_with_retry("llama-3.1-8b-instant", prompt, temperature=0.1, json_mode=True)
+        parsed = clean_and_parse_json(response_text)
+        verifications = parsed.get("verifications", [])
+        
+        results = []
+        for idx, claim in enumerate(claims_list):
+            search_results = search_results_list[idx] if idx < len(search_results_list) else []
+            valid_urls = [res["url"] for res in search_results]
+            
+            # Find matching index from LLM output
+            matching_ver = next((v for v in verifications if v.get("claim_index") == idx + 1), None)
+            
+            if matching_ver:
+                verdict = matching_ver.get("verdict", "Unverifiable")
+                source_url = matching_ver.get("source_url")
+                reasoning = matching_ver.get("reasoning", "")
+            else:
+                verdict = "Unverifiable"
+                source_url = None
+                reasoning = "Not processed by model."
+                
+            if verdict in ["Confirmed", "Disputed"]:
+                if not source_url or source_url not in valid_urls:
+                    if valid_urls:
+                        source_url = valid_urls[0]
+                    else:
+                        verdict = "Unverifiable"
+                        source_url = None
+            else:
+                source_url = None
+                
+            results.append({
+                "verdict": verdict,
+                "source_url": source_url,
+                "reasoning": reasoning
+            })
+            
+        return results
+    except Exception as e:
+        print(f"Error during batch verification: {e}")
+        return [{
+            "verdict": "Unverifiable",
+            "source_url": None,
+            "reasoning": f"Batch verification failed: {e}"
+        } for _ in claims_list]
 
 # ─── Judge Evaluation (Strengthened Scoring) ──────────────────
 

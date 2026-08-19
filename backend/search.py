@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from duckduckgo_search import DDGS
 from backend.config import settings, get_domain_tier
 
+_search_cache = {}
 def clean_claim_for_query(claim: str) -> str:
     """
     Cleans the claim text to make it suitable for search engines,
@@ -126,44 +127,28 @@ def ddg_search_fallback(query: str, max_results: int = 5) -> list[dict]:
 
 def generate_search_query(claim_text: str) -> str:
     """
-    Uses Groq LLM to extract core keywords and entities from a claim text 
-    to optimize the search query.
+    Programmatically extracts core keywords and entities from a claim text 
+    to optimize search query performance and avoid slow LLM calls.
     """
-    if not settings.GROQ_API_KEY:
-        # Programmatic keyword extraction fallback for mock mode
-        # Remove common stopwords and keep years, percentages, nouns, numbers
-        words = claim_text.split()
-        stopwords = {
-            "in", "the", "and", "a", "of", "to", "by", "than", "standard", 
-            "their", "for", "with", "would", "is", "are", "was", "were", 
-            "be", "been", "have", "has", "had", "more", "fewer", "about",
-            "from", "on", "as", "at", "but", "or", "an", "that", "which"
-        }
-        keywords = []
-        for word in words:
-            # Strip punctuation except percentages
-            clean_word = re.sub(r'[^\w%]', '', word)
-            if clean_word and clean_word.lower() not in stopwords:
-                keywords.append(clean_word)
-        return " ".join(keywords)
+    words = claim_text.split()
+    stopwords = {
+        "in", "the", "and", "a", "of", "to", "by", "than", "standard", 
+        "their", "for", "with", "would", "is", "are", "was", "were", 
+        "be", "been", "have", "has", "had", "more", "fewer", "about",
+        "from", "on", "as", "at", "but", "or", "an", "that", "which",
+        "this", "these", "those", "it", "they", "them", "his", "her",
+        "my", "your", "our", "us", "we", "i", "you", "me", "him", "who"
+    }
+    keywords = []
+    for word in words:
+        clean_word = re.sub(r'[^\w%$€£]', '', word)
+        if clean_word and clean_word.lower() not in stopwords:
+            keywords.append(clean_word)
+            
+    if len(keywords) > 8:
+        keywords = keywords[:8]
         
-    prompt = f"""
-    You are a search query optimizer.
-    Convert this factual claim sentence into a concise keyword search query for Google/DuckDuckGo.
-    Focus on key terms, numbers, dates, and names. Exclude conversational words, assertions, or descriptors.
-    
-    Factual Claim: "{claim_text}"
-    
-    Output ONLY the search query keywords. Do not include quotes, reasoning, or formatting.
-    """
-    try:
-        from backend.agents import generate_content_with_retry
-        response_text = generate_content_with_retry("llama-3.1-8b-instant", prompt, temperature=0.1)
-        query = response_text.strip().strip('"').strip("'")
-        return query if query else claim_text
-    except Exception as e:
-        print(f"Failed to optimize search query: {e}")
-        return claim_text
+    return " ".join(keywords) if keywords else claim_text
 
 def google_rss_search(query: str, max_results: int = 5) -> list[dict]:
     """
@@ -202,15 +187,18 @@ def google_rss_search(query: str, max_results: int = 5) -> list[dict]:
 def search_whitelist(claim_text: str, max_results: int = 5) -> list[dict]:
     """
     Searches ONLY within the whitelisted domains.
-    Returns a list of search result dicts with URL, Title, Snippet, and Tier.
+    Uses in-memory cache to skip repeating queries.
     """
-    # 1. Optimize query using LLM keyword extraction
+    # 1. Clean and programmatically optimize the claim text
     search_query = generate_search_query(claim_text)
-    
-    # Clean the query
     cleaned_query = clean_claim_for_query(search_query)
     if not cleaned_query:
         return []
+
+    # 2. Check query cache
+    cache_key = (cleaned_query, max_results)
+    if cache_key in _search_cache:
+        return _search_cache[cache_key]
     
     # Collect whitelist domains
     whitelist = settings.TIER_1_DOMAINS + settings.TIER_2_DOMAINS + settings.TIER_3_DOMAINS
@@ -218,7 +206,6 @@ def search_whitelist(claim_text: str, max_results: int = 5) -> list[dict]:
     # Try Google Search first if configured
     results = []
     if settings.GOOGLE_SEARCH_API_KEY and settings.GOOGLE_SEARCH_CX:
-        # Google search handles site: OR logic extremely well
         query_domains = ["gov", "edu", "org"]
         for domain in whitelist:
             if domain.endswith(".gov") or domain.endswith(".edu") or domain.endswith(".org") or domain in ["gov", "edu", "org"]:
@@ -231,7 +218,7 @@ def search_whitelist(claim_text: str, max_results: int = 5) -> list[dict]:
         query = f"{cleaned_query} ({site_query})"
         results = google_search(query, max_results)
     
-    # Fallback to Google News RSS + DuckDuckGo Search (which fails/blocks on complex site: OR operators)
+    # Fallback to Google News RSS + DuckDuckGo Search
     if not results:
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -240,7 +227,6 @@ def search_whitelist(claim_text: str, max_results: int = 5) -> list[dict]:
             rss_results = future_rss.result()
             general_results = future_ddg.result()
         
-        # Combine results
         combined_results = rss_results + general_results
         
         results = []
@@ -269,4 +255,5 @@ def search_whitelist(claim_text: str, max_results: int = 5) -> list[dict]:
                 "tier": tier
             })
             
+    _search_cache[cache_key] = tiered_results
     return tiered_results
