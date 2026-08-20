@@ -1,11 +1,21 @@
 import asyncio
 import json
+import sys
 import httpx
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
+
+# Ensure utf-8 encoding for standard output across all platforms
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 from backend import database, agents, search, config
 from backend.config import (
     hash_password, verify_password, create_session_token, verify_session_token

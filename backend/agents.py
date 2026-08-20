@@ -2,8 +2,17 @@ import json
 import re
 import time
 import random
+import sys
 from groq import Groq
 from backend.config import settings
+
+# Ensure utf-8 encoding for standard output across all platforms
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 # Detect if we should run in Mock Mode for demonstration when API key is missing
 MOCK_MODE = not settings.GROQ_API_KEY
@@ -86,6 +95,8 @@ def strip_internal_thinking(text: str) -> str:
     cleaned = re.sub(r'\*+(?:Word Count|Constraint|Cutting|Deconstruct)[^*]*\*+[\s\S]*?(?=\n\n|\Z)', '', cleaned, flags=re.IGNORECASE)
     # Clean bracketed footnote tags <[1]> to [1]
     cleaned = re.sub(r'<\s*\[\s*(\d+)\s*\]\s*>', r'[\1]', cleaned)
+    # Strip Asian citation brackets like 【4:0†source】 or 【1】
+    cleaned = re.sub(r'[【\u3010][^】\u3011]*[】\u3011]', '', cleaned)
     return cleaned.strip()
 
 def clean_and_parse_json(text: str):
