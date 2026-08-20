@@ -303,14 +303,18 @@ async def debate_stream_generator(debate_id: str):
     await asyncio.sleep(0.05)
 
     # 1. Perform initial topic research to anchor agent and stance knowledge
-    research_results = await run_in_threadpool(search.search_whitelist, topic, 10)
     research_context = ""
-    if research_results:
-        research_context = "Found the following real-world articles and facts about this topic:\n"
-        for idx, res in enumerate(research_results):
-            research_context += f"- Source: {res.get('url')}\n"
-            research_context += f"  Title: {res.get('title')}\n"
-            research_context += f"  Snippet: {res.get('snippet')}\n"
+    try:
+        research_results = await run_in_threadpool(search.search_whitelist, topic, 5)
+        if research_results:
+            research_context = "Found the following verified facts about this topic:\n"
+            for idx, res in enumerate(research_results[:4]):
+                clean_snippet = (res.get('snippet') or '').strip()[:220]
+                research_context += f"- Source: {res.get('url')}\n"
+                research_context += f"  Title: {res.get('title')}\n"
+                research_context += f"  Snippet: {clean_snippet}\n"
+    except Exception as search_err:
+        print(f"Initial topic research non-fatal warning: {search_err}")
 
     # ── FACTCHECK MODE ────────────────────────────────────────
     if mode == "factcheck":

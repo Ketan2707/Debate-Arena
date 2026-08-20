@@ -622,6 +622,7 @@ function App() {
         if (data && data.error) {
           setError(data.error);
           setStatus({ status: 'idle' });
+          streamCompletedRef.current = true;
           source.close();
         }
       } catch {
@@ -630,7 +631,7 @@ function App() {
     });
     
     source.onerror = async (err) => {
-      // If stream finished normally via verdict event, close is expected
+      // If stream finished normally via verdict event or error event, close is expected
       if (streamCompletedRef.current) {
         source.close();
         return;
@@ -653,8 +654,9 @@ function App() {
             streamCompletedRef.current = true;
             return;
           } else if (detail.status === 'failed') {
-            setError("Analysis was interrupted. Click Retry to run again.");
+            setError(detail.error || "Analysis was interrupted. Click Retry to run again.");
             setStatus({ status: 'idle' });
+            streamCompletedRef.current = true;
             return;
           }
         }
@@ -731,16 +733,37 @@ function App() {
     });
   };
 
+  // Sanitize internal thinking scratchpads, <think> tags, and raw bracket tags
+  const cleanThinkingAndFootnotes = (rawText) => {
+    if (!rawText) return "";
+    let cleaned = rawText;
+    // Strip <think>...</think> blocks
+    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    // Strip unclosed <think> blocks
+    cleaned = cleaned.replace(/<think>[\s\S]*$/gi, '');
+    // Strip "Thinking Process: ..." up to the first real paragraph
+    cleaned = cleaned.replace(/^(?:Thinking Process|Thought Process|Reasoning):[\s\S]*?\n\n/gi, '');
+    // Strip meta scratchpad lines like *Word Count:* ...
+    cleaned = cleaned.replace(/\*+(?:Word Count|Constraint|Cutting|Deconstruct)[^*]*\*+[\s\S]*?(?=\n\n|$)/gi, '');
+    // Strip raw HTML-like bracketed footnote tags like <[1]>, <[2]>, <[3]>
+    cleaned = cleaned.replace(/<\s*\[\s*\d+\s*\]\s*>/g, '');
+    // Clean unclickable footnotes like [1], [2] unless they are markdown links [1](http...)
+    cleaned = cleaned.replace(/\s*\[\d+\](?!\()/g, '');
+    return cleaned.trim();
+  };
+
   // Parse markdown links [text](url) into clickable elements
   const parseMarkdownLinks = (text) => {
+    if (!text) return "";
+    const sanitized = cleanThinkingAndFootnotes(text);
     const parts = [];
     const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
     let lastIndex = 0;
     let match;
     
-    while ((match = regex.exec(text)) !== null) {
+    while ((match = regex.exec(sanitized)) !== null) {
       if (match.index > lastIndex) {
-        parts.push(text.substring(lastIndex, match.index));
+        parts.push(sanitized.substring(lastIndex, match.index));
       }
       parts.push(
         <a 
@@ -757,19 +780,19 @@ function App() {
       lastIndex = match.index + match[0].length;
     }
     
-    if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex));
+    if (lastIndex < sanitized.length) {
+      parts.push(sanitized.substring(lastIndex));
     }
     
-    return parts.length > 0 ? parts : [text];
+    return parts.length > 0 ? parts : [sanitized];
   };
 
   // Helper to parse claims and apply dynamic underlines + inline reference icons
   const renderContentWithClaims = (content, claims) => {
     if (!content) return null;
 
-    // Clean up plain unclickable footnotes like [1], [2], [6], [7], etc.
-    const cleanedContent = content.replace(/\s*\[\d+\](?!\()/g, '');
+    const cleanedContent = cleanThinkingAndFootnotes(content);
+    if (!cleanedContent) return null;
     
     // 1. Find all inline citations e.g. [Source: https...] or [Name](https...)
     const citationRegex = /\[Source:\s*(https?:\/\/[^\s\]]+)\]|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;

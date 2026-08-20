@@ -1,7 +1,8 @@
-# pyrefly: ignore [missing-import]
 import httpx
 import re
 import urllib.parse
+import warnings
+warnings.filterwarnings("ignore")
 from concurrent.futures import ThreadPoolExecutor, wait
 # pyrefly: ignore [missing-import]
 from duckduckgo_search import DDGS
@@ -145,7 +146,7 @@ def ddg_search(query: str, max_results: int = 5) -> list[dict]:
     Searches using the duckduckgo-search package with strict timeout.
     """
     try:
-        with DDGS(timeout=3) as ddgs:
+        with DDGS(timeout=1.5) as ddgs:
             ddg_results = list(ddgs.text(query, max_results=max_results))
             results = []
             for item in ddg_results:
@@ -156,8 +157,8 @@ def ddg_search(query: str, max_results: int = 5) -> list[dict]:
                 })
             if results:
                 return results
-    except Exception as e:
-        print(f"DuckDuckGo Search error: {e}")
+    except Exception:
+        pass
     
     return ddg_search_fallback(query, max_results)
 
@@ -171,7 +172,7 @@ def ddg_search_fallback(query: str, max_results: int = 5) -> list[dict]:
     }
     data = {"q": query}
     try:
-        response = httpx.post(url, data=data, headers=headers, timeout=3.0)
+        response = httpx.post(url, data=data, headers=headers, timeout=1.5)
         if response.status_code == 200:
             html = response.text
             links = re.findall(r'<a class="result__url" href="([^"]+)"', html)
@@ -195,8 +196,8 @@ def ddg_search_fallback(query: str, max_results: int = 5) -> list[dict]:
                     "snippet": clean_snippet
                 })
             return results
-    except Exception as e:
-        print(f"DDG HTTP Fallback search error: {e}")
+    except Exception:
+        pass
     return []
 
 def search_whitelist(claim_text: str, max_results: int = 5) -> list[dict]:
@@ -230,7 +231,7 @@ def search_whitelist(claim_text: str, max_results: int = 5) -> list[dict]:
         if settings.GOOGLE_SEARCH_API_KEY and settings.GOOGLE_SEARCH_CX:
             futures.append(executor.submit(google_search, cleaned_query, max_results))
         
-        done, not_done = wait(futures, timeout=3.5)
+        done, not_done = wait(futures, timeout=2.0)
         for future in done:
             try:
                 res_list = future.result()
