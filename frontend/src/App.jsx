@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Play, Shield, RefreshCw, Award, BookOpen, AlertTriangle, 
   CheckCircle, HelpCircle, ChevronRight, History, ArrowLeft, 
@@ -250,6 +250,8 @@ function App() {
   
   // Detail selection state for the sidebar/modal fact-check display
   const [selectedClaim, setSelectedClaim] = useState(null);
+  const [activeRoundTab, setActiveRoundTab] = useState('all'); // 'all', '1', '2', '3', '4', '5', 'verdict'
+  const [claimFilter, setClaimFilter] = useState('all'); // 'all', 'Confirmed', 'Disputed', 'Unverifiable'
   
   // History state
   const [historyList, setHistoryList] = useState([]);
@@ -543,6 +545,8 @@ function App() {
     setScores([]);
     setStances({ stance_a: '', stance_b: '' });
     setSelectedClaim(null);
+    setActiveRoundTab('all');
+    setClaimFilter('all');
     setDebateTopic(topic);
     setDebateMode(mode);
     
@@ -744,6 +748,16 @@ function App() {
     });
   };
 
+  // Helper to extract clean domain name from URL
+  const getDomainFromUrl = (url) => {
+    try {
+      const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+      return parsed.hostname.replace(/^www\./, '');
+    } catch {
+      return url.length > 22 ? url.substring(0, 22) + '...' : url;
+    }
+  };
+
   // Sanitize internal thinking scratchpads, <think> tags, and raw bracket tags
   const cleanThinkingAndFootnotes = (rawText) => {
     if (!rawText) return "";
@@ -771,39 +785,50 @@ function App() {
     return cleaned.trim();
   };
 
-  // Parse markdown links [text](url) into clickable elements
+  // Parse markdown links [text](url), parenthetical URLs (https://...), and bare URLs into clean clickable domain badges
   const parseMarkdownLinks = (text) => {
     if (!text) return "";
     const sanitized = cleanThinkingAndFootnotes(text);
+    
+    // Normalize raw parenthetical URLs like plan(https://reuters.com) -> plan [reuters.com](https://reuters.com)
+    const normalized = sanitized.replace(/(?<=[^\s\[])\((https?:\/\/[^\s)]+)\)/g, ' [$1]($1)')
+                                .replace(/\((https?:\/\/[^\s)]+)\)/g, ' [$1]($1)');
+
     const parts = [];
-    const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)|(https?:\/\/[^\s<>)"]+)/g;
     let lastIndex = 0;
     let match;
     
-    while ((match = regex.exec(sanitized)) !== null) {
+    while ((match = linkRegex.exec(normalized)) !== null) {
       if (match.index > lastIndex) {
-        parts.push(sanitized.substring(lastIndex, match.index));
+        parts.push(normalized.substring(lastIndex, match.index));
       }
+      
+      const isMarkdown = Boolean(match[1]);
+      const rawUrl = isMarkdown ? match[2] : match[3];
+      const linkLabel = isMarkdown ? (match[1].startsWith('http') ? getDomainFromUrl(match[1]) : match[1]) : getDomainFromUrl(rawUrl);
+      
       parts.push(
         <a 
-          key={match.index} 
-          href={match[2]} 
+          key={`link-${match.index}`} 
+          href={rawUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="inline-flex items-center text-brand-accent hover:text-brand-accent/80 font-medium border-b border-brand-accent/30 transition-colors"
+          className="inline-flex items-center space-x-1 px-2 py-0.5 mx-1 rounded-md text-[11px] font-semibold bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-300/60 dark:border-indigo-400/30 hover:bg-indigo-500/20 dark:hover:bg-indigo-500/30 hover:underline transition-all align-baseline cursor-pointer"
+          title={`Open verified source: ${rawUrl}`}
         >
-          {match[1]}
-          <ExternalLink className="h-3 w-3 ml-0.5 flex-shrink-0" />
+          <span>{linkLabel}</span>
+          <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 ml-0.5" />
         </a>
       );
       lastIndex = match.index + match[0].length;
     }
     
-    if (lastIndex < sanitized.length) {
-      parts.push(sanitized.substring(lastIndex));
+    if (lastIndex < normalized.length) {
+      parts.push(normalized.substring(lastIndex));
     }
     
-    return parts.length > 0 ? parts : [sanitized];
+    return parts.length > 0 ? parts : [normalized];
   };
 
   // Helper to parse claims and apply dynamic underlines + inline reference icons
@@ -1588,14 +1613,13 @@ function App() {
           </div>
         )}
 
-        {/* ── ACTIVE DEBATE / TRANSCRIPT STREAM ── */}
+        {/* ── ACTIVE DEBATE / COMMAND CENTER ── */}
         {activeView === 'debate' && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 animate-fade-in">
-            {/* Left Side */}
-            <div className="lg:col-span-3 flex flex-col space-y-4">
-              
-              {/* Back / Cancel Button */}
-              <div className="flex items-center justify-between">
+          <div className="flex flex-col space-y-6 animate-fade-in w-full max-w-7xl mx-auto">
+            
+            {/* 1. Header Control Bar */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/80 dark:border-white/10 p-4 rounded-2xl shadow-lg">
+              <div className="flex items-center space-x-3">
                 <button 
                   onClick={() => {
                     if (status.status === 'idle' || confirm("Cancel active analysis and return home?")) {
@@ -1604,455 +1628,456 @@ function App() {
                       setActiveView('landing');
                     }
                   }}
-                  className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200 hover-lift"
+                  className="flex items-center space-x-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
                 >
-                  <ArrowLeft className="h-3.5 w-3.5 text-slate-400" />
-                  <span>{status.status === 'idle' ? "Back to Home" : "Cancel & Return Home"}</span>
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>{status.status === 'idle' ? "Back to Home" : "Cancel"}</span>
                 </button>
-                
-                {status.status !== 'idle' && (
-                  <span className="flex items-center space-x-2 text-[11px] text-brand-textMuted font-mono bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
-                    <RefreshCw className="h-3 w-3 animate-spin text-brand-accent" />
-                    <span>Processing...</span>
+
+                <div className="h-5 w-[1px] bg-slate-300 dark:bg-white/10"></div>
+
+                <div className="flex items-center space-x-2">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    debateMode === 'factcheck'
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                      : 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30'
+                  }`}>
+                    {debateMode === 'factcheck' ? '🛡️ Factual Deep-Dive' : '⚔️ Debate Arena'}
                   </span>
-                )}
-              </div>
-              
-              {/* Active topic display card */}
-              <div className="glass rounded-2xl p-6 shadow-xl relative overflow-hidden gradient-border">
-                <div className="absolute top-0 right-0 h-48 w-48 bg-brand-accent/5 rounded-full filter blur-3xl pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 h-32 w-32 bg-brand-accentAmber/3 rounded-full filter blur-2xl pointer-events-none"></div>
-                
-                <div className="flex items-center space-x-2 text-xs font-semibold mb-3">
-                  {debateMode === 'factcheck' ? (
-                    <><div className="flex items-center space-x-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full"><div className="h-2 w-2 bg-emerald-400 rounded-full animate-pulse"></div><Search className="h-3.5 w-3.5 text-emerald-400" /><span className="text-emerald-400">FACTUAL DEEP-DIVE</span></div></>
-                  ) : (
-                    <><div className="flex items-center space-x-1.5 bg-brand-accent/10 border border-brand-accent/20 px-3 py-1.5 rounded-full"><div className="h-2 w-2 bg-brand-accent rounded-full animate-pulse"></div><MessageSquare className="h-3.5 w-3.5 text-brand-accent" /><span className="text-brand-accent">ACTIVE DEBATE ROOM</span></div></>
-                  )}
-                </div>
-                <h3 className="text-3xl font-bold font-serif mb-4 leading-snug text-brand-textLight">{debateTopic}</h3>
-                
-                {/* Show stances only for debate mode */}
-                {debateMode === 'debate' && stances.stance_a && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-brand-border/40">
-                    <div className="glass rounded-xl p-4 agent-a-border">
-                      <div className="text-xs text-brand-accent font-semibold mb-1.5 uppercase tracking-wider flex items-center space-x-1.5">
-                        <div className="h-2 w-2 bg-brand-accent rounded-full"></div>
-                        <span>Agent A (Affirmative)</span>
-                      </div>
-                      <p className="text-sm text-slate-300 font-sans">{stances.stance_a}</p>
-                    </div>
-                    <div className="glass rounded-xl p-4 agent-b-border">
-                      <div className="text-xs text-brand-accentAmber font-semibold mb-1.5 uppercase tracking-wider flex items-center space-x-1.5">
-                        <div className="h-2 w-2 bg-brand-accentAmber rounded-full"></div>
-                        <span>Agent B (Negative)</span>
-                      </div>
-                      <p className="text-sm text-slate-300 font-sans">{stances.stance_b}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {turns.length === 0 && status.status !== 'idle' && !error ? (
-                <BattleArenaLoader mode={debateMode} topic={debateTopic} />
-              ) : (
-                <>
-                  {/* ── FACTCHECK MODE LAYOUT ── */}
-                  {debateMode === 'factcheck' && (
-                    <div className="space-y-6">
-                      {/* FOR section */}
-                      {turns.filter(t => t.agent === 'FOR').map(turn => (
-                        <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up" style={{ borderLeft: '3px solid rgba(16, 185, 129, 0.6)' }}>
-                          <div className="flex items-center space-x-2 mb-3">
-                            <div className="bg-emerald-500/15 p-1.5 rounded-lg">
-                              <CheckCircle className="h-4.5 w-4.5 text-emerald-400" />
-                            </div>
-                            <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Supporting Case (FOR)</span>
-                          </div>
-                          {renderContentWithClaims(turn.content, turn.claims)}
-                        </div>
-                      ))}
-
-                      {/* AGAINST section */}
-                      {turns.filter(t => t.agent === 'AGAINST').map(turn => (
-                        <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up" style={{ borderLeft: '3px solid rgba(244, 63, 94, 0.6)' }}>
-                          <div className="flex items-center space-x-2 mb-3">
-                            <div className="bg-rose-500/15 p-1.5 rounded-lg">
-                              <AlertTriangle className="h-4.5 w-4.5 text-rose-400" />
-                            </div>
-                            <span className="text-sm font-bold text-rose-400 uppercase tracking-wider">Opposing Case (AGAINST)</span>
-                          </div>
-                          {renderContentWithClaims(turn.content, turn.claims)}
-                        </div>
-                      ))}
-
-                      {/* VERDICT section */}
-                      {turns.filter(t => t.agent === 'VERDICT').map(turn => (
-                        <div key={turn.id} className="glass rounded-2xl p-6 shadow-md animate-slide-up glow-accent" style={{ borderLeft: '3px solid rgba(99, 102, 241, 0.6)' }}>
-                          <div className="flex items-center space-x-2 mb-3">
-                            <div className="bg-indigo-500/15 p-1.5 rounded-lg">
-                              <Award className="h-4.5 w-4.5 text-indigo-400" />
-                            </div>
-                            <span className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Balanced Verdict</span>
-                          </div>
-                          {renderContentWithClaims(turn.content, turn.claims)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* ── DEBATE MODE LAYOUT ── */}
-                  {debateMode === 'debate' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[450px]">
-                      {/* Agent A Column */}
-                      <div className="flex flex-col space-y-4">
-                        <div className="flex items-center space-x-2.5 px-4 py-2 bg-brand-accent/10 border border-brand-accent/25 rounded-full self-start glow-accent">
-                          <div className="h-2.5 w-2.5 bg-brand-accent rounded-full animate-pulse"></div>
-                          <span className="text-xs font-bold text-slate-100 tracking-wider">AGENT A</span>
-                          <span className="text-[10px] text-brand-accent font-mono">T:0.6</span>
-                        </div>
-
-                        {turns
-                          .filter((t) => t.agent === 'Agent A')
-                          .map((turn) => (
-                            <div 
-                              key={turn.id} 
-                              className="glass rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-slide-up agent-a-border hover-lift transition-all"
-                            >
-                              <div className="flex items-center justify-between text-[11px] text-brand-textMuted border-b border-brand-border/40 pb-2">
-                                <span className="font-semibold tracking-wider font-sans uppercase flex items-center space-x-1.5">
-                                  <span className="bg-brand-accent/15 text-brand-accent px-2 py-0.5 rounded-md text-[10px] font-bold">R{turn.round_number}</span>
-                                  <span>{turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'}</span>
-                                </span>
-                              </div>
-                              {renderContentWithClaims(turn.content, turn.claims)}
-                            </div>
-                          ))}
-
-                        {status.agent === 'Agent A' && (
-                          <div className="glass border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
-                            <div className="bg-brand-accent/10 p-3 rounded-full text-brand-accent animate-pulse-glow">
-                              <RefreshCw className="h-5 w-5 animate-spin" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-300">
-                                {status.status === 'writing' ? "Agent A is formulating statement..." : "Fact-checking Agent A's claims..."}
-                              </p>
-                              <span className="text-xs text-brand-textMuted font-sans">
-                                {status.status === 'writing' ? "Citing verified sources inline" : "Verifying claims against whitelist domains..."}
-                              </span>
-                            </div>
-                            {/* Skeleton preview */}
-                            <div className="w-full space-y-2 mt-2">
-                              <div className="skeleton h-3 w-full rounded"></div>
-                              <div className="skeleton h-3 w-4/5 rounded"></div>
-                              <div className="skeleton h-3 w-3/5 rounded"></div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Agent B Column */}
-                      <div className="flex flex-col space-y-4">
-                        <div className="flex items-center space-x-2.5 px-4 py-2 bg-brand-accentAmber/10 border border-brand-accentAmber/25 rounded-full self-start glow-amber">
-                          <div className="h-2.5 w-2.5 bg-brand-accentAmber rounded-full animate-pulse"></div>
-                          <span className="text-xs font-bold text-slate-100 tracking-wider">AGENT B</span>
-                          <span className="text-[10px] text-brand-accentAmber font-mono">T:0.8</span>
-                        </div>
-
-                        {turns
-                          .filter((t) => t.agent === 'Agent B')
-                          .map((turn) => (
-                            <div 
-                              key={turn.id} 
-                              className="glass rounded-2xl p-5 shadow-md flex flex-col space-y-3 animate-slide-up agent-b-border hover-lift transition-all"
-                            >
-                              <div className="flex items-center justify-between text-[11px] text-brand-textMuted border-b border-brand-border/40 pb-2">
-                                <span className="font-semibold tracking-wider font-sans uppercase flex items-center space-x-1.5">
-                                  <span className="bg-brand-accentAmber/15 text-brand-accentAmber px-2 py-0.5 rounded-md text-[10px] font-bold">R{turn.round_number}</span>
-                                  <span>{turn.round_number === 1 ? 'Opening' : turn.round_number === 5 ? 'Closing' : 'Rebuttal'}</span>
-                                </span>
-                              </div>
-                              {renderContentWithClaims(turn.content, turn.claims)}
-                            </div>
-                          ))}
-
-                        {status.agent === 'Agent B' && (
-                          <div className="glass border-dashed rounded-2xl p-6 flex flex-col items-center justify-center space-y-3 text-center">
-                            <div className="bg-brand-accentAmber/10 p-3 rounded-full text-brand-accentAmber animate-pulse-glow">
-                              <RefreshCw className="h-5 w-5 animate-spin" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-300">
-                                {status.status === 'writing' ? "Agent B is formulating statement..." : "Fact-checking Agent B's claims..."}
-                              </p>
-                              <span className="text-xs text-brand-textMuted font-sans">
-                                {status.status === 'writing' ? "Analyzing opponent arguments and citing sources" : "Verifying claims against whitelist domains..."}
-                              </span>
-                            </div>
-                            <div className="w-full space-y-2 mt-2">
-                              <div className="skeleton h-3 w-full rounded"></div>
-                              <div className="skeleton h-3 w-4/5 rounded"></div>
-                              <div className="skeleton h-3 w-3/5 rounded"></div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              <div ref={turnsEndRef} />
-
-              {/* Status display for analysis / judging */}
-              {(status.agent === 'Judge' || status.agent === 'Analyst' || status.agent === 'FOR' || status.agent === 'AGAINST' || status.agent === 'VERDICT') && (
-                <div className="glass rounded-2xl p-8 flex flex-col items-center justify-center text-center space-y-4 shadow-xl glow-accent">
-                  <div className="bg-indigo-500/10 border border-indigo-500/30 p-4 rounded-2xl text-indigo-400 animate-pulse-glow">
-                    {debateMode === 'factcheck' ? <Search className="h-8 w-8" /> : <Award className="h-8 w-8" />}
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold font-serif text-slate-200">
-                      {debateMode === 'factcheck' 
-                        ? `Analyzing: ${status.agent} case...`
-                        : 'The Judge Agent is evaluating the debate...'
-                      }
-                    </h4>
-                    <p className="text-sm text-brand-textMuted max-w-md mx-auto font-sans mt-2">
-                      {debateMode === 'factcheck'
-                        ? 'Researching sources, extracting factual claims, and verifying each against the trusted domain whitelist.'
-                        : 'Running double-blind grading with swapped labels to remove position bias. Scoring logic, evidence quality, and rebuttal effectiveness.'
-                      }
-                    </p>
-                  </div>
-                  {/* Progress skeletons */}
-                  <div className="w-full max-w-sm space-y-2 mt-2">
-                    <div className="skeleton h-2 w-full rounded-full"></div>
-                    <div className="skeleton h-2 w-3/4 rounded-full"></div>
-                  </div>
-                </div>
-              )}
-
-              {/* Error Callout */}
-              {error && (
-                <div className="bg-rose-950/40 border border-rose-500/30 rounded-2xl p-5 flex items-start space-x-3.5 text-rose-200 animate-scale-in">
-                  <AlertTriangle className="h-6 w-6 text-rose-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h5 className="font-bold text-sm">Analysis Engine Interrupted</h5>
-                    <p className="text-xs text-rose-300/90 font-sans mt-1 leading-relaxed">{error}</p>
-                    <button 
-                      onClick={() => handleStartDebate()}
-                      className="mt-3 bg-rose-500 hover:bg-rose-600 text-brand-dark px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Scorecard Panel (Debate mode only) */}
-              {debateMode === 'debate' && scores && scores.length > 0 && (
-                <div className="glass rounded-2xl p-6 shadow-2xl space-y-6 animate-scale-in gradient-border glow-accent">
-                  <div className="flex items-center space-x-2 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
-                    <Award className="h-4 w-4" />
-                    <span>Official Scorecard</span>
-                  </div>
                   
-                  <h4 className="text-2xl font-bold font-serif gradient-text">Judge's Final Verdict</h4>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-brand-border/40">
-                    {scores.map((score) => {
-                      const isA = score.agent === 'Agent A';
-                      const winner = getWinner(scores);
-                      const isWinner = score.agent === winner;
-                      return (
-                        <div key={score.agent} className={`p-5 rounded-xl border relative overflow-hidden ${
-                          isA 
-                            ? 'border-brand-accent/25 bg-brand-accent/5' 
-                            : 'border-brand-accentAmber/25 bg-brand-accentAmber/5'
-                        } ${isWinner ? (isA ? 'glow-accent' : 'glow-amber') : ''} flex flex-col space-y-4`}>
-                          {/* Winner badge */}
-                          {isWinner && winner !== 'Tie' && (
-                            <div className="absolute top-3 right-3">
-                              <Crown className={`h-5 w-5 ${isA ? 'text-brand-accent' : 'text-brand-accentAmber'} animate-float`} />
-                            </div>
-                          )}
-                          
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold font-serif text-lg text-slate-200 flex items-center space-x-2">
-                              <span>{score.agent}</span>
-                              {isWinner && winner !== 'Tie' && (
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isA ? 'bg-brand-accent/20 text-brand-accent' : 'bg-brand-accentAmber/20 text-brand-accentAmber'}`}>WINNER</span>
-                              )}
-                            </span>
-                            <div className="flex items-baseline space-x-1">
-                              <span className="text-3xl font-extrabold text-white">{score.total}</span>
-                              <span className="text-xs text-slate-400">/ 10</span>
-                            </div>
-                          </div>
-
-                          <div className="space-y-3 text-sm">
-                            {[
-                              { label: 'Logic Validity', key: 'logic' },
-                              { label: 'Evidence Quality', key: 'evidence' },
-                              { label: 'Rebuttal Effectiveness', key: 'rebuttal' }
-                            ].map(({ label, key }) => (
-                              <div key={key}>
-                                <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-                                  <span>{label}</span>
-                                  <span className="font-bold text-slate-200">{score[key]}/10</span>
-                                </div>
-                                <div className="h-2.5 w-full bg-brand-dark/60 rounded-full overflow-hidden">
-                                  <div 
-                                    className={`h-full rounded-full score-bar-fill ${isA ? 'bg-brand-accent' : 'bg-brand-accentAmber'}`} 
-                                    style={{ width: scoreBarsVisible ? `${score[key] * 10}%` : '0%' }}
-                                  ></div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="glass p-4 rounded-lg text-xs text-slate-300 font-sans leading-relaxed">
-                            <strong className="block text-brand-textLight mb-1.5 font-serif text-[13px]">Judge Reasoning:</strong>
-                            {score.judge_reasoning}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  {status.status !== 'idle' ? (
+                    <span className="flex items-center space-x-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span>{status.status === 'writing' ? `${status.agent} speaking...` : 'Evaluating claims...'}</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center space-x-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Completed</span>
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
 
-              {/* Factcheck completion banner */}
-              {debateMode === 'factcheck' && status.status === 'idle' && turns.length > 0 && !error && (
-                <div className="glass rounded-2xl p-6 text-center animate-scale-in glow-emerald" style={{ borderLeft: '3px solid rgba(16, 185, 129, 0.6)' }}>
-                  <div className="flex items-center justify-center space-x-2 text-emerald-400 mb-2">
-                    <CheckCircle className="h-5 w-5" />
-                    <span className="text-sm font-bold uppercase tracking-wider">Analysis Complete</span>
+              {/* Stance Indicator */}
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+                Focus: <strong className="text-slate-800 dark:text-slate-200 capitalize">{stancePreference}</strong>
+              </div>
+            </div>
+
+            {/* 2. Topic Display Card */}
+            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-blue-200 dark:border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1.5 flex items-center space-x-2">
+                <Target className="h-3.5 w-3.5" />
+                <span>Central Motion / Query</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold font-sans text-slate-900 dark:text-white leading-tight">
+                {debateTopic}
+              </h2>
+
+              {/* Stances Matrix */}
+              {debateMode === 'debate' && stances.stance_a && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-slate-200 dark:border-white/10">
+                  <div className="bg-indigo-50/70 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-500/30 rounded-xl p-4">
+                    <div className="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider mb-1 flex items-center space-x-1.5">
+                      <Zap className="h-3.5 w-3.5" />
+                      <span>Agent A (Affirmative)</span>
+                    </div>
+                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">{stances.stance_a}</p>
                   </div>
-                  <p className="text-xs text-brand-textMuted font-sans">
-                    All factual claims have been extracted and verified against the trusted domain whitelist. Click any underlined claim to inspect its verification details.
-                  </p>
+                  <div className="bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/30 rounded-xl p-4">
+                    <div className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center space-x-1.5">
+                      <Shield className="h-3.5 w-3.5" />
+                      <span>Agent B (Negative)</span>
+                    </div>
+                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">{stances.stance_b}</p>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Right Side Column: Claims Inspection Panel */}
-            <div className="lg:col-span-1 flex flex-col space-y-6">
-              <div className="glass-strong rounded-2xl p-5 shadow-xl flex flex-col space-y-4 sticky top-24">
-                <div className="flex items-center justify-between text-brand-textMuted border-b border-brand-border/40 pb-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="p-1.5 rounded-lg flex items-center justify-center">
-                      <img src={logo} className="h-4 w-4 object-contain" alt="Logo" />
-                    </div>
-                    <h4 className="text-sm font-bold tracking-wider uppercase font-sans">
-                      {selectedClaim?.ref_number ? `Reference [${selectedClaim.ref_number}]` : "Fact-Checker Log"}
-                    </h4>
-                  </div>
-                  {selectedClaim && (
-                    <button 
-                      onClick={() => setSelectedClaim(null)} 
-                      className="text-xs hover:text-white text-slate-500 font-semibold transition-colors bg-brand-border/30 px-2 py-1 rounded-md"
+            {/* 3. Round Selector Tabs (Concept 3 Command Center) */}
+            {debateMode === 'debate' && turns.length > 0 && (
+              <div className="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  onClick={() => setActiveRoundTab('all')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    activeRoundTab === 'all'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'bg-white/70 dark:bg-slate-800/70 border border-blue-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800'
+                  }`}
+                >
+                  🌐 All Rounds
+                </button>
+                
+                {[1, 2, 3, 4, 5].map((rnd) => {
+                  const hasTurns = turns.some(t => t.round_number === rnd);
+                  if (!hasTurns && status.status === 'idle') return null;
+                  const label = rnd === 1 ? 'R1: Opening' : rnd === 5 ? 'R5: Closing' : `R${rnd}: Rebuttal`;
+                  return (
+                    <button
+                      key={rnd}
+                      onClick={() => setActiveRoundTab(String(rnd))}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                        activeRoundTab === String(rnd)
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-white/70 dark:bg-slate-800/70 border border-blue-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800'
+                      }`}
                     >
-                      Clear
+                      {label}
                     </button>
-                  )}
-                </div>
+                  );
+                })}
 
-                {!selectedClaim ? (
-                  <div className="py-12 px-4 text-center flex flex-col items-center justify-center space-y-3">
-                    <div className="p-4 rounded-2xl animate-pulse-glow">
-                      <img src={logo} className="h-10 w-10 object-contain opacity-50" alt="Logo" />
+                {scores && scores.length > 0 && (
+                  <button
+                    onClick={() => setActiveRoundTab('verdict')}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
+                      activeRoundTab === 'verdict'
+                        ? 'bg-amber-600 text-white shadow-md'
+                        : 'bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Award className="h-3.5 w-3.5" />
+                    <span>Official Scorecard</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 4. Main Arena Body (3-Column Layout: Speeches + Right Fact Radar) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Left & Center 2 Columns: Speech Decks */}
+              <div className="lg:col-span-2 space-y-6">
+                
+                {turns.length === 0 && status.status !== 'idle' && !error ? (
+                  <BattleArenaLoader mode={debateMode} topic={debateTopic} />
+                ) : (
+                  <>
+                    {/* ── FACTCHECK MODE DECK ── */}
+                    {debateMode === 'factcheck' && (
+                      <div className="space-y-5">
+                        {turns.filter(t => t.agent === 'FOR').map(turn => (
+                          <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-emerald-300/60 dark:border-emerald-500/30 rounded-2xl p-6 shadow-xl space-y-3">
+                            <div className="flex items-center space-x-2 text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle className="h-5 w-5" />
+                              <span className="text-sm font-bold uppercase tracking-wider">Supporting Evidence (FOR)</span>
+                            </div>
+                            <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                              {renderContentWithClaims(turn.content, turn.claims)}
+                            </div>
+                          </div>
+                        ))}
+
+                        {turns.filter(t => t.agent === 'AGAINST').map(turn => (
+                          <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-rose-300/60 dark:border-rose-500/30 rounded-2xl p-6 shadow-xl space-y-3">
+                            <div className="flex items-center space-x-2 text-rose-700 dark:text-rose-400">
+                              <AlertTriangle className="h-5 w-5" />
+                              <span className="text-sm font-bold uppercase tracking-wider">Counter Arguments (AGAINST)</span>
+                            </div>
+                            <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                              {renderContentWithClaims(turn.content, turn.claims)}
+                            </div>
+                          </div>
+                        ))}
+
+                        {turns.filter(t => t.agent === 'VERDICT').map(turn => (
+                          <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-indigo-300/60 dark:border-indigo-500/30 rounded-2xl p-6 shadow-xl space-y-3">
+                            <div className="flex items-center space-x-2 text-indigo-700 dark:text-indigo-400">
+                              <Award className="h-5 w-5" />
+                              <span className="text-sm font-bold uppercase tracking-wider">Balanced Factual Synthesis</span>
+                            </div>
+                            <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                              {renderContentWithClaims(turn.content, turn.claims)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* ── DEBATE MODE DECK (Filtered by activeRoundTab) ── */}
+                    {debateMode === 'debate' && activeRoundTab !== 'verdict' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        
+                        {/* Agent A Column */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-300/70 dark:border-indigo-500/30 px-4 py-2.5 rounded-xl">
+                            <div className="flex items-center space-x-2">
+                              <div className="h-2.5 w-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></div>
+                              <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">Agent A (Affirmative)</span>
+                            </div>
+                            <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">Temp: 0.6</span>
+                          </div>
+
+                          {turns
+                            .filter(t => t.agent === 'Agent A')
+                            .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
+                            .map((turn) => (
+                              <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-indigo-200 dark:border-indigo-500/30 rounded-2xl p-5 shadow-lg space-y-3">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10 text-xs">
+                                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                                    Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : 'Rebuttal'}
+                                  </span>
+                                </div>
+                                <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                                  {renderContentWithClaims(turn.content, turn.claims)}
+                                </div>
+                              </div>
+                            ))}
+
+                          {status.agent === 'Agent A' && (
+                            <div className="bg-white/80 dark:bg-slate-900/80 border border-dashed border-indigo-400 rounded-2xl p-6 text-center space-y-3">
+                              <RefreshCw className="h-6 w-6 animate-spin text-indigo-600 dark:text-indigo-400 mx-auto" />
+                              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Agent A is articulating arguments &amp; citing sources...
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Agent B Column */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between bg-amber-500/10 dark:bg-amber-950/30 border border-amber-300/70 dark:border-amber-500/30 px-4 py-2.5 rounded-xl">
+                            <div className="flex items-center space-x-2">
+                              <div className="h-2.5 w-2.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse"></div>
+                              <span className="text-xs font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wider">Agent B (Negative)</span>
+                            </div>
+                            <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold">Temp: 0.8</span>
+                          </div>
+
+                          {turns
+                            .filter(t => t.agent === 'Agent B')
+                            .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
+                            .map((turn) => (
+                              <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-amber-200 dark:border-amber-500/30 rounded-2xl p-5 shadow-lg space-y-3">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10 text-xs">
+                                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                                    Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : 'Rebuttal'}
+                                  </span>
+                                </div>
+                                <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                                  {renderContentWithClaims(turn.content, turn.claims)}
+                                </div>
+                              </div>
+                            ))}
+
+                          {status.agent === 'Agent B' && (
+                            <div className="bg-white/80 dark:bg-slate-900/80 border border-dashed border-amber-400 rounded-2xl p-6 text-center space-y-3">
+                              <RefreshCw className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400 mx-auto" />
+                              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Agent B is analyzing claims &amp; executing counter-arguments...
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Scorecard Panel */}
+                {debateMode === 'debate' && scores && scores.length > 0 && (activeRoundTab === 'all' || activeRoundTab === 'verdict') && (
+                  <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-amber-300 dark:border-amber-500/30 rounded-2xl p-6 shadow-2xl space-y-6">
+                    <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
+                      <Award className="h-5 w-5" />
+                      <span>Official Double-Blind Judgment Scorecard</span>
                     </div>
-                    <div>
-                      <h5 className="font-serif text-slate-300 font-semibold">Inspect Claims</h5>
-                      <p className="text-xs text-brand-textMuted font-sans mt-1 leading-relaxed">
-                        Factual statements are underlined and citations are numbered. Click any element to inspect its source verification.
-                      </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {scores.map((score) => {
+                        const isA = score.agent === 'Agent A';
+                        const winner = getWinner(scores);
+                        const isWinner = score.agent === winner;
+                        return (
+                          <div key={score.agent} className={`p-5 rounded-xl border relative ${
+                            isA 
+                              ? 'border-indigo-300 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-950/20' 
+                              : 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20'
+                          } space-y-4`}>
+                            {isWinner && winner !== 'Tie' && (
+                              <div className="absolute top-4 right-4">
+                                <Crown className={`h-5 w-5 ${isA ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`} />
+                              </div>
+                            )}
+
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-lg text-slate-900 dark:text-white flex items-center space-x-2">
+                                <span>{score.agent}</span>
+                                {isWinner && winner !== 'Tie' && (
+                                  <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">WINNER</span>
+                                )}
+                              </span>
+                              <span className="text-2xl font-extrabold text-slate-900 dark:text-white">{score.total} <span className="text-xs text-slate-500">/ 10</span></span>
+                            </div>
+
+                            <div className="space-y-2.5 text-xs">
+                              {[
+                                { label: 'Logic Validity', key: 'logic' },
+                                { label: 'Evidence Quality', key: 'evidence' },
+                                { label: 'Rebuttal Strength', key: 'rebuttal' }
+                              ].map(({ label, key }) => (
+                                <div key={key}>
+                                  <div className="flex justify-between text-slate-600 dark:text-slate-400 mb-1 font-semibold">
+                                    <span>{label}</span>
+                                    <span className="text-slate-900 dark:text-white font-bold">{score[key]}/10</span>
+                                  </div>
+                                  <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full rounded-full ${isA ? 'bg-indigo-600' : 'bg-amber-600'}`}
+                                      style={{ width: `${score[key] * 10}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="p-3 bg-white/70 dark:bg-slate-800/70 border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
+                              <strong className="block text-slate-900 dark:text-white mb-1">Judge Reasoning:</strong>
+                              {score.judge_reasoning}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                ) : (
-                  <div className="flex flex-col space-y-4 animate-scale-in">
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                )}
+
+              </div>
+
+              {/* Right 1 Column: Live Fact-Checker Command Matrix */}
+              <div className="lg:col-span-1 space-y-4">
+                <div className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-blue-200 dark:border-white/10 rounded-2xl p-5 shadow-xl sticky top-20 space-y-4">
+                  
+                  {/* Radar Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
+                    <div className="flex items-center space-x-2">
+                      <Shield className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Fact-Checker Radar
+                      </h4>
+                    </div>
+                    {selectedClaim && (
+                      <button 
+                        onClick={() => setSelectedClaim(null)} 
+                        className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                      >
+                        &larr; View All
+                      </button>
+                    )}
+                  </div>
+
+                  {/* If A Specific Claim Is Inspected */}
+                  {selectedClaim ? (
+                    <div className="space-y-4 animate-scale-in">
+                      <div className="flex items-center justify-between">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                           selectedClaim.verdict === 'Confirmed' 
-                            ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' 
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' 
                             : selectedClaim.verdict === 'Disputed' 
-                            ? 'bg-amber-950/60 text-amber-400 border border-amber-500/30' 
-                            : 'bg-slate-800 text-slate-400 border border-slate-700'
+                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' 
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400'
                         }`}>
-                          {selectedClaim.verdict === 'Confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                          {selectedClaim.verdict === 'Disputed' && <AlertTriangle className="h-3 w-3 mr-1" />}
-                          {selectedClaim.verdict === 'Unverifiable' && <HelpCircle className="h-3 w-3 mr-1" />}
-                          <span>{selectedClaim.verdict}</span>
+                          {selectedClaim.verdict === 'Confirmed' ? '✓ Confirmed' : selectedClaim.verdict === 'Disputed' ? '⚠️ Disputed' : '? Unverifiable'}
                         </span>
-                        
+
                         {selectedClaim.source_tier && (
-                          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded">
-                            Tier {selectedClaim.source_tier}
+                          <span className="text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                            Tier {selectedClaim.source_tier} Source
                           </span>
                         )}
                       </div>
-                      
-                      <h5 className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans mb-1">FACTUAL CLAIM:</h5>
-                      <p className="text-sm font-sans font-medium text-slate-200 leading-relaxed glass p-3 rounded-lg">
-                        "{selectedClaim.claim_text}"
-                      </p>
-                    </div>
 
-                    <div className="border-t border-brand-border/40 pt-4 flex flex-col space-y-3">
-                      <div>
-                        <span className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans block mb-1">Verification Reasoning:</span>
-                        <p className="text-xs text-slate-300 font-sans leading-relaxed">
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-slate-500">Statement Tested:</span>
+                        <p className="text-xs font-medium text-slate-900 dark:text-white p-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl leading-relaxed">
+                          "{selectedClaim.claim_text}"
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-slate-500">Audit Verification:</span>
+                        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
                           {selectedClaim.reasoning}
                         </p>
                       </div>
 
-                      {selectedClaim.source_url ? (
-                        <div>
-                          <span className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans block mb-1">Verified Source:</span>
+                      {selectedClaim.source_url && (
+                        <div className="pt-2 border-t border-slate-200 dark:border-white/10 space-y-1.5">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">Verified Citation Link:</span>
                           <a 
                             href={selectedClaim.source_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="inline-flex items-center space-x-1.5 text-brand-accent hover:text-brand-accent/80 text-xs font-medium border-b border-brand-accent/30 pb-0.5 break-all leading-relaxed"
+                            className="inline-flex items-center space-x-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline break-all"
                           >
-                            <span>{(() => { try { return new URL(selectedClaim.source_url).hostname; } catch { return selectedClaim.source_url; } })()}</span>
-                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
-                          </a>
-                          
-                          <span className="block text-[10px] text-brand-textMuted font-sans mt-2">
-                            {selectedClaim.source_tier === 1 && "✓ Tier 1 (Wire service or official public record)"}
-                            {selectedClaim.source_tier === 2 && "✓ Tier 2 (Established national/international newspaper)"}
-                            {selectedClaim.source_tier === 3 && "✓ Tier 3 (Think tank, academic, or advocacy organization)"}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="glass p-3 rounded-lg text-[10px] text-brand-textMuted font-sans leading-relaxed">
-                          No source link verified. Under source-integrity rules, claims without a verifiable whitelisted domain citation must be labeled Unverifiable.
-                        </div>
-                      )}
-
-                      {selectedClaim.cited_url && (
-                        <div>
-                          <span className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans block mb-1">Agent's Cited Source:</span>
-                          <a 
-                            href={selectedClaim.cited_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center space-x-1.5 text-slate-400 hover:text-slate-200 text-xs font-medium break-all leading-relaxed"
-                          >
-                            <span>{(() => { try { return new URL(selectedClaim.cited_url).hostname; } catch { return selectedClaim.cited_url; } })()}</span>
+                            <span>{getDomainFromUrl(selectedClaim.source_url)}</span>
                             <ExternalLink className="h-3 w-3 flex-shrink-0" />
                           </a>
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    /* Live List of All Claims */
+                    <div className="space-y-3">
+                      {/* Filter Pills */}
+                      <div className="flex items-center space-x-1.5 pb-2">
+                        {['all', 'Confirmed', 'Disputed'].map((f) => (
+                          <button
+                            key={f}
+                            onClick={() => setClaimFilter(f)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                              claimFilter === f
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                            }`}
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Claims List */}
+                      {turns.flatMap(t => t.claims || []).length === 0 ? (
+                        <div className="py-8 text-center text-xs text-slate-500 space-y-2">
+                          <Search className="h-6 w-6 mx-auto opacity-40 animate-pulse" />
+                          <p>Claims will appear here as statements stream in...</p>
+                        </div>
+                      ) : (
+                        <div className="max-h-[380px] overflow-y-auto space-y-2 pr-1">
+                          {turns
+                            .flatMap(t => t.claims || [])
+                            .filter(c => claimFilter === 'all' || c.verdict === claimFilter)
+                            .map((c, i) => (
+                              <div
+                                key={`claim-card-${i}`}
+                                onClick={() => setSelectedClaim(c)}
+                                className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer space-y-1.5"
+                              >
+                                <div className="flex items-center justify-between text-[10px]">
+                                  <span className={`px-1.5 py-0.5 rounded font-bold ${
+                                    c.verdict === 'Confirmed' ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/15' : 'text-amber-700 dark:text-amber-400 bg-amber-500/15'
+                                  }`}>
+                                    {c.verdict === 'Confirmed' ? '✓ Confirmed' : '⚠️ Disputed'}
+                                  </span>
+                                  {c.source_tier && <span className="text-slate-500 font-mono">Tier {c.source_tier}</span>}
+                                </div>
+                                <p className="text-xs text-slate-800 dark:text-slate-200 line-clamp-2 font-sans font-medium">
+                                  "{c.claim_text}"
+                                </p>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                </div>
               </div>
+
             </div>
+
           </div>
         )}
 
@@ -2198,8 +2223,9 @@ function App() {
         )}
       </main>
 
-      {/* ── ACETERNITY-STYLE MULTI-COLUMN MEGA FOOTER ── */}
-      <footer id="site-footer" className="relative z-10 border-t border-brand-border/30 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-xl pt-14 pb-8 px-6 sm:px-12 mt-16 font-sans">
+      {/* ── ACETERNITY-STYLE MULTI-COLUMN MEGA FOOTER (Only shown on Landing View) ── */}
+      {activeView === 'landing' && (
+        <footer id="site-footer" className="relative z-10 border-t border-brand-border/30 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-xl pt-14 pb-8 px-6 sm:px-12 mt-16 font-sans">
         <div className="max-w-7xl mx-auto">
           
           {/* Top Brand Section */}
@@ -2358,6 +2384,7 @@ function App() {
 
         </div>
       </footer>
+      )}
 
       {/* Mobile Claim Details Drawer / Modal */}
       {selectedClaim && (
