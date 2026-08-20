@@ -201,14 +201,18 @@ export default function CloudShader({
   const canvasRef = useRef(null);
   const paramsRef = useRef({ speed, count, cloudColor, skyTopColor, skyBottomColor, paused });
 
+  // Keep params ref up to date on every render without re-mounting WebGL
   paramsRef.current = { speed, count, cloudColor, skyTopColor, skyBottomColor, paused };
+
+  const animFrameRef = useRef(null);
+  const isLoopingRef = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const gl = canvas.getContext('webgl', {
-      alpha: false,
+      alpha: true,
       antialias: false,
       premultipliedAlpha: false,
       powerPreference: 'high-performance',
@@ -247,38 +251,43 @@ export default function CloudShader({
       skyBottom: gl.getUniformLocation(program, 'u_skyBottom'),
     };
 
-    let frame = 0;
     let running = true;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const resize = () => {
-      // Clamp DPR to 1.25 to prevent 4K/Retina GPU fill-rate exhaustion
+      if (!canvas || !gl) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+      const width = canvas.clientWidth || window.innerWidth;
+      const height = canvas.clientHeight || window.innerHeight;
       const w = Math.max(1, Math.floor(width * dpr));
       const h = Math.max(1, Math.floor(height * dpr));
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-      }
+      
+      canvas.width = w;
+      canvas.height = h;
+      
       gl.viewport(0, 0, w, h);
       gl.uniform2f(loc.res, w, h);
     };
 
-    const observer = new ResizeObserver(resize);
+    const observer = new ResizeObserver(() => {
+      resize();
+      renderSingleFrame(lastElapsedRef.current);
+    });
     observer.observe(canvas);
     resize();
 
     const start = performance.now();
-    let lastRenderedTime = 0;
+    const lastElapsedRef = { current: 0.5 };
 
     const renderSingleFrame = (t) => {
+      if (!gl || !program) return;
       const p = paramsRef.current;
       const cloud = parseHex(p.cloudColor);
       const skyTop = parseHex(p.skyTopColor);
       const skyBottom = parseHex(p.skyBottomColor);
 
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.uniform2f(loc.res, canvas.width, canvas.height);
       gl.uniform1f(loc.time, t);
       gl.uniform1f(loc.count, Math.min(6, Math.max(1, p.count)));
       gl.uniform3f(loc.cloud, cloud[0], cloud[1], cloud[2]);
@@ -289,36 +298,83 @@ export default function CloudShader({
 
     const draw = (now) => {
       if (!running) return;
-      const p = paramsRef.current;
       
-      if (p.paused) {
-        // If paused, render once at the last timestamp and do not loop
-        renderSingleFrame(lastRenderedTime);
+      if (paramsRef.current.paused) {
+        // Paused: Render current snapshot once and sleep
+        isLoopingRef.current = false;
+        renderSingleFrame(lastElapsedRef.current);
         return;
       }
 
-      const elapsed = reduceMotion ? 0 : ((now - start) / 1000) * p.speed;
-      lastRenderedTime = elapsed;
+      const elapsed = reduceMotion ? 0 : ((now - start) / 1000) * paramsRef.current.speed;
+      lastElapsedRef.current = elapsed;
       renderSingleFrame(elapsed);
-      frame = requestAnimationFrame(draw);
+      animFrameRef.current = requestAnimationFrame(draw);
     };
 
-    // If paused initially or switched, render frame
-    if (paramsRef.current.paused) {
-      renderSingleFrame(0.5);
-    } else {
-      frame = requestAnimationFrame(draw);
+    // Trigger initial render
+    renderSingleFrame(0.5);
+
+    if (!paused) {
+      isLoopingRef.current = true;
+      animFrameRef.current = requestAnimationFrame(draw);
     }
 
     return () => {
       running = false;
-      cancelAnimationFrame(frame);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       observer.disconnect();
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
       gl.deleteShader(vert);
       gl.deleteShader(frag);
     };
+  }, []);
+
+  // React to paused prop changes without re-mounting WebGL context
+  useEffect(() => {
+    if (!paused && !isLoopingRef.current) {
+      isLoopingRef.current = true;
+      const start = performance.now();
+      const drawResume = (now) => {
+        if (paramsRef.current.paused) {
+          isLoopingRef.current = false;
+          return;
+        }
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const gl = canvas.getContext('webgl');
+        if (!gl) return;
+        
+        const p = paramsRef.current;
+        const elapsed = ((now - start) / 1000) * p.speed + 0.5;
+        const cloud = parseHex(p.cloudColor);
+        const skyTop = parseHex(p.skyTopColor);
+        const skyBottom = parseHex(p.skyBottomColor);
+
+        const loc = {
+          res: gl.getUniformLocation(gl.getParameter(gl.CURRENT_PROGRAM), 'u_res'),
+          time: gl.getUniformLocation(gl.getParameter(gl.CURRENT_PROGRAM), 'u_time'),
+          count: gl.getUniformLocation(gl.getParameter(gl.CURRENT_PROGRAM), 'u_count'),
+          cloud: gl.getUniformLocation(gl.getParameter(gl.CURRENT_PROGRAM), 'u_cloud'),
+          skyTop: gl.getUniformLocation(gl.getParameter(gl.CURRENT_PROGRAM), 'u_skyTop'),
+          skyBottom: gl.getUniformLocation(gl.getParameter(gl.CURRENT_PROGRAM), 'u_skyBottom'),
+        };
+
+        if (loc.time) {
+          gl.viewport(0, 0, canvas.width, canvas.height);
+          gl.uniform2f(loc.res, canvas.width, canvas.height);
+          gl.uniform1f(loc.time, elapsed);
+          gl.uniform1f(loc.count, Math.min(6, Math.max(1, p.count)));
+          gl.uniform3f(loc.cloud, cloud[0], cloud[1], cloud[2]);
+          gl.uniform3f(loc.skyTop, skyTop[0], skyTop[1], skyTop[2]);
+          gl.uniform3f(loc.skyBottom, skyBottom[0], skyBottom[1], skyBottom[2]);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+        animFrameRef.current = requestAnimationFrame(drawResume);
+      };
+      animFrameRef.current = requestAnimationFrame(drawResume);
+    }
   }, [paused]);
 
   return (
@@ -331,6 +387,7 @@ export default function CloudShader({
         height: '100%',
         pointerEvents: 'none',
         display: 'block',
+        background: 'linear-gradient(to bottom, #3876ba, #8cbfe8)',
       }}
     />
   );

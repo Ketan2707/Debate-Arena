@@ -1102,7 +1102,7 @@ function App() {
   // ─── RENDER ────────────────────────────────────────────────
 
   return (
-    <div className={`min-h-screen bg-brand-dark text-slate-100 flex flex-col antialiased relative${darkMode ? ' dark-mode' : ''}`}>
+    <div className={`min-h-screen ${darkMode ? 'bg-[#060813] dark-mode' : 'bg-gradient-to-b from-[#3876ba] via-[#5a96d8] to-[#8cbfe8]'} text-slate-100 flex flex-col antialiased relative`}>
       {/* Adaptive Background Effects */}
       {!darkMode ? (
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">

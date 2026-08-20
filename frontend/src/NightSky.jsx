@@ -16,6 +16,8 @@ export default function NightSky({
   paused = false,
 }) {
   const canvasRef = useRef(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -60,7 +62,7 @@ export default function NightSky({
     };
 
     const spawnShootingStar = () => {
-      if (!enableShootingStars || paused) return;
+      if (!enableShootingStars || pausedRef.current) return;
       const startX = Math.random() * (width * 0.8) + width * 0.1;
       const startY = Math.random() * (height * 0.4);
       const angle = (Math.PI / 4) + (Math.random() - 0.5) * 0.3; // roughly 45 degrees down-right
@@ -132,7 +134,7 @@ export default function NightSky({
 
       // Draw stars
       for (let star of stars) {
-        if (!paused) {
+        if (!pausedRef.current) {
           star.alpha += star.twinkleSpeed;
           if (star.alpha > 0.95 || star.alpha < 0.2) {
             star.twinkleSpeed = -star.twinkleSpeed;
@@ -152,7 +154,7 @@ export default function NightSky({
         ctx.fill();
       }
 
-      if (!paused && enableShootingStars) {
+      if (!pausedRef.current && enableShootingStars) {
         if (now - lastSpawnTime > nextSpawnDelay) {
           spawnShootingStar();
           lastSpawnTime = now;
@@ -204,12 +206,12 @@ export default function NightSky({
     const render = (now) => {
       if (!isRunning) return;
       renderFrame(now);
-      if (!paused) {
+      if (!pausedRef.current) {
         animationFrameId = requestAnimationFrame(render);
       }
     };
 
-    if (!paused) {
+    if (!pausedRef.current) {
       animationFrameId = requestAnimationFrame(render);
     }
 
@@ -218,13 +220,27 @@ export default function NightSky({
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
     };
-  }, [starCount, speed, enableShootingStars, paused]);
+  }, [starCount, speed, enableShootingStars]);
+
+  // Handle paused toggle
+  useEffect(() => {
+    if (!paused && canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        let frameId;
+        const resumeLoop = (now) => {
+          if (pausedRef.current) return;
+          // Loop continues via render
+        };
+      }
+    }
+  }, [paused]);
 
   return (
     <canvas
       ref={canvasRef}
       className={`pointer-events-none absolute inset-0 h-full w-full ${className}`}
-      style={{ display: 'block' }}
+      style={{ display: 'block', background: '#060813' }}
     />
   );
 }
