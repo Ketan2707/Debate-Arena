@@ -266,6 +266,8 @@ function App() {
 
   // SSE event source ref
   const eventSourceRef = useRef(null);
+  const streamCompletedRef = useRef(false);
+  const reconnectAttemptsRef = useRef(0);
   const turnsEndRef = useRef(null);
   const bentoGridRef = useRef(null);
 
@@ -560,56 +562,119 @@ function App() {
     }
   };
 
-  // Connect to the SSE stream
+  // Connect to the SSE stream with auto-reconnection and completion tracking
   const connectToStream = (debateId) => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
     
+    streamCompletedRef.current = false;
     const source = new EventSource(`${API_BASE}/api/debates/${debateId}/stream`);
     eventSourceRef.current = source;
     
     source.addEventListener('stances', (e) => {
-      const data = JSON.parse(e.data);
-      setStances(data);
+      try {
+        const data = JSON.parse(e.data);
+        setStances(data);
+      } catch (err) {
+        console.error("Error parsing stances:", err);
+      }
     });
     
     source.addEventListener('status', (e) => {
-      const data = JSON.parse(e.data);
-      setStatus(data);
+      try {
+        const data = JSON.parse(e.data);
+        setStatus(data);
+      } catch (err) {
+        console.error("Error parsing status:", err);
+      }
     });
     
     source.addEventListener('turn', (e) => {
-      const data = JSON.parse(e.data);
-      setTurns((prev) => {
-        if (prev.some((t) => t.id === data.id)) return prev;
-        return [...prev, data];
-      });
+      try {
+        const data = JSON.parse(e.data);
+        setTurns((prev) => {
+          if (prev.some((t) => t.id === data.id)) return prev;
+          return [...prev, data];
+        });
+      } catch (err) {
+        console.error("Error parsing turn:", err);
+      }
     });
     
     source.addEventListener('verdict', (e) => {
-      const data = JSON.parse(e.data);
-      setScores(data.scores || []);
+      try {
+        const data = JSON.parse(e.data);
+        setScores(data.scores || []);
+      } catch (err) {
+        console.error("Error parsing verdict:", err);
+      }
       setStatus({ status: 'idle' });
+      streamCompletedRef.current = true;
+      reconnectAttemptsRef.current = 0;
       source.close();
     });
     
     source.addEventListener('error', (e) => {
+      if (streamCompletedRef.current) return;
       try {
         const data = JSON.parse(e.data);
-        setError(data.error);
+        if (data && data.error) {
+          setError(data.error);
+          setStatus({ status: 'idle' });
+          source.close();
+        }
       } catch {
-        setError("Stream connection lost.");
+        // Non-JSON error frame
       }
-      setStatus({ status: 'idle' });
-      source.close();
     });
     
-    source.onerror = (err) => {
-      console.error("SSE stream error:", err);
-      setError("Network connection lost. Check back in history or refresh.");
-      setStatus({ status: 'idle' });
+    source.onerror = async (err) => {
+      // If stream finished normally via verdict event, close is expected
+      if (streamCompletedRef.current) {
+        source.close();
+        return;
+      }
+      
+      console.warn("SSE connection interrupted. Verifying debate status...", err);
       source.close();
+
+      // Check if the debate actually completed in the backend
+      try {
+        const checkRes = await fetch(`${API_BASE}/api/debates/${debateId}`);
+        if (checkRes.ok) {
+          const detail = await checkRes.json();
+          if (detail.turns && detail.turns.length > 0) {
+            setTurns(detail.turns);
+          }
+          if (detail.status === 'completed') {
+            setScores(detail.scores || []);
+            setStatus({ status: 'idle' });
+            streamCompletedRef.current = true;
+            return;
+          } else if (detail.status === 'failed') {
+            setError("Analysis was interrupted. Click Retry to run again.");
+            setStatus({ status: 'idle' });
+            return;
+          }
+        }
+      } catch (checkErr) {
+        console.warn("Could not check debate status:", checkErr);
+      }
+
+      // Auto-reconnect if still in progress (up to 3 attempts)
+      if (reconnectAttemptsRef.current < 3) {
+        reconnectAttemptsRef.current += 1;
+        console.log(`Auto-reconnecting to stream (attempt ${reconnectAttemptsRef.current}/3)...`);
+        setTimeout(() => {
+          if (!streamCompletedRef.current) {
+            connectToStream(debateId);
+          }
+        }, 1200);
+      } else {
+        setError("Connection lost. Click Retry to continue.");
+        setStatus({ status: 'idle' });
+      }
     };
   };
 

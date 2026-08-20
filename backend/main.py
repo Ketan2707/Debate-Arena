@@ -297,8 +297,13 @@ async def debate_stream_generator(debate_id: str):
     topic = db_debate["topic"]
     mode = db_debate.get("mode", "debate")
     
+    # Send immediate connection ack and status so client establishes SSE instantly
+    yield f": keep-alive\n\n"
+    yield f"event: status\ndata: {json.dumps({'agent': 'Analyst' if mode == 'factcheck' else 'Orchestrator', 'status': 'researching', 'round_number': 1})}\n\n"
+    await asyncio.sleep(0.05)
+
     # 1. Perform initial topic research to anchor agent and stance knowledge
-    research_results = await run_in_threadpool(search.search_whitelist, topic, 20)
+    research_results = await run_in_threadpool(search.search_whitelist, topic, 10)
     research_context = ""
     if research_results:
         research_context = "Found the following real-world articles and facts about this topic:\n"
@@ -309,8 +314,8 @@ async def debate_stream_generator(debate_id: str):
 
     # ── FACTCHECK MODE ────────────────────────────────────────
     if mode == "factcheck":
-        yield f"event: status\ndata: {json.dumps({'agent': 'Analyst', 'status': 'researching', 'round_number': 1})}\n\n"
-        await asyncio.sleep(0.2)
+        yield f"event: status\ndata: {json.dumps({'agent': 'Analyst', 'status': 'analyzing', 'round_number': 1})}\n\n"
+        await asyncio.sleep(0.1)
         
         try:
             # Get stance preference from DB or default
@@ -575,5 +580,10 @@ def stream_debate(debate_id: str):
     """
     return StreamingResponse(
         debate_stream_generator(debate_id),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
     )
