@@ -97,6 +97,11 @@ def strip_internal_thinking(text: str) -> str:
     cleaned = re.sub(r'<\s*\[\s*(\d+)\s*\]\s*>', r'[\1]', cleaned)
     # Strip Asian citation brackets like 【4:0†source】 or 【1】
     cleaned = re.sub(r'[【\u3010][^】\u3011]*[】\u3011]', '', cleaned)
+    # Strip standalone References / Bibliography / Works Cited lists at the beginning or end of text
+    cleaned = re.sub(r'^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)+', '', cleaned.strip(), flags=re.IGNORECASE)
+    cleaned = re.sub(r'\n+(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)+$', '', cleaned.strip(), flags=re.IGNORECASE)
+    cleaned = re.sub(r'^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):[ \t]*\n+', '', cleaned.strip(), flags=re.IGNORECASE)
+    cleaned = re.sub(r'^(?:[-*•]\s+[A-Za-z\s,.\(\)\d]+(?:Retrieved from\s*)?<https?://[^\s>]+>\s*\n*)+', '', cleaned.strip(), flags=re.IGNORECASE)
     return cleaned.strip()
 
 def clean_and_parse_json(text: str):
@@ -315,11 +320,12 @@ def generate_debate_turn(
     1. Argue strongly and in good faith. Stick to your assigned stance.
     2. Write 100-150 words. Be concise and impactful.
     3. If this is a rebuttal round, directly address {opposing_agent}'s previous argument.
-    4. EVERY factual claim MUST have an inline citation: [Source Name](exact URL from research)
-    5. Do NOT invent facts, statistics, or URLs. Only use what appears in the research sources.
-    6. Structure your argument in clear paragraphs. Separate factual claims so they can be independently verified.
-    7. If you cannot find supporting evidence for a point, argue using logic and reasoning instead of fabricating data.
-    8. CRITICAL: Output ONLY the speech paragraphs directly. Do NOT output thinking steps, scratchpad, <think> tags, or word counts.
+    4. EVERY factual claim MUST have an inline citation inside your sentence: [Source Name](exact URL from research).
+    5. NEVER output a bibliography, "Reference(s):", "References:", or standalone citation list at the beginning or end of your speech.
+    6. Do NOT invent facts, statistics, or URLs. Only use what appears in the research sources.
+    7. Structure your argument in clear paragraphs. Separate factual claims so they can be independently verified.
+    8. If you cannot find supporting evidence for a point, argue using logic and reasoning instead of fabricating data.
+    9. CRITICAL: Output ONLY the speech paragraphs directly. Do NOT output thinking steps, scratchpad, <think> tags, word counts, or reference lists.
     
     Begin your response directly with your arguments. No salutations.
     """

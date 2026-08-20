@@ -745,8 +745,16 @@ function App() {
     cleaned = cleaned.replace(/^(?:Thinking Process|Thought Process|Reasoning):[\s\S]*?\n\n/gi, '');
     // Strip meta scratchpad lines like *Word Count:* ...
     cleaned = cleaned.replace(/\*+(?:Word Count|Constraint|Cutting|Deconstruct)[^*]*\*+[\s\S]*?(?=\n\n|$)/gi, '');
+    // Strip "Reference(s):" or "References:" bibliographic headers and preceding lists
+    cleaned = cleaned.replace(/^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)*/gi, '');
+    cleaned = cleaned.replace(/\n+(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)*$/gi, '');
+    cleaned = cleaned.replace(/^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):[ \t]*\n*/gi, '');
+    // Strip bulleted bibliographic citations at start (e.g. "- Author (Year)... <http...>")
+    cleaned = cleaned.replace(/^(?:[-*•]\s+[A-Za-z\s,.\(\)\d]+(?:Retrieved from\s*)?<https?:\/\/[^\s>]+>\s*\n*)+/gi, '');
     // Strip raw HTML-like bracketed footnote tags like <[1]>, <[2]>, <[3]>
     cleaned = cleaned.replace(/<\s*\[\s*\d+\s*\]\s*>/g, '');
+    // Strip Asian citation brackets like 【4:0†source】
+    cleaned = cleaned.replace(/[【\u3010][^】\u3011]*[】\u3011]/g, '');
     // Clean unclickable footnotes like [1], [2] unless they are markdown links [1](http...)
     cleaned = cleaned.replace(/\s*\[\d+\](?!\()/g, '');
     return cleaned.trim();
