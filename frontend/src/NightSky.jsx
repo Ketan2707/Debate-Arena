@@ -13,6 +13,7 @@ export default function NightSky({
   starCount = 180,
   speed = 0.5,
   enableShootingStars = true,
+  paused = false,
 }) {
   const canvasRef = useRef(null);
 
@@ -59,7 +60,7 @@ export default function NightSky({
     };
 
     const spawnShootingStar = () => {
-      if (!enableShootingStars) return;
+      if (!enableShootingStars || paused) return;
       const startX = Math.random() * (width * 0.8) + width * 0.1;
       const startY = Math.random() * (height * 0.4);
       const angle = (Math.PI / 4) + (Math.random() - 0.5) * 0.3; // roughly 45 degrees down-right
@@ -79,10 +80,10 @@ export default function NightSky({
     };
 
     let lastSpawnTime = performance.now();
-    let nextSpawnDelay = Math.random() * 3000 + 3500; // between 3.5s and 6.5s
+    let nextSpawnDelay = Math.random() * 3000 + 3500;
 
     const handleResize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
       const rect = canvas.getBoundingClientRect();
       width = rect.width || window.innerWidth;
       height = rect.height || window.innerHeight;
@@ -92,151 +93,132 @@ export default function NightSky({
       ctx.scale(dpr, dpr);
 
       initStars();
+      renderFrame(performance.now());
+    };
+
+    const renderFrame = (now) => {
+      if (!width || !height) return;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Deep celestial midnight gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+      bgGrad.addColorStop(0, '#060813');
+      bgGrad.addColorStop(0.5, '#0b0f24');
+      bgGrad.addColorStop(1, '#080a18');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Cosmic ambient nebula dust (electric indigo & warm golden amber)
+      const nebula1 = ctx.createRadialGradient(
+        width * 0.25, height * 0.35, 0,
+        width * 0.25, height * 0.35, width * 0.5
+      );
+      nebula1.addColorStop(0, 'rgba(79, 70, 229, 0.09)');
+      nebula1.addColorStop(0.5, 'rgba(99, 102, 241, 0.03)');
+      nebula1.addColorStop(1, 'transparent');
+      ctx.fillStyle = nebula1;
+      ctx.fillRect(0, 0, width, height);
+
+      const nebula2 = ctx.createRadialGradient(
+        width * 0.75, height * 0.45, 0,
+        width * 0.75, height * 0.45, width * 0.45
+      );
+      nebula2.addColorStop(0, 'rgba(217, 119, 6, 0.06)');
+      nebula2.addColorStop(0.5, 'rgba(245, 158, 11, 0.02)');
+      nebula2.addColorStop(1, 'transparent');
+      ctx.fillStyle = nebula2;
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw stars
+      for (let star of stars) {
+        if (!paused) {
+          star.alpha += star.twinkleSpeed;
+          if (star.alpha > 0.95 || star.alpha < 0.2) {
+            star.twinkleSpeed = -star.twinkleSpeed;
+          }
+          star.x += star.vx;
+          star.y += star.vy;
+          if (star.x < 0) star.x = width;
+          if (star.x > width) star.x = 0;
+          if (star.y < 0) star.y = height;
+          if (star.y > height) star.y = 0;
+        }
+
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fillStyle = star.color;
+        ctx.globalAlpha = Math.max(0.15, Math.min(1.0, star.alpha));
+        ctx.fill();
+      }
+
+      if (!paused && enableShootingStars) {
+        if (now - lastSpawnTime > nextSpawnDelay) {
+          spawnShootingStar();
+          lastSpawnTime = now;
+          nextSpawnDelay = Math.random() * 4000 + 4000;
+        }
+
+        for (let i = shootingStars.length - 1; i >= 0; i--) {
+          const s = shootingStars[i];
+          s.x += s.vx;
+          s.y += s.vy;
+          s.life -= s.decay;
+
+          if (s.life <= 0 || s.x > width + 100 || s.y > height + 100) {
+            shootingStars.splice(i, 1);
+            continue;
+          }
+
+          const tailX = s.x - (s.vx / Math.hypot(s.vx, s.vy)) * s.length;
+          const tailY = s.y - (s.vy / Math.hypot(s.vx, s.vy)) * s.length;
+
+          const trailGrad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
+          trailGrad.addColorStop(0, s.color);
+          trailGrad.addColorStop(0.3, 'rgba(199, 210, 254, 0.6)');
+          trailGrad.addColorStop(1, 'transparent');
+
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(tailX, tailY);
+          ctx.strokeStyle = trailGrad;
+          ctx.lineWidth = 1.6;
+          ctx.globalAlpha = Math.max(0, s.life * 0.85);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, 1.2, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.globalAlpha = Math.max(0, s.life);
+          ctx.fill();
+        }
+      }
+
+      ctx.globalAlpha = 1.0;
     };
 
     const observer = new ResizeObserver(handleResize);
     observer.observe(canvas);
     handleResize();
 
-    const render = (time) => {
+    const render = (now) => {
       if (!isRunning) return;
-
-      // 1. Draw Deep Midnight Space Gradient
-      const grad = ctx.createLinearGradient(0, 0, 0, height);
-      grad.addColorStop(0, '#04060d');
-      grad.addColorStop(0.5, '#070b16');
-      grad.addColorStop(1, '#0c1222');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, width, height);
-
-      // 2. Draw Soft Ambient Cosmic Nebula Dust (Two-Agent Energy)
-      // Agent A (Indigo) Nebula Glow - Top Left
-      const nebulaA = ctx.createRadialGradient(
-        width * 0.15,
-        height * 0.25,
-        0,
-        width * 0.15,
-        height * 0.25,
-        width * 0.45
-      );
-      nebulaA.addColorStop(0, 'rgba(99, 102, 241, 0.14)');
-      nebulaA.addColorStop(0.5, 'rgba(79, 70, 229, 0.04)');
-      nebulaA.addColorStop(1, 'transparent');
-      ctx.fillStyle = nebulaA;
-      ctx.fillRect(0, 0, width, height);
-
-      // Agent B (Amber) Nebula Glow - Bottom Right
-      const nebulaB = ctx.createRadialGradient(
-        width * 0.85,
-        height * 0.75,
-        0,
-        width * 0.85,
-        height * 0.75,
-        width * 0.40
-      );
-      nebulaB.addColorStop(0, 'rgba(245, 158, 11, 0.09)');
-      nebulaB.addColorStop(0.5, 'rgba(217, 119, 6, 0.02)');
-      nebulaB.addColorStop(1, 'transparent');
-      ctx.fillStyle = nebulaB;
-      ctx.fillRect(0, 0, width, height);
-
-      // 3. Draw & Animate Stars
-      for (let i = 0; i < stars.length; i++) {
-        const star = stars[i];
-
-        // Animate twinkle
-        star.alpha += star.twinkleSpeed;
-        if (star.alpha > 0.95) {
-          star.alpha = 0.95;
-          star.twinkleSpeed = -Math.abs(star.twinkleSpeed);
-        } else if (star.alpha < 0.15) {
-          star.alpha = 0.15;
-          star.twinkleSpeed = Math.abs(star.twinkleSpeed);
-        }
-
-        // Slight drift
-        star.x += star.vx;
-        star.y += star.vy;
-        if (star.x < 0) star.x = width;
-        if (star.x > width) star.x = 0;
-        if (star.y < 0) star.y = height;
-        if (star.y > height) star.y = 0;
-
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = star.color;
-        ctx.globalAlpha = star.alpha;
-        ctx.fill();
-
-        // 4-point glow on brighter large stars
-        if (star.radius > 1.4 && star.alpha > 0.6) {
-          ctx.beginPath();
-          ctx.strokeStyle = star.color;
-          ctx.globalAlpha = star.alpha * 0.35;
-          ctx.lineWidth = 0.5;
-          const crossSize = star.radius * 2.8;
-          ctx.moveTo(star.x - crossSize, star.y);
-          ctx.lineTo(star.x + crossSize, star.y);
-          ctx.moveTo(star.x, star.y - crossSize);
-          ctx.lineTo(star.x, star.y + crossSize);
-          ctx.stroke();
-        }
+      renderFrame(now);
+      if (!paused) {
+        animationFrameId = requestAnimationFrame(render);
       }
-
-      // 4. Spawn & Draw Shooting Stars
-      if (time - lastSpawnTime > nextSpawnDelay) {
-        spawnShootingStar();
-        lastSpawnTime = time;
-        nextSpawnDelay = Math.random() * 4000 + 4000;
-      }
-
-      for (let i = shootingStars.length - 1; i >= 0; i--) {
-        const s = shootingStars[i];
-        s.x += s.vx;
-        s.y += s.vy;
-        s.life -= s.decay;
-
-        if (s.life <= 0 || s.x > width + 100 || s.y > height + 100) {
-          shootingStars.splice(i, 1);
-          continue;
-        }
-
-        const tailX = s.x - (s.vx / Math.hypot(s.vx, s.vy)) * s.length;
-        const tailY = s.y - (s.vy / Math.hypot(s.vx, s.vy)) * s.length;
-
-        const trailGrad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
-        trailGrad.addColorStop(0, s.color);
-        trailGrad.addColorStop(0.3, 'rgba(199, 210, 254, 0.6)');
-        trailGrad.addColorStop(1, 'transparent');
-
-        ctx.beginPath();
-        ctx.moveTo(s.x, s.y);
-        ctx.lineTo(tailX, tailY);
-        ctx.strokeStyle = trailGrad;
-        ctx.lineWidth = 1.6;
-        ctx.globalAlpha = Math.max(0, s.life * 0.85);
-        ctx.stroke();
-
-        // Head glow point
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, 1.2, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.globalAlpha = Math.max(0, s.life);
-        ctx.fill();
-      }
-
-      ctx.globalAlpha = 1.0;
-      animationFrameId = requestAnimationFrame(render);
     };
 
-    animationFrameId = requestAnimationFrame(render);
+    if (!paused) {
+      animationFrameId = requestAnimationFrame(render);
+    }
 
     return () => {
       isRunning = false;
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
     };
-  }, [starCount, speed, enableShootingStars]);
+  }, [starCount, speed, enableShootingStars, paused]);
 
   return (
     <canvas

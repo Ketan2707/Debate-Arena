@@ -183,23 +183,25 @@ function compile(gl, type, source) {
  * CloudShader – WebGL animated sky + volumetric cloud background.
  *
  * Props:
- *   speed       – animation speed multiplier (default 1)
- *   count       – number of cloud layers 1-6 (default 6)
- *   cloudColor  – cloud tint hex/rgb (default "#fbf8f2")
- *   skyTopColor – sky gradient top hex/rgb (default "#3876ba")
+ *   speed          – animation speed multiplier (default 0.7)
+ *   count          – number of cloud layers 1-6 (default 6)
+ *   cloudColor     – cloud tint hex/rgb (default "#fbf8f2")
+ *   skyTopColor    – sky gradient top hex/rgb (default "#3876ba")
  *   skyBottomColor – sky gradient bottom hex/rgb (default "#8cbfe8")
+ *   paused         – freeze GPU rendering loop (e.g. during active debate)
  */
 export default function CloudShader({
-  speed = 1,
+  speed = 0.7,
   count = 6,
   cloudColor = '#fbf8f2',
   skyTopColor = '#3876ba',
   skyBottomColor = '#8cbfe8',
+  paused = false,
 }) {
   const canvasRef = useRef(null);
-  const paramsRef = useRef({ speed, count, cloudColor, skyTopColor, skyBottomColor });
+  const paramsRef = useRef({ speed, count, cloudColor, skyTopColor, skyBottomColor, paused });
 
-  paramsRef.current = { speed, count, cloudColor, skyTopColor, skyBottomColor };
+  paramsRef.current = { speed, count, cloudColor, skyTopColor, skyBottomColor, paused };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -209,6 +211,7 @@ export default function CloudShader({
       alpha: false,
       antialias: false,
       premultipliedAlpha: false,
+      powerPreference: 'high-performance',
     });
     if (!gl) return;
 
@@ -249,7 +252,8 @@ export default function CloudShader({
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Clamp DPR to 1.25 to prevent 4K/Retina GPU fill-rate exhaustion
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       const w = Math.max(1, Math.floor(width * dpr));
@@ -267,24 +271,44 @@ export default function CloudShader({
     resize();
 
     const start = performance.now();
-    const draw = (now) => {
-      if (!running) return;
+    let lastRenderedTime = 0;
+
+    const renderSingleFrame = (t) => {
       const p = paramsRef.current;
-      const elapsed = reduceMotion ? 0 : ((now - start) / 1000) * p.speed;
       const cloud = parseHex(p.cloudColor);
       const skyTop = parseHex(p.skyTopColor);
       const skyBottom = parseHex(p.skyBottomColor);
 
-      gl.uniform1f(loc.time, elapsed);
+      gl.uniform1f(loc.time, t);
       gl.uniform1f(loc.count, Math.min(6, Math.max(1, p.count)));
       gl.uniform3f(loc.cloud, cloud[0], cloud[1], cloud[2]);
       gl.uniform3f(loc.skyTop, skyTop[0], skyTop[1], skyTop[2]);
       gl.uniform3f(loc.skyBottom, skyBottom[0], skyBottom[1], skyBottom[2]);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+
+    const draw = (now) => {
+      if (!running) return;
+      const p = paramsRef.current;
+      
+      if (p.paused) {
+        // If paused, render once at the last timestamp and do not loop
+        renderSingleFrame(lastRenderedTime);
+        return;
+      }
+
+      const elapsed = reduceMotion ? 0 : ((now - start) / 1000) * p.speed;
+      lastRenderedTime = elapsed;
+      renderSingleFrame(elapsed);
       frame = requestAnimationFrame(draw);
     };
 
-    frame = requestAnimationFrame(draw);
+    // If paused initially or switched, render frame
+    if (paramsRef.current.paused) {
+      renderSingleFrame(0.5);
+    } else {
+      frame = requestAnimationFrame(draw);
+    }
 
     return () => {
       running = false;
@@ -295,7 +319,7 @@ export default function CloudShader({
       gl.deleteShader(vert);
       gl.deleteShader(frag);
     };
-  }, []);
+  }, [paused]);
 
   return (
     <canvas

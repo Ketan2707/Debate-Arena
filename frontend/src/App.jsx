@@ -1104,6 +1104,7 @@ function App() {
             cloudColor="#fbf8f2"
             skyTopColor="#3876ba"
             skyBottomColor="#8cbfe8"
+            paused={activeView === 'debate'}
           />
         </div>
       ) : (
@@ -1112,6 +1113,7 @@ function App() {
             starCount={180}
             speed={0.6}
             enableShootingStars={true}
+            paused={activeView === 'debate'}
           />
         </div>
       )}
@@ -1641,7 +1643,7 @@ function App() {
           <div className="flex flex-col space-y-6 animate-fade-in w-full max-w-7xl mx-auto">
             
             {/* 1. Header Control Bar */}
-            <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl p-4 rounded-2xl shadow-lg border ${darkMode ? 'bg-slate-900/80 border-white/10 text-white' : 'bg-white/85 border-blue-200 text-slate-900 shadow-md'}`}>
+            <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl shadow-lg border ${darkMode ? 'bg-slate-900/95 border-white/10 text-white' : 'bg-white/95 border-blue-200 text-slate-900 shadow-md'}`}>
               <div className="flex items-center space-x-3">
                 <button 
                   onClick={() => {
@@ -1689,7 +1691,7 @@ function App() {
             </div>
 
             {/* 2. Topic Display Card */}
-            <div className={`rounded-2xl p-6 shadow-xl relative overflow-hidden backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-white/10 text-white shadow-2xl' : 'bg-white/90 border-blue-200 text-slate-900 shadow-lg'}`}>
+            <div className={`rounded-2xl p-6 shadow-xl relative overflow-hidden border ${darkMode ? 'bg-slate-900/95 border-white/10 text-white shadow-2xl' : 'bg-white/95 border-blue-200 text-slate-900 shadow-lg'}`}>
               <div className={`text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center space-x-2 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
                 <Target className="h-3.5 w-3.5" />
                 <span>Central Motion / Query</span>
@@ -1782,7 +1784,7 @@ function App() {
                     {debateMode === 'factcheck' && (
                       <div className="space-y-5">
                         {turns.filter(t => t.agent === 'FOR').map(turn => (
-                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-emerald-500/30 text-slate-200' : 'bg-white/92 border-emerald-200 text-slate-900 shadow-md'}`}>
+                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-emerald-500/30 text-slate-200' : 'bg-white/95 border-emerald-200 text-slate-900 shadow-md'}`}>
                             <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
                               <CheckCircle className="h-5 w-5" />
                               <span className="text-sm font-bold uppercase tracking-wider">Supporting Evidence (FOR)</span>
@@ -1794,7 +1796,7 @@ function App() {
                         ))}
 
                         {turns.filter(t => t.agent === 'AGAINST').map(turn => (
-                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-rose-500/30 text-slate-200' : 'bg-white/92 border-rose-200 text-slate-900 shadow-md'}`}>
+                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-rose-500/30 text-slate-200' : 'bg-white/95 border-rose-200 text-slate-900 shadow-md'}`}>
                             <div className="flex items-center space-x-2 text-rose-600 dark:text-rose-400">
                               <AlertTriangle className="h-5 w-5" />
                               <span className="text-sm font-bold uppercase tracking-wider">Counter Arguments (AGAINST)</span>
@@ -1806,7 +1808,7 @@ function App() {
                         ))}
 
                         {turns.filter(t => t.agent === 'VERDICT').map(turn => (
-                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-indigo-500/30 text-slate-200' : 'bg-white/92 border-indigo-200 text-slate-900 shadow-md'}`}>
+                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-200' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
                             <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
                               <Award className="h-5 w-5" />
                               <span className="text-sm font-bold uppercase tracking-wider">Balanced Factual Synthesis</span>
@@ -1837,7 +1839,7 @@ function App() {
                             .filter(t => t.agent === 'Agent A')
                             .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
                             .map((turn) => (
-                              <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-indigo-500/30 text-slate-100' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
+                              <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-100' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
                                 <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-indigo-400' : 'border-slate-200 text-indigo-600'}`}>
                                   <span>
                                     Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : 'Rebuttal'}
@@ -1873,7 +1875,7 @@ function App() {
                             .filter(t => t.agent === 'Agent B')
                             .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
                             .map((turn) => (
-                              <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-md'}`}>
+                              <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-md'}`}>
                                 <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-amber-400' : 'border-slate-200 text-amber-600'}`}>
                                   <span>
                                     Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : 'Rebuttal'}
@@ -1971,7 +1973,7 @@ function App() {
 
               {/* Right 1 Column: Live Fact-Checker Command Matrix */}
               <div className="lg:col-span-1 space-y-4">
-                <div className={`rounded-2xl p-5 shadow-xl sticky top-20 space-y-4 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-white/10 text-slate-100 shadow-2xl' : 'bg-white/92 border-blue-200 text-slate-900 shadow-lg'}`}>
+                <div className={`rounded-2xl p-5 shadow-xl sticky top-20 space-y-4 border ${darkMode ? 'bg-slate-900/95 border-white/10 text-slate-100 shadow-2xl' : 'bg-white/95 border-blue-200 text-slate-900 shadow-lg'}`}>
                   
                   {/* Radar Header */}
                   <div className={`flex items-center justify-between pb-3 border-b ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
