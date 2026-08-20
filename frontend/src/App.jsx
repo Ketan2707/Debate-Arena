@@ -545,7 +545,7 @@ function App() {
     setScores([]);
     setStances({ stance_a: '', stance_b: '' });
     setSelectedClaim(null);
-    setActiveRoundTab('all');
+    setActiveRoundTab('1');
     setClaimFilter('all');
     setDebateTopic(topic);
     setDebateMode(mode);
@@ -600,6 +600,9 @@ function App() {
       try {
         const data = JSON.parse(e.data);
         setStatus(data);
+        if (data.round_number && data.round_number >= 1 && data.round_number <= 5) {
+          setActiveRoundTab(String(data.round_number));
+        }
       } catch (err) {
         console.error("Error parsing status:", err);
       }
@@ -612,6 +615,9 @@ function App() {
           if (prev.some((t) => t.id === data.id)) return prev;
           return [...prev, data];
         });
+        if (data.round_number && data.round_number >= 1 && data.round_number <= 5) {
+          setActiveRoundTab(String(data.round_number));
+        }
       } catch (err) {
         console.error("Error parsing turn:", err);
       }
@@ -621,6 +627,7 @@ function App() {
       try {
         const data = JSON.parse(e.data);
         setScores(data.scores || []);
+        setActiveRoundTab('verdict');
       } catch (err) {
         console.error("Error parsing verdict:", err);
       }
@@ -713,6 +720,7 @@ function App() {
       setDebateMode(data.mode || 'debate');
       setTurns(data.turns || []);
       setScores(data.scores || []);
+      setActiveRoundTab('1');
       
       setStances({
         stance_a: "In support of the topic",
@@ -1721,60 +1729,67 @@ function App() {
               )}
             </div>
 
-            {/* 3. Round Selector Tabs (Concept 3 Command Center) */}
-            {debateMode === 'debate' && turns.length > 0 && (
-              <div className="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar">
-                <button
-                  onClick={() => setActiveRoundTab('all')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    activeRoundTab === 'all'
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : (darkMode ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white/80 border border-blue-200 text-slate-700 hover:bg-white shadow-sm')
-                  }`}
-                >
-                  🌐 All Rounds
-                </button>
-                
-                {[1, 2, 3, 4, 5].map((rnd) => {
-                  const hasTurns = turns.some(t => t.round_number === rnd);
-                  if (!hasTurns && status.status === 'idle') return null;
-                  const label = rnd === 1 ? 'R1: Opening' : rnd === 5 ? 'R5: Closing' : `R${rnd}: Rebuttal`;
-                  return (
+            {/* 3. Stage Round Navigator (Concept 1: Interactive Stage) */}
+            {debateMode === 'debate' && (
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-2 rounded-2xl border border-blue-200/80 dark:border-white/10 shadow-sm">
+                <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+                  {[1, 2, 3, 4, 5].map((rnd) => {
+                    const hasTurns = turns.some(t => t.round_number === rnd);
+                    const isStreamingThis = status.round_number === rnd && status.status !== 'idle';
+                    const roundTitle = rnd === 1 ? 'R1: Opening' : rnd === 5 ? 'R5: Closing' : `R${rnd}: Rebuttal ${rnd - 1}`;
+                    
+                    return (
+                      <button
+                        key={rnd}
+                        onClick={() => setActiveRoundTab(String(rnd))}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
+                          activeRoundTab === String(rnd)
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : (darkMode 
+                                ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10' 
+                                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs')
+                        }`}
+                      >
+                        {isStreamingThis && <RefreshCw className="h-3 w-3 animate-spin text-amber-400" />}
+                        <span>{roundTitle}</span>
+                      </button>
+                    );
+                  })}
+
+                  {scores && scores.length > 0 && (
                     <button
-                      key={rnd}
-                      onClick={() => setActiveRoundTab(String(rnd))}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                        activeRoundTab === String(rnd)
-                          ? 'bg-indigo-600 text-white shadow-md'
-                          : (darkMode ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white/80 border border-blue-200 text-slate-700 hover:bg-white shadow-sm')
+                      onClick={() => setActiveRoundTab('verdict')}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
+                        activeRoundTab === 'verdict'
+                          ? 'bg-amber-600 text-white shadow-md'
+                          : (darkMode ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 shadow-xs')
                       }`}
                     >
-                      {label}
+                      <Award className="h-3.5 w-3.5" />
+                      <span>Scorecard</span>
                     </button>
-                  );
-                })}
+                  )}
+                </div>
 
-                {scores && scores.length > 0 && (
-                  <button
-                    onClick={() => setActiveRoundTab('verdict')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
-                      activeRoundTab === 'verdict'
-                        ? 'bg-amber-600 text-white shadow-md'
-                        : (darkMode ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 shadow-sm')
-                    }`}
-                  >
-                    <Award className="h-3.5 w-3.5" />
-                    <span>Official Scorecard</span>
-                  </button>
-                )}
+                {/* All Rounds Full Log Toggle */}
+                <button
+                  onClick={() => setActiveRoundTab(activeRoundTab === 'all' ? '1' : 'all')}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
+                    activeRoundTab === 'all'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : (darkMode ? 'text-slate-400 border-white/10 hover:text-white hover:bg-white/5' : 'text-slate-600 border-slate-200 hover:bg-slate-100')
+                  }`}
+                >
+                  📜 {activeRoundTab === 'all' ? "Stage View" : "Full Transcript"}
+                </button>
               </div>
             )}
 
-            {/* 4. Main Arena Body (3-Column Layout: Speeches + Right Fact Radar) */}
+            {/* 4. Main Stage Arena (Concept 1: 2 Speech Columns + Right Fact Radar) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              {/* Left & Center 2 Columns: Speech Decks */}
-              <div className="lg:col-span-2 space-y-6">
+              {/* Left & Center 2 Columns: Speech Stage Decks */}
+              <div className="lg:col-span-2 space-y-4">
                 
                 {turns.length === 0 && status.status !== 'idle' && !error ? (
                   <BattleArenaLoader mode={debateMode} topic={debateTopic} />
@@ -1821,82 +1836,127 @@ function App() {
                       </div>
                     )}
 
-                    {/* ── DEBATE MODE DECK (Filtered by activeRoundTab) ── */}
+                    {/* ── DEBATE MODE STAGE (Concept 1: Single Round or All Rounds) ── */}
                     {debateMode === 'debate' && activeRoundTab !== 'verdict' && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        
-                        {/* Agent A Column */}
-                        <div className="space-y-4">
-                          <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${darkMode ? 'bg-indigo-950/40 border-indigo-500/30' : 'bg-indigo-50/90 border-indigo-200 shadow-sm'}`}>
-                            <div className="flex items-center space-x-2">
-                              <div className="h-2.5 w-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></div>
-                              <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-indigo-300' : 'text-indigo-900'}`}>Agent A (Affirmative)</span>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          
+                          {/* Agent A Column */}
+                          <div className="space-y-3 flex flex-col">
+                            <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${darkMode ? 'bg-indigo-950/40 border-indigo-500/30' : 'bg-indigo-50/90 border-indigo-200 shadow-sm'}`}>
+                              <div className="flex items-center space-x-2">
+                                <div className="h-2.5 w-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></div>
+                                <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-indigo-300' : 'text-indigo-900'}`}>Agent A (Affirmative)</span>
+                              </div>
+                              <span className={`text-[10px] font-mono font-bold ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>Temp: 0.6</span>
                             </div>
-                            <span className={`text-[10px] font-mono font-bold ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>Temp: 0.6</span>
+
+                            {turns
+                              .filter(t => t.agent === 'Agent A')
+                              .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
+                              .map((turn) => (
+                                <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 border max-h-[520px] overflow-y-auto ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-100' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
+                                  <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-indigo-400' : 'border-slate-200 text-indigo-600'}`}>
+                                    <span>
+                                      Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : `Rebuttal ${turn.round_number - 1}`}
+                                    </span>
+                                  </div>
+                                  <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                    {renderContentWithClaims(turn.content, turn.claims)}
+                                  </div>
+                                </div>
+                              ))}
+
+                            {/* Loading state for Agent A */}
+                            {status.agent === 'Agent A' && (activeRoundTab === 'all' || String(status.round_number) === activeRoundTab) && (
+                              <div className={`border border-dashed rounded-2xl p-6 text-center space-y-3 ${darkMode ? 'bg-slate-900/80 border-indigo-500/40' : 'bg-white/90 border-indigo-300 shadow-sm'}`}>
+                                <RefreshCw className={`h-6 w-6 animate-spin mx-auto ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                                <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
+                                  Agent A is formulating {status.round_number === 1 ? 'Opening Statement' : status.round_number === 5 ? 'Closing Statement' : `Rebuttal ${status.round_number - 1}`}...
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Empty placeholder if not reached yet in single round view */}
+                            {activeRoundTab !== 'all' && !turns.some(t => t.agent === 'Agent A' && String(t.round_number) === activeRoundTab) && status.agent !== 'Agent A' && (
+                              <div className={`rounded-2xl p-8 text-center space-y-2 border border-dashed ${darkMode ? 'bg-slate-900/40 border-white/10 text-slate-500' : 'bg-white/50 border-slate-200 text-slate-400'}`}>
+                                <Zap className="h-6 w-6 mx-auto opacity-30" />
+                                <p className="text-xs font-medium">Speech will appear once round starts</p>
+                              </div>
+                            )}
                           </div>
 
-                          {turns
-                            .filter(t => t.agent === 'Agent A')
-                            .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
-                            .map((turn) => (
-                              <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-100' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
-                                <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-indigo-400' : 'border-slate-200 text-indigo-600'}`}>
-                                  <span>
-                                    Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : 'Rebuttal'}
-                                  </span>
-                                </div>
-                                <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                  {renderContentWithClaims(turn.content, turn.claims)}
-                                </div>
+                          {/* Agent B Column */}
+                          <div className="space-y-3 flex flex-col">
+                            <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${darkMode ? 'bg-amber-950/40 border-amber-500/30' : 'bg-amber-50/90 border-amber-200 shadow-sm'}`}>
+                              <div className="flex items-center space-x-2">
+                                <div className="h-2.5 w-2.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse"></div>
+                                <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-amber-300' : 'text-amber-900'}`}>Agent B (Negative)</span>
                               </div>
-                            ))}
-
-                          {status.agent === 'Agent A' && (
-                            <div className={`border border-dashed rounded-2xl p-6 text-center space-y-3 ${darkMode ? 'bg-slate-900/80 border-indigo-500/40' : 'bg-white/90 border-indigo-300 shadow-sm'}`}>
-                              <RefreshCw className={`h-6 w-6 animate-spin mx-auto ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
-                              <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
-                                Agent A is articulating arguments &amp; citing sources...
-                              </p>
+                              <span className={`text-[10px] font-mono font-bold ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>Temp: 0.8</span>
                             </div>
-                          )}
-                        </div>
 
-                        {/* Agent B Column */}
-                        <div className="space-y-4">
-                          <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${darkMode ? 'bg-amber-950/40 border-amber-500/30' : 'bg-amber-50/90 border-amber-200 shadow-sm'}`}>
-                            <div className="flex items-center space-x-2">
-                              <div className="h-2.5 w-2.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse"></div>
-                              <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-amber-300' : 'text-amber-900'}`}>Agent B (Negative)</span>
-                            </div>
-                            <span className={`text-[10px] font-mono font-bold ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>Temp: 0.8</span>
+                            {turns
+                              .filter(t => t.agent === 'Agent B')
+                              .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
+                              .map((turn) => (
+                                <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 border max-h-[520px] overflow-y-auto ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-md'}`}>
+                                  <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-amber-400' : 'border-slate-200 text-amber-600'}`}>
+                                    <span>
+                                      Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : `Rebuttal ${turn.round_number - 1}`}
+                                    </span>
+                                  </div>
+                                  <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                    {renderContentWithClaims(turn.content, turn.claims)}
+                                  </div>
+                                </div>
+                              ))}
+
+                            {/* Loading state for Agent B */}
+                            {status.agent === 'Agent B' && (activeRoundTab === 'all' || String(status.round_number) === activeRoundTab) && (
+                              <div className={`border border-dashed rounded-2xl p-6 text-center space-y-3 ${darkMode ? 'bg-slate-900/80 border-amber-500/40' : 'bg-white/90 border-amber-300 shadow-sm'}`}>
+                                <RefreshCw className={`h-6 w-6 animate-spin mx-auto ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
+                                <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
+                                  Agent B is formulating {status.round_number === 1 ? 'Opening Statement' : status.round_number === 5 ? 'Closing Statement' : `Rebuttal ${status.round_number - 1}`}...
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Empty placeholder if not reached yet in single round view */}
+                            {activeRoundTab !== 'all' && !turns.some(t => t.agent === 'Agent B' && String(t.round_number) === activeRoundTab) && status.agent !== 'Agent B' && (
+                              <div className={`rounded-2xl p-8 text-center space-y-2 border border-dashed ${darkMode ? 'bg-slate-900/40 border-white/10 text-slate-500' : 'bg-white/50 border-slate-200 text-slate-400'}`}>
+                                <Shield className="h-6 w-6 mx-auto opacity-30" />
+                                <p className="text-xs font-medium">Speech will appear once round starts</p>
+                              </div>
+                            )}
                           </div>
 
-                          {turns
-                            .filter(t => t.agent === 'Agent B')
-                            .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
-                            .map((turn) => (
-                              <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-md'}`}>
-                                <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-amber-400' : 'border-slate-200 text-amber-600'}`}>
-                                  <span>
-                                    Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : 'Rebuttal'}
-                                  </span>
-                                </div>
-                                <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                  {renderContentWithClaims(turn.content, turn.claims)}
-                                </div>
-                              </div>
-                            ))}
-
-                          {status.agent === 'Agent B' && (
-                            <div className={`border border-dashed rounded-2xl p-6 text-center space-y-3 ${darkMode ? 'bg-slate-900/80 border-amber-500/40' : 'bg-white/90 border-amber-300 shadow-sm'}`}>
-                              <RefreshCw className={`h-6 w-6 animate-spin mx-auto ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
-                              <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
-                                Agent B is analyzing claims &amp; executing counter-arguments...
-                              </p>
-                            </div>
-                          )}
                         </div>
 
+                        {/* Stage Bottom Navigation Controls */}
+                        {activeRoundTab !== 'all' && ['1', '2', '3', '4', '5'].includes(activeRoundTab) && (
+                          <div className={`flex items-center justify-between p-3 rounded-xl border ${darkMode ? 'bg-slate-900/80 border-white/10' : 'bg-white/90 border-blue-200 shadow-xs'}`}>
+                            <button
+                              disabled={activeRoundTab === '1'}
+                              onClick={() => setActiveRoundTab(String(parseInt(activeRoundTab) - 1))}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold border disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:bg-indigo-500/10"
+                            >
+                              &larr; Previous Round
+                            </button>
+
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                              Round {activeRoundTab} of 5: {activeRoundTab === '1' ? 'Opening Statement' : activeRoundTab === '5' ? 'Closing Statement' : `Rebuttal ${parseInt(activeRoundTab) - 1}`}
+                            </span>
+
+                            <button
+                              disabled={activeRoundTab === '5'}
+                              onClick={() => setActiveRoundTab(String(parseInt(activeRoundTab) + 1))}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold border disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:bg-indigo-500/10"
+                            >
+                              Next Round &rarr;
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
@@ -1980,7 +2040,10 @@ function App() {
                     <div className="flex items-center space-x-2">
                       <Shield className={`h-4 w-4 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
                       <h4 className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                        Fact-Checker Radar
+                        {activeRoundTab !== 'all' && ['1','2','3','4','5'].includes(activeRoundTab)
+                          ? `Round ${activeRoundTab} Radar`
+                          : "Fact-Checker Radar"
+                        }
                       </h4>
                     </div>
                     {selectedClaim && (
@@ -1988,7 +2051,7 @@ function App() {
                         onClick={() => setSelectedClaim(null)} 
                         className={`text-[11px] font-bold hover:underline cursor-pointer ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}
                       >
-                        &larr; View All
+                        &larr; View List
                       </button>
                     )}
                   </div>
@@ -2044,7 +2107,7 @@ function App() {
                       )}
                     </div>
                   ) : (
-                    /* Live List of All Claims */
+                    /* Live List of Claims (Scoped to current round or all) */
                     <div className="space-y-3">
                       {/* Filter Pills */}
                       <div className="flex items-center space-x-1.5 pb-2">
@@ -2064,17 +2127,32 @@ function App() {
                       </div>
 
                       {/* Claims List */}
-                      {turns.flatMap(t => t.claims || []).length === 0 ? (
-                        <div className="py-8 text-center text-xs text-slate-500 space-y-2">
-                          <Search className="h-6 w-6 mx-auto opacity-40 animate-pulse" />
-                          <p>Claims will appear here as statements stream in...</p>
-                        </div>
-                      ) : (
-                        <div className="max-h-[380px] overflow-y-auto space-y-2 pr-1">
-                          {turns
-                            .flatMap(t => t.claims || [])
-                            .filter(c => claimFilter === 'all' || c.verdict === claimFilter)
-                            .map((c, i) => (
+                      {(() => {
+                        const targetTurns = activeRoundTab === 'all' || activeRoundTab === 'verdict'
+                          ? turns
+                          : turns.filter(t => String(t.round_number) === activeRoundTab);
+                        
+                        const displayClaims = targetTurns
+                          .flatMap(t => t.claims || [])
+                          .filter(c => claimFilter === 'all' || c.verdict === claimFilter);
+
+                        if (displayClaims.length === 0) {
+                          return (
+                            <div className="py-8 text-center text-xs text-slate-500 space-y-2">
+                              <Search className="h-6 w-6 mx-auto opacity-40 animate-pulse" />
+                              <p>
+                                {activeRoundTab !== 'all' 
+                                  ? `No claims verified for Round ${activeRoundTab} yet` 
+                                  : "Claims will appear as statements stream in..."
+                                }
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="max-h-[380px] overflow-y-auto space-y-2 pr-1">
+                            {displayClaims.map((c, i) => (
                               <div
                                 key={`claim-card-${i}`}
                                 onClick={() => setSelectedClaim(c)}
@@ -2099,8 +2177,9 @@ function App() {
                                 </p>
                               </div>
                             ))}
-                        </div>
-                      )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
