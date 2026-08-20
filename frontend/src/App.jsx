@@ -814,7 +814,11 @@ function App() {
           href={rawUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 px-2 py-0.5 mx-1 rounded-md text-[11px] font-semibold bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-300/60 dark:border-indigo-400/30 hover:bg-indigo-500/20 dark:hover:bg-indigo-500/30 hover:underline transition-all align-baseline cursor-pointer"
+          className={`inline-flex items-center space-x-1 px-2 py-0.5 mx-1 rounded-md text-[11px] font-semibold transition-all align-baseline cursor-pointer border ${
+            darkMode
+              ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/30 hover:underline'
+              : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 hover:underline shadow-xs'
+          }`}
           title={`Open verified source: ${rawUrl}`}
         >
           <span>{linkLabel}</span>
@@ -915,7 +919,7 @@ function App() {
     }
     
     if (filteredSegments.length === 0) {
-      return <p className="text-slate-300 leading-relaxed font-sans whitespace-pre-wrap">{parseMarkdownLinks(cleanedContent)}</p>;
+      return <div className={`leading-relaxed font-sans whitespace-pre-wrap ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>{parseMarkdownLinks(cleanedContent)}</div>;
     }
     
     // 4. Map unique URLs to reference numbers
@@ -969,7 +973,11 @@ function App() {
             <button
               type="button"
               onClick={() => setSelectedClaim(refObject)}
-              className="bg-brand-accent/20 hover:bg-brand-accent hover:text-brand-dark text-brand-accent border border-brand-accent/30 text-[9px] font-extrabold px-1.5 py-0.5 rounded transition-all duration-200"
+              className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded transition-all duration-200 cursor-pointer border ${
+                darkMode
+                  ? 'bg-indigo-500/20 hover:bg-indigo-500 hover:text-white text-indigo-300 border-indigo-500/30'
+                  : 'bg-indigo-100 hover:bg-indigo-600 hover:text-white text-indigo-700 border-indigo-200 shadow-xs'
+              }`}
               title={`View citation details: ${seg.url}`}
             >
               [{refNum}]
@@ -980,9 +988,19 @@ function App() {
         const claimText = cleanedContent.substring(seg.start, seg.end);
         const verdict = seg.claim.verdict;
         
-        let borderStyle = 'border-slate-500 text-slate-100 hover:bg-slate-800/40';
-        if (verdict === 'Confirmed') borderStyle = 'border-emerald-500/80 text-emerald-100 hover:bg-emerald-950/20';
-        if (verdict === 'Disputed') borderStyle = 'border-amber-500/80 text-amber-100 hover:bg-amber-950/20';
+        let borderStyle = darkMode 
+          ? 'border-slate-500 text-slate-200 hover:bg-slate-800/40' 
+          : 'border-slate-400 text-slate-900 hover:bg-slate-100';
+        if (verdict === 'Confirmed') {
+          borderStyle = darkMode 
+            ? 'border-emerald-500/80 text-slate-200 hover:bg-emerald-950/20' 
+            : 'border-emerald-500/80 text-slate-900 hover:bg-emerald-50';
+        }
+        if (verdict === 'Disputed') {
+          borderStyle = darkMode 
+            ? 'border-amber-500/80 text-slate-200 hover:bg-amber-950/20' 
+            : 'border-amber-500/80 text-slate-900 hover:bg-amber-50';
+        }
         
         parts.push(
           <span 
@@ -992,12 +1010,12 @@ function App() {
             title="Click to view source integrity check"
           >
             {parseMarkdownLinks(claimText)}
-            <span className={`inline-flex items-center justify-center rounded-full ml-1.5 px-1 py-0.5 text-[9px] font-extrabold select-none ${
+            <span className={`inline-flex items-center justify-center rounded-full ml-1 px-1 py-0.2 text-[9px] font-extrabold select-none ${
               verdict === 'Confirmed' 
-                ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' 
+                ? (darkMode ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-800 border border-emerald-300')
                 : verdict === 'Disputed' 
-                ? 'bg-amber-950/60 text-amber-400 border border-amber-500/30' 
-                : 'bg-slate-800 text-slate-400 border border-slate-700'
+                ? (darkMode ? 'bg-amber-950/60 text-amber-400 border border-amber-500/30' : 'bg-amber-100 text-amber-800 border border-amber-300')
+                : (darkMode ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-slate-100 text-slate-700 border border-slate-300')
             }`}>
               {verdict === 'Confirmed' ? '✓' : verdict === 'Disputed' ? '⚠️' : '?'}
             </span>
@@ -1015,26 +1033,31 @@ function App() {
         </React.Fragment>
       );
     }
-    
     return (
       <div className="flex flex-col space-y-4">
-        <p className="text-slate-300 leading-relaxed font-sans whitespace-pre-wrap">{parts}</p>
+        <div className={`leading-relaxed font-sans whitespace-pre-wrap ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>{parts}</div>
         
         {/* Render Cited Sources Index */}
         {Object.keys(urlToRefNum).length > 0 && (
-          <div className="pt-3 border-t border-brand-border/40 text-xs text-brand-textMuted font-sans">
-            <div className="font-semibold text-slate-400 mb-1 flex items-center">
-              <BookOpen className="h-3.5 w-3.5 mr-1 text-brand-accent" /> Cited Sources
+          <div className={`pt-3 border-t text-xs font-sans ${darkMode ? 'border-white/10 text-slate-400' : 'border-slate-200 text-slate-600'}`}>
+            <div className={`font-bold mb-1.5 flex items-center ${darkMode ? 'text-indigo-400' : 'text-indigo-700'}`}>
+              <BookOpen className="h-3.5 w-3.5 mr-1" /> Cited Sources
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-1.5">
               {Object.entries(urlToRefNum).map(([url, num]) => (
-                <div key={url} className="flex items-start space-x-1.5 hover:text-slate-200 transition-colors">
-                  <span className="font-bold text-brand-accent text-[9px] bg-brand-accent/10 border border-brand-accent/20 px-1 py-0.5 rounded leading-none">[{num}]</span>
+                <div key={url} className="flex items-start space-x-1.5 transition-colors">
+                  <span className={`font-bold text-[9px] px-1 py-0.5 rounded leading-none border ${
+                    darkMode 
+                      ? 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30' 
+                      : 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                  }`}>[{num}]</span>
                   <a 
                     href={url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="hover:underline truncate text-[11px] leading-tight inline-flex items-center text-slate-400 hover:text-brand-accent transition-colors"
+                    className={`hover:underline truncate text-[11px] leading-tight inline-flex items-center transition-colors ${
+                      darkMode ? 'text-slate-300 hover:text-indigo-400' : 'text-slate-700 hover:text-indigo-700'
+                    }`}
                   >
                     {url.replace(/https?:\/\/(www\.)?/, '')}
                     <ExternalLink className="h-2.5 w-2.5 ml-1 flex-shrink-0" />
@@ -1618,7 +1641,7 @@ function App() {
           <div className="flex flex-col space-y-6 animate-fade-in w-full max-w-7xl mx-auto">
             
             {/* 1. Header Control Bar */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-blue-200/80 dark:border-white/10 p-4 rounded-2xl shadow-lg">
+            <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl p-4 rounded-2xl shadow-lg border ${darkMode ? 'bg-slate-900/80 border-white/10 text-white' : 'bg-white/85 border-blue-200 text-slate-900 shadow-md'}`}>
               <div className="flex items-center space-x-3">
                 <button 
                   onClick={() => {
@@ -1628,30 +1651,30 @@ function App() {
                       setActiveView('landing');
                     }
                   }}
-                  className="flex items-center space-x-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
+                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${darkMode ? 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-slate-900'}`}
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>{status.status === 'idle' ? "Back to Home" : "Cancel"}</span>
                 </button>
 
-                <div className="h-5 w-[1px] bg-slate-300 dark:bg-white/10"></div>
+                <div className={`h-5 w-[1px] ${darkMode ? 'bg-white/10' : 'bg-slate-300'}`}></div>
 
                 <div className="flex items-center space-x-2">
                   <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     debateMode === 'factcheck'
-                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                      : 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30'
+                      ? (darkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-200')
+                      : (darkMode ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-700 border border-indigo-200')
                   }`}>
                     {debateMode === 'factcheck' ? '🛡️ Factual Deep-Dive' : '⚔️ Debate Arena'}
                   </span>
                   
                   {status.status !== 'idle' ? (
-                    <span className="flex items-center space-x-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
+                    <span className={`flex items-center space-x-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${darkMode ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-amber-700 bg-amber-50 border-amber-200'}`}>
                       <RefreshCw className="h-3 w-3 animate-spin" />
                       <span>{status.status === 'writing' ? `${status.agent} speaking...` : 'Evaluating claims...'}</span>
                     </span>
                   ) : (
-                    <span className="flex items-center space-x-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                    <span className={`flex items-center space-x-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${darkMode ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-emerald-700 bg-emerald-50 border-emerald-200'}`}>
                       <CheckCircle className="h-3 w-3" />
                       <span>Completed</span>
                     </span>
@@ -1660,37 +1683,37 @@ function App() {
               </div>
 
               {/* Stance Indicator */}
-              <div className="text-xs text-slate-500 dark:text-slate-400 font-sans">
-                Focus: <strong className="text-slate-800 dark:text-slate-200 capitalize">{stancePreference}</strong>
+              <div className={`text-xs font-sans ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                Focus: <strong className={`capitalize ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>{stancePreference}</strong>
               </div>
             </div>
 
             {/* 2. Topic Display Card */}
-            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-blue-200 dark:border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1.5 flex items-center space-x-2">
+            <div className={`rounded-2xl p-6 shadow-xl relative overflow-hidden backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-white/10 text-white shadow-2xl' : 'bg-white/90 border-blue-200 text-slate-900 shadow-lg'}`}>
+              <div className={`text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center space-x-2 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
                 <Target className="h-3.5 w-3.5" />
                 <span>Central Motion / Query</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold font-sans text-slate-900 dark:text-white leading-tight">
+              <h2 className={`text-2xl sm:text-3xl font-extrabold font-sans leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                 {debateTopic}
               </h2>
 
               {/* Stances Matrix */}
               {debateMode === 'debate' && stances.stance_a && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-slate-200 dark:border-white/10">
-                  <div className="bg-indigo-50/70 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-500/30 rounded-xl p-4">
-                    <div className="text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider mb-1 flex items-center space-x-1.5">
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
+                  <div className={`rounded-xl p-4 border ${darkMode ? 'bg-indigo-950/20 border-indigo-500/30' : 'bg-indigo-50/70 border-indigo-200'}`}>
+                    <div className={`text-xs font-bold uppercase tracking-wider mb-1 flex items-center space-x-1.5 ${darkMode ? 'text-indigo-400' : 'text-indigo-700'}`}>
                       <Zap className="h-3.5 w-3.5" />
                       <span>Agent A (Affirmative)</span>
                     </div>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">{stances.stance_a}</p>
+                    <p className={`text-xs leading-relaxed font-sans ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{stances.stance_a}</p>
                   </div>
-                  <div className="bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/30 rounded-xl p-4">
-                    <div className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1 flex items-center space-x-1.5">
+                  <div className={`rounded-xl p-4 border ${darkMode ? 'bg-amber-950/20 border-amber-500/30' : 'bg-amber-50/70 border-amber-200'}`}>
+                    <div className={`text-xs font-bold uppercase tracking-wider mb-1 flex items-center space-x-1.5 ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
                       <Shield className="h-3.5 w-3.5" />
                       <span>Agent B (Negative)</span>
                     </div>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">{stances.stance_b}</p>
+                    <p className={`text-xs leading-relaxed font-sans ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{stances.stance_b}</p>
                   </div>
                 </div>
               )}
@@ -1704,7 +1727,7 @@ function App() {
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     activeRoundTab === 'all'
                       ? 'bg-indigo-600 text-white shadow-md'
-                      : 'bg-white/70 dark:bg-slate-800/70 border border-blue-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800'
+                      : (darkMode ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white/80 border border-blue-200 text-slate-700 hover:bg-white shadow-sm')
                   }`}
                 >
                   🌐 All Rounds
@@ -1721,7 +1744,7 @@ function App() {
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                         activeRoundTab === String(rnd)
                           ? 'bg-indigo-600 text-white shadow-md'
-                          : 'bg-white/70 dark:bg-slate-800/70 border border-blue-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800'
+                          : (darkMode ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white/80 border border-blue-200 text-slate-700 hover:bg-white shadow-sm')
                       }`}
                     >
                       {label}
@@ -1735,7 +1758,7 @@ function App() {
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
                       activeRoundTab === 'verdict'
                         ? 'bg-amber-600 text-white shadow-md'
-                        : 'bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20'
+                        : (darkMode ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 shadow-sm')
                     }`}
                   >
                     <Award className="h-3.5 w-3.5" />
@@ -1759,36 +1782,36 @@ function App() {
                     {debateMode === 'factcheck' && (
                       <div className="space-y-5">
                         {turns.filter(t => t.agent === 'FOR').map(turn => (
-                          <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-emerald-300/60 dark:border-emerald-500/30 rounded-2xl p-6 shadow-xl space-y-3">
-                            <div className="flex items-center space-x-2 text-emerald-700 dark:text-emerald-400">
+                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-emerald-500/30 text-slate-200' : 'bg-white/92 border-emerald-200 text-slate-900 shadow-md'}`}>
+                            <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
                               <CheckCircle className="h-5 w-5" />
                               <span className="text-sm font-bold uppercase tracking-wider">Supporting Evidence (FOR)</span>
                             </div>
-                            <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                            <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                               {renderContentWithClaims(turn.content, turn.claims)}
                             </div>
                           </div>
                         ))}
 
                         {turns.filter(t => t.agent === 'AGAINST').map(turn => (
-                          <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-rose-300/60 dark:border-rose-500/30 rounded-2xl p-6 shadow-xl space-y-3">
-                            <div className="flex items-center space-x-2 text-rose-700 dark:text-rose-400">
+                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-rose-500/30 text-slate-200' : 'bg-white/92 border-rose-200 text-slate-900 shadow-md'}`}>
+                            <div className="flex items-center space-x-2 text-rose-600 dark:text-rose-400">
                               <AlertTriangle className="h-5 w-5" />
                               <span className="text-sm font-bold uppercase tracking-wider">Counter Arguments (AGAINST)</span>
                             </div>
-                            <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                            <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                               {renderContentWithClaims(turn.content, turn.claims)}
                             </div>
                           </div>
                         ))}
 
                         {turns.filter(t => t.agent === 'VERDICT').map(turn => (
-                          <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-indigo-300/60 dark:border-indigo-500/30 rounded-2xl p-6 shadow-xl space-y-3">
-                            <div className="flex items-center space-x-2 text-indigo-700 dark:text-indigo-400">
+                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-indigo-500/30 text-slate-200' : 'bg-white/92 border-indigo-200 text-slate-900 shadow-md'}`}>
+                            <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
                               <Award className="h-5 w-5" />
                               <span className="text-sm font-bold uppercase tracking-wider">Balanced Factual Synthesis</span>
                             </div>
-                            <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                            <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                               {renderContentWithClaims(turn.content, turn.claims)}
                             </div>
                           </div>
@@ -1802,34 +1825,34 @@ function App() {
                         
                         {/* Agent A Column */}
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-300/70 dark:border-indigo-500/30 px-4 py-2.5 rounded-xl">
+                          <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${darkMode ? 'bg-indigo-950/40 border-indigo-500/30' : 'bg-indigo-50/90 border-indigo-200 shadow-sm'}`}>
                             <div className="flex items-center space-x-2">
                               <div className="h-2.5 w-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></div>
-                              <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">Agent A (Affirmative)</span>
+                              <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-indigo-300' : 'text-indigo-900'}`}>Agent A (Affirmative)</span>
                             </div>
-                            <span className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">Temp: 0.6</span>
+                            <span className={`text-[10px] font-mono font-bold ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>Temp: 0.6</span>
                           </div>
 
                           {turns
                             .filter(t => t.agent === 'Agent A')
                             .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
                             .map((turn) => (
-                              <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-indigo-200 dark:border-indigo-500/30 rounded-2xl p-5 shadow-lg space-y-3">
-                                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10 text-xs">
-                                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                              <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-indigo-500/30 text-slate-100' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
+                                <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-indigo-400' : 'border-slate-200 text-indigo-600'}`}>
+                                  <span>
                                     Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : 'Rebuttal'}
                                   </span>
                                 </div>
-                                <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                                <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                                   {renderContentWithClaims(turn.content, turn.claims)}
                                 </div>
                               </div>
                             ))}
 
                           {status.agent === 'Agent A' && (
-                            <div className="bg-white/80 dark:bg-slate-900/80 border border-dashed border-indigo-400 rounded-2xl p-6 text-center space-y-3">
-                              <RefreshCw className="h-6 w-6 animate-spin text-indigo-600 dark:text-indigo-400 mx-auto" />
-                              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            <div className={`border border-dashed rounded-2xl p-6 text-center space-y-3 ${darkMode ? 'bg-slate-900/80 border-indigo-500/40' : 'bg-white/90 border-indigo-300 shadow-sm'}`}>
+                              <RefreshCw className={`h-6 w-6 animate-spin mx-auto ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                              <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
                                 Agent A is articulating arguments &amp; citing sources...
                               </p>
                             </div>
@@ -1838,34 +1861,34 @@ function App() {
 
                         {/* Agent B Column */}
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between bg-amber-500/10 dark:bg-amber-950/30 border border-amber-300/70 dark:border-amber-500/30 px-4 py-2.5 rounded-xl">
+                          <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${darkMode ? 'bg-amber-950/40 border-amber-500/30' : 'bg-amber-50/90 border-amber-200 shadow-sm'}`}>
                             <div className="flex items-center space-x-2">
                               <div className="h-2.5 w-2.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse"></div>
-                              <span className="text-xs font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wider">Agent B (Negative)</span>
+                              <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-amber-300' : 'text-amber-900'}`}>Agent B (Negative)</span>
                             </div>
-                            <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold">Temp: 0.8</span>
+                            <span className={`text-[10px] font-mono font-bold ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>Temp: 0.8</span>
                           </div>
 
                           {turns
                             .filter(t => t.agent === 'Agent B')
                             .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
                             .map((turn) => (
-                              <div key={turn.id} className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-amber-200 dark:border-amber-500/30 rounded-2xl p-5 shadow-lg space-y-3">
-                                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10 text-xs">
-                                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                              <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-md'}`}>
+                                <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-amber-400' : 'border-slate-200 text-amber-600'}`}>
+                                  <span>
                                     Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : 'Rebuttal'}
                                   </span>
                                 </div>
-                                <div className="text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm">
+                                <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                                   {renderContentWithClaims(turn.content, turn.claims)}
                                 </div>
                               </div>
                             ))}
 
                           {status.agent === 'Agent B' && (
-                            <div className="bg-white/80 dark:bg-slate-900/80 border border-dashed border-amber-400 rounded-2xl p-6 text-center space-y-3">
-                              <RefreshCw className="h-6 w-6 animate-spin text-amber-600 dark:text-amber-400 mx-auto" />
-                              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            <div className={`border border-dashed rounded-2xl p-6 text-center space-y-3 ${darkMode ? 'bg-slate-900/80 border-amber-500/40' : 'bg-white/90 border-amber-300 shadow-sm'}`}>
+                              <RefreshCw className={`h-6 w-6 animate-spin mx-auto ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
+                              <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
                                 Agent B is analyzing claims &amp; executing counter-arguments...
                               </p>
                             </div>
@@ -1879,7 +1902,7 @@ function App() {
 
                 {/* Scorecard Panel */}
                 {debateMode === 'debate' && scores && scores.length > 0 && (activeRoundTab === 'all' || activeRoundTab === 'verdict') && (
-                  <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-amber-300 dark:border-amber-500/30 rounded-2xl p-6 shadow-2xl space-y-6">
+                  <div className={`rounded-2xl p-6 shadow-2xl space-y-6 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-xl'}`}>
                     <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
                       <Award className="h-5 w-5" />
                       <span>Official Double-Blind Judgment Scorecard</span>
@@ -1891,11 +1914,11 @@ function App() {
                         const winner = getWinner(scores);
                         const isWinner = score.agent === winner;
                         return (
-                          <div key={score.agent} className={`p-5 rounded-xl border relative ${
+                          <div key={score.agent} className={`p-5 rounded-xl border relative space-y-4 ${
                             isA 
-                              ? 'border-indigo-300 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-950/20' 
-                              : 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20'
-                          } space-y-4`}>
+                              ? (darkMode ? 'border-indigo-500/30 bg-indigo-950/20' : 'border-indigo-200 bg-indigo-50/60') 
+                              : (darkMode ? 'border-amber-500/30 bg-amber-950/20' : 'border-amber-200 bg-amber-50/60')
+                          }`}>
                             {isWinner && winner !== 'Tie' && (
                               <div className="absolute top-4 right-4">
                                 <Crown className={`h-5 w-5 ${isA ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`} />
@@ -1903,13 +1926,13 @@ function App() {
                             )}
 
                             <div className="flex justify-between items-center">
-                              <span className="font-bold text-lg text-slate-900 dark:text-white flex items-center space-x-2">
+                              <span className={`font-bold text-lg flex items-center space-x-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                 <span>{score.agent}</span>
                                 {isWinner && winner !== 'Tie' && (
                                   <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">WINNER</span>
                                 )}
                               </span>
-                              <span className="text-2xl font-extrabold text-slate-900 dark:text-white">{score.total} <span className="text-xs text-slate-500">/ 10</span></span>
+                              <span className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{score.total} <span className="text-xs text-slate-500">/ 10</span></span>
                             </div>
 
                             <div className="space-y-2.5 text-xs">
@@ -1919,11 +1942,11 @@ function App() {
                                 { label: 'Rebuttal Strength', key: 'rebuttal' }
                               ].map(({ label, key }) => (
                                 <div key={key}>
-                                  <div className="flex justify-between text-slate-600 dark:text-slate-400 mb-1 font-semibold">
+                                  <div className="flex justify-between mb-1 font-semibold text-slate-600 dark:text-slate-400">
                                     <span>{label}</span>
-                                    <span className="text-slate-900 dark:text-white font-bold">{score[key]}/10</span>
+                                    <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{score[key]}/10</span>
                                   </div>
-                                  <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                  <div className={`h-2 w-full rounded-full overflow-hidden ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>
                                     <div 
                                       className={`h-full rounded-full ${isA ? 'bg-indigo-600' : 'bg-amber-600'}`}
                                       style={{ width: `${score[key] * 10}%` }}
@@ -1933,8 +1956,8 @@ function App() {
                               ))}
                             </div>
 
-                            <div className="p-3 bg-white/70 dark:bg-slate-800/70 border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
-                              <strong className="block text-slate-900 dark:text-white mb-1">Judge Reasoning:</strong>
+                            <div className={`p-3 border rounded-lg text-xs leading-relaxed font-sans ${darkMode ? 'bg-slate-800/70 border-white/10 text-slate-300' : 'bg-white border-slate-200 text-slate-700 shadow-sm'}`}>
+                              <strong className={`block mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Judge Reasoning:</strong>
                               {score.judge_reasoning}
                             </div>
                           </div>
@@ -1948,20 +1971,20 @@ function App() {
 
               {/* Right 1 Column: Live Fact-Checker Command Matrix */}
               <div className="lg:col-span-1 space-y-4">
-                <div className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-blue-200 dark:border-white/10 rounded-2xl p-5 shadow-xl sticky top-20 space-y-4">
+                <div className={`rounded-2xl p-5 shadow-xl sticky top-20 space-y-4 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/90 border-white/10 text-slate-100 shadow-2xl' : 'bg-white/92 border-blue-200 text-slate-900 shadow-lg'}`}>
                   
                   {/* Radar Header */}
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
+                  <div className={`flex items-center justify-between pb-3 border-b ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
                     <div className="flex items-center space-x-2">
-                      <Shield className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                      <Shield className={`h-4 w-4 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                      <h4 className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                         Fact-Checker Radar
                       </h4>
                     </div>
                     {selectedClaim && (
                       <button 
                         onClick={() => setSelectedClaim(null)} 
-                        className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                        className={`text-[11px] font-bold hover:underline cursor-pointer ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}
                       >
                         &larr; View All
                       </button>
@@ -1972,18 +1995,18 @@ function App() {
                   {selectedClaim ? (
                     <div className="space-y-4 animate-scale-in">
                       <div className="flex items-center justify-between">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
                           selectedClaim.verdict === 'Confirmed' 
-                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30' 
+                            ? (darkMode ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-200')
                             : selectedClaim.verdict === 'Disputed' 
-                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30' 
-                            : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400'
+                            ? (darkMode ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-200')
+                            : (darkMode ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-200')
                         }`}>
                           {selectedClaim.verdict === 'Confirmed' ? '✓ Confirmed' : selectedClaim.verdict === 'Disputed' ? '⚠️ Disputed' : '? Unverifiable'}
                         </span>
 
                         {selectedClaim.source_tier && (
-                          <span className="text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                          <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${darkMode ? 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' : 'text-indigo-700 bg-indigo-50 border-indigo-200'}`}>
                             Tier {selectedClaim.source_tier} Source
                           </span>
                         )}
@@ -1991,26 +2014,26 @@ function App() {
 
                       <div className="space-y-1">
                         <span className="text-[10px] uppercase font-bold text-slate-500">Statement Tested:</span>
-                        <p className="text-xs font-medium text-slate-900 dark:text-white p-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl leading-relaxed">
+                        <p className={`text-xs font-medium p-3 border rounded-xl leading-relaxed ${darkMode ? 'text-white bg-white/5 border-white/10' : 'text-slate-900 bg-slate-50 border-slate-200'}`}>
                           "{selectedClaim.claim_text}"
                         </p>
                       </div>
 
                       <div className="space-y-1">
                         <span className="text-[10px] uppercase font-bold text-slate-500">Audit Verification:</span>
-                        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                        <p className={`text-xs leading-relaxed ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                           {selectedClaim.reasoning}
                         </p>
                       </div>
 
                       {selectedClaim.source_url && (
-                        <div className="pt-2 border-t border-slate-200 dark:border-white/10 space-y-1.5">
+                        <div className={`pt-2 border-t space-y-1.5 ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
                           <span className="text-[10px] uppercase font-bold text-slate-500 block">Verified Citation Link:</span>
                           <a 
                             href={selectedClaim.source_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="inline-flex items-center space-x-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline break-all"
+                            className={`inline-flex items-center space-x-1.5 text-xs font-bold hover:underline break-all ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}
                           >
                             <span>{getDomainFromUrl(selectedClaim.source_url)}</span>
                             <ExternalLink className="h-3 w-3 flex-shrink-0" />
@@ -2030,7 +2053,7 @@ function App() {
                             className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
                               claimFilter === f
                                 ? 'bg-indigo-600 text-white'
-                                : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                                : (darkMode ? 'bg-white/5 text-slate-400 hover:bg-white/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200')
                             }`}
                           >
                             {f}
@@ -2053,17 +2076,23 @@ function App() {
                               <div
                                 key={`claim-card-${i}`}
                                 onClick={() => setSelectedClaim(c)}
-                                className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer space-y-1.5"
+                                className={`p-2.5 rounded-xl border transition-all cursor-pointer space-y-1.5 ${
+                                  darkMode 
+                                    ? 'border-white/10 bg-white/5 hover:bg-white/10 text-slate-200' 
+                                    : 'border-slate-200 bg-white hover:bg-indigo-50/60 text-slate-800 shadow-sm'
+                                }`}
                               >
                                 <div className="flex items-center justify-between text-[10px]">
                                   <span className={`px-1.5 py-0.5 rounded font-bold ${
-                                    c.verdict === 'Confirmed' ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/15' : 'text-amber-700 dark:text-amber-400 bg-amber-500/15'
+                                    c.verdict === 'Confirmed' 
+                                      ? (darkMode ? 'text-emerald-400 bg-emerald-500/15' : 'text-emerald-700 bg-emerald-100') 
+                                      : (darkMode ? 'text-amber-400 bg-amber-500/15' : 'text-amber-700 bg-amber-100')
                                   }`}>
                                     {c.verdict === 'Confirmed' ? '✓ Confirmed' : '⚠️ Disputed'}
                                   </span>
                                   {c.source_tier && <span className="text-slate-500 font-mono">Tier {c.source_tier}</span>}
                                 </div>
-                                <p className="text-xs text-slate-800 dark:text-slate-200 line-clamp-2 font-sans font-medium">
+                                <p className={`text-xs line-clamp-2 font-sans font-medium ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                                   "{c.claim_text}"
                                 </p>
                               </div>

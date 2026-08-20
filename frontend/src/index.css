@@ -2,6 +2,8 @@
 
 @import "tailwindcss";
 
+@variant dark (&:where(.dark-mode, .dark-mode *));
+
 @theme {
   /* Design system tokens – Light Theme */
   --color-brand-dark: #dbeafe;
