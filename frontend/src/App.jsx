@@ -4,13 +4,24 @@ import {
   CheckCircle, HelpCircle, ChevronRight, History, ArrowLeft, 
   ExternalLink, Sparkles, MessageSquare, Info, Star,
   Search, LogIn, LogOut, UserPlus, Lock, Mail, Eye, EyeOff,
-  Zap, Crown, TrendingUp, Target, Globe
+  Zap, Crown, TrendingUp, Target, Globe, Sun, Moon
 } from 'lucide-react';
-import DarkVeil from './DarkVeil';
+import CloudShader from './CloudShader';
+import NightSky from './NightSky';
+import FloatingDock from './FloatingDock';
 import logo from './assets/logo.png';
 import { ParticleCard, GlobalSpotlight } from './MagicBento';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
+// ─── Dark mode helper (outside component to avoid re-creation) ───
+function getInitialDarkMode() {
+  try {
+    const saved = localStorage.getItem('arguforge-dark-mode');
+    if (saved !== null) return saved === 'true';
+  } catch (_) {}
+  return false; // default: light mode
+}
 
 const GithubIcon = ({ className }) => (
   <svg 
@@ -1022,19 +1033,40 @@ function App() {
     return 'Tie';
   };
 
+  // ─── DARK MODE ─────────────────────────────────────────────
+  const [darkMode, setDarkMode] = useState(getInitialDarkMode);
+  const toggleDarkMode = () => {
+    setDarkMode(prev => {
+      const next = !prev;
+      try { localStorage.setItem('arguforge-dark-mode', String(next)); } catch(_) {}
+      return next;
+    });
+  };
+
   // ─── RENDER ────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-brand-dark text-slate-100 flex flex-col antialiased relative">
-      {/* Animated Background Effects */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <DarkVeil
-          scanlineIntensity={0.64}
-          speed={0.7}
-          scanlineFrequency={1.4}
-          hueShift={280}
-        />
-      </div>
+    <div className={`min-h-screen bg-brand-dark text-slate-100 flex flex-col antialiased relative${darkMode ? ' dark-mode' : ''}`}>
+      {/* Adaptive Background Effects */}
+      {!darkMode ? (
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <CloudShader
+            speed={0.7}
+            count={6}
+            cloudColor="#fbf8f2"
+            skyTopColor="#3876ba"
+            skyBottomColor="#8cbfe8"
+          />
+        </div>
+      ) : (
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <NightSky
+            starCount={180}
+            speed={0.6}
+            enableShootingStars={true}
+          />
+        </div>
+      )}
       <div className="dot-grid"></div>
 
       {/* Top Header - Floating design matching the screenshot */}
@@ -1056,7 +1088,7 @@ function App() {
             </div>
           </div>
           
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4">
             <button 
               onClick={() => {
                 if (status.status === 'idle' || confirm("Leave active session?")) {
@@ -1072,15 +1104,20 @@ function App() {
             </button>
             <button 
               onClick={() => {
-                if (status.status === 'idle' || confirm("Leave active session?")) {
-                  if (eventSourceRef.current) eventSourceRef.current.close();
-                  setStatus({ status: 'idle' });
-                  setActiveView('about');
-                }
+                document.getElementById('site-footer')?.scrollIntoView({ behavior: 'smooth' });
               }}
               className="text-sm text-slate-400 hover:text-white transition-colors font-sans cursor-pointer"
             >
               About
+            </button>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="theme-toggle"
+              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
 
             {/* Auth Button */}
@@ -1408,21 +1445,21 @@ function App() {
 
         {/* ── LANDING VIEW ── */}
         {activeView === 'landing' && (
-          <div ref={bentoGridRef} className="max-w-4xl mx-auto w-full py-16 flex flex-col items-center justify-center text-center animate-slide-up bento-section">
+          <div ref={bentoGridRef} className="max-w-4xl mx-auto w-full py-6 sm:py-10 flex flex-col items-center justify-center text-center animate-slide-up bento-section">
             <GlobalSpotlight gridRef={bentoGridRef} spotlightRadius={300} glowColor="168, 85, 247" />
 
             {/* Pill Badge from image */}
-            <div className="inline-flex items-center justify-center border border-white/10 bg-white/5 backdrop-blur-md px-4 py-1.5 rounded-full mb-8 text-xs text-slate-300 font-sans tracking-wide animate-scale-in">
-              <span className="bg-white text-black px-2.5 py-0.5 rounded-full font-bold mr-2 text-[9px]">NEW</span>
+            <div className={`inline-flex items-center justify-center backdrop-blur-md px-4 py-1.5 rounded-full mb-5 text-xs font-sans tracking-wide animate-scale-in ${darkMode ? 'border border-white/10 bg-white/5 text-slate-300' : 'border border-blue-200 bg-white/60 text-slate-700'}`}>
+              <span className={`px-2.5 py-0.5 rounded-full font-bold mr-2 text-[9px] ${darkMode ? 'bg-white text-black' : 'bg-indigo-600 text-white'}`}>NEW</span>
               <span>Just shipped v2.0</span>
             </div>
 
             {/* Hero Heading - matching font and text style */}
-            <h2 className="text-5xl md:text-7xl font-extrabold tracking-tight font-sans text-white mb-6 leading-tight max-w-4xl mx-auto">
-              Become emboldened by the flame of truth
+            <h2 className={`text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight font-sans mb-4 leading-tight max-w-3xl mx-auto ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+              Rise above the noise, forge the truth
             </h2>
 
-            <p className="text-slate-400 text-lg mb-10 max-w-xl font-sans font-light leading-relaxed">
+            <p className={`text-base sm:text-lg mb-8 max-w-xl font-sans font-light leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               Submit any topic. Settle claims with verified sources. Choose a full adversarial AI debate or a quick factual deep-dive analysis.
             </p>
             
@@ -1436,14 +1473,14 @@ function App() {
                 glowColor="168, 85, 247"
                 className="w-full magic-bento-card rounded-2xl"
               >
-                <div className="flex items-center w-full bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 backdrop-blur-xl px-5 py-2.5 rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.02)] focus-within:border-white/40 focus-within:shadow-[0_0_30px_rgba(255,255,255,0.08)] transition-all duration-300">
+                <div className={`flex items-center w-full backdrop-blur-xl px-5 py-2.5 rounded-2xl transition-all duration-300 ${darkMode ? 'bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.02)] focus-within:border-white/40 focus-within:shadow-[0_0_30px_rgba(255,255,255,0.08)]' : 'bg-white/70 hover:bg-white/80 border border-blue-200 shadow-lg shadow-black/5 focus-within:border-indigo-400 focus-within:shadow-[0_0_20px_rgba(79,70,229,0.12)]'}`}>
                   <Search className="h-5 w-5 text-slate-400 mr-3 flex-shrink-0" />
                   <input 
                     type="text" 
                     value={topicInput}
                     onChange={(e) => setTopicInput(e.target.value)}
                     placeholder="Should electric vehicles be mandatory by 2035?"
-                    className="w-full bg-transparent py-3 text-slate-100 placeholder-slate-500 focus:outline-none font-sans text-md"
+                    className={`w-full bg-transparent py-3 focus:outline-none font-sans text-md ${darkMode ? 'text-slate-100 placeholder-slate-500' : 'text-slate-800 placeholder-slate-400'}`}
                   />
                 </div>
               </ParticleCard>
@@ -1457,9 +1494,9 @@ function App() {
                 glowColor="168, 85, 247"
                 className="mt-6 w-full max-w-lg magic-bento-card rounded-2xl"
               >
-                <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 bg-white/5 border border-white/10 backdrop-blur-md px-5 py-3 rounded-2xl">
-                  <span className="text-xs text-slate-400 font-sans font-bold uppercase tracking-wider">Analysis Focus:</span>
-                  <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
+                <div className={`flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 backdrop-blur-md px-5 py-3 rounded-2xl ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white/65 border border-blue-200 shadow-md shadow-black/5'}`}>
+                  <span className={`text-xs font-sans font-bold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Analysis Focus:</span>
+                  <div className={`flex p-1 rounded-xl ${darkMode ? 'bg-black/40 border border-white/10' : 'bg-slate-200/80 border border-blue-200'}`}>
                     {[
                       { value: 'both', label: 'Both Sides' },
                       { value: 'for', label: 'Supporting' },
@@ -1471,8 +1508,8 @@ function App() {
                         onClick={() => setStancePreference(opt.value)}
                         className={`text-[11px] px-4 py-1.5 rounded-lg font-bold uppercase tracking-wide transition-all ${
                           stancePreference === opt.value
-                            ? 'bg-white text-black shadow-lg'
-                            : 'text-slate-400 hover:text-white'
+                            ? (darkMode ? 'bg-white text-black shadow-lg' : 'bg-indigo-600 text-white shadow-lg')
+                            : (darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900')
                         }`}
                       >
                         {opt.label}
@@ -1516,7 +1553,7 @@ function App() {
                       setDebateMode('factcheck');
                       handleStartDebate(null, 'factcheck');
                     }}
-                    className="bg-transparent text-white border border-white/15 hover:bg-white/5 font-bold px-8 py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200"
+                    className={`font-bold px-8 py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200 ${darkMode ? 'bg-transparent text-white border border-white/15 hover:bg-white/5' : 'bg-white/60 text-slate-800 border border-blue-200 hover:bg-white/80'}`}
                   >
                     <Shield className="h-4 w-4 text-white" />
                     <span>Run Fact-Check</span>
@@ -1526,38 +1563,25 @@ function App() {
             </form>
             
             {/* Quick prefill examples */}
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-2 max-w-2xl">
-              <span className="text-xs text-slate-500 mr-2 flex items-center font-sans"><Sparkles className="h-3 w-3 mr-1 text-slate-400" />Try:</span>
-              {["Should electric vehicles be mandatory by 2035?", "Is artificial intelligence a net benefit to public education?", "Should lab-grown meat be certified for commercial scale distribution?"].map((ex, i) => (
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-2 max-w-2xl">
+              <span className="text-xs text-slate-500 mr-1 flex items-center font-sans"><Sparkles className="h-3 w-3 mr-1 text-slate-400" />Try:</span>
+              {["Should electric vehicles be mandatory by 2035?", "Is artificial intelligence a net benefit to public education?", "Should lab-grown meat be certified for commercial scale distribution?"].map((ex) => (
                 <button 
                   key={ex}
                   onClick={() => setTopicInput(ex)}
-                  className="bg-white/5 border border-white/10 text-xs px-4 py-2 rounded-full text-slate-400 hover:text-white hover:border-white/20 transition-all duration-300 font-sans"
+                  className={`text-xs px-3.5 py-1.5 rounded-full transition-all duration-300 font-sans ${darkMode ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20' : 'bg-white/60 border border-blue-200 text-slate-600 hover:text-slate-900 hover:border-blue-300'}`}
                 >
-                  {ex.length > 40 ? ex.substring(0, 40) + '...' : ex}
+                  {ex.length > 38 ? ex.substring(0, 38) + '...' : ex}
                 </button>
               ))}
             </div>
 
-            {/* Features row */}
-            <div className="mt-12 grid grid-cols-3 gap-4 w-full max-w-lg border-t border-white/10 pt-8">
-              {[
-                { icon: <Target className="h-4 w-4" />, label: 'Source Verified', color: 'text-slate-400' },
-                { icon: <Globe className="h-4 w-4" />, label: 'Trusted Domains', color: 'text-slate-400' },
-                { icon: <TrendingUp className="h-4 w-4" />, label: 'Bias-Free Judge', color: 'text-slate-400' }
-              ].map((feat) => (
-                <div key={feat.label} className="flex flex-col items-center space-y-2 py-1">
-                  <div className={`${feat.color}`}>{feat.icon}</div>
-                  <span className="text-[11px] text-slate-500 font-sans font-semibold">{feat.label}</span>
-                </div>
-              ))}
-            </div>
 
             {!currentUser && (
-              <div className="mt-8 bg-white/5 border border-white/10 rounded-xl p-4 max-w-md">
-                <p className="text-xs text-slate-400 font-sans text-center">
-                  <Lock className="h-3 w-3 inline mr-1" />
-                  <button onClick={() => setActiveView('login')} className="text-white hover:underline font-semibold">Sign in</button> to start debates and fact-checks. Browse the archive as a guest.
+              <div className={`mt-5 rounded-xl px-4 py-2.5 max-w-md backdrop-blur-md ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white/60 border border-blue-200'}`}>
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-sans text-center">
+                  <Lock className="h-3 w-3 inline mr-1 opacity-70" />
+                  <button onClick={() => setActiveView('login')} className="font-semibold underline hover:opacity-80">Sign in</button> to save debates &amp; fact-checks to your archive.
                 </p>
               </div>
             )}
@@ -2172,209 +2196,166 @@ function App() {
             )}
           </div>
         )}
-
-        {/* ── ABOUT & DEVELOPER VIEW ── */}
-        {activeView === 'about' && (
-          <div className="max-w-4xl mx-auto w-full py-8 space-y-8 animate-slide-up">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-3xl font-bold font-serif gradient-text">About ArguForge AI</h3>
-                <p className="text-sm text-brand-textMuted font-sans mt-1">
-                  Argument Forge Artificial Intelligence &mdash; Source-Integrity AI Debate Platform
-                </p>
-              </div>
-              <button 
-                onClick={() => setActiveView('landing')}
-                className="flex items-center space-x-2 glass hover:bg-brand-border/50 px-4 py-2 rounded-xl text-sm transition-all text-slate-300 hover:text-white hover-lift cursor-pointer"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back Home</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Features & Concept (Span 2) */}
-              <div className="md:col-span-2 space-y-6">
-                {/* Platform Overview */}
-                <div className="glass rounded-2xl p-6 glow-accent border border-white/10 relative overflow-hidden group hover-lift">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand-accent/5 rounded-full blur-3xl group-hover:bg-brand-accent/10 transition-all duration-500"></div>
-                  <h4 className="text-xl font-bold font-serif mb-3 text-slate-100 flex items-center space-x-2">
-                    <Sparkles className="h-5 w-5 text-brand-accent animate-pulse" />
-                    <span>The Vision</span>
-                  </h4>
-                  <p className="text-sm text-slate-300 font-sans leading-relaxed">
-                    <strong>ArguForge AI</strong> stands for <strong>Argument Forge Artificial Intelligence</strong>. It is a full-stack, source-integrity-first AI debate and factual analysis platform designed to battle misinformation. By setting specialized, temperature-tuned agents in an adversarial debate arena, the platform forge logical, source-verified insights for any topic.
-                  </p>
-                </div>
-
-                {/* Features Card */}
-                <div className="glass rounded-2xl p-6 border border-white/10 hover-lift">
-                  <h4 className="text-xl font-bold font-serif mb-4 text-slate-100 flex items-center space-x-2">
-                    <Shield className="h-5 w-5 text-brand-accent" />
-                    <span>Core Features</span>
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-1.5 hover:bg-white/[0.08] transition-colors duration-300">
-                      <div className="flex items-center space-x-2">
-                        <MessageSquare className="h-4 w-4 text-brand-accent" />
-                        <h5 className="font-bold text-sm text-slate-200">Adversarial Debate</h5>
-                      </div>
-                      <p className="text-xs text-brand-textMuted leading-relaxed">
-                        Two temperature-tuned agents argue opposing stances (Affirmative vs. Negative) to generate structured, logical rebuttals.
-                      </p>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-1.5 hover:bg-white/[0.08] transition-colors duration-300">
-                      <div className="flex items-center space-x-2">
-                        <Search className="h-4 w-4 text-emerald-400" />
-                        <h5 className="font-bold text-sm text-slate-200">Source-Integrity Auditing</h5>
-                      </div>
-                      <p className="text-xs text-brand-textMuted leading-relaxed">
-                        An independent Fact-Checker extracts objective claims and verifies them against a strict multi-tier whitelist.
-                      </p>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-1.5 hover:bg-white/[0.08] transition-colors duration-300">
-                      <div className="flex items-center space-x-2">
-                        <Award className="h-4 w-4 text-brand-accentAmber" />
-                        <h5 className="font-bold text-sm text-slate-200">Bias-Free Judging</h5>
-                      </div>
-                      <p className="text-xs text-brand-textMuted leading-relaxed">
-                        Eliminates position bias by evaluating the debate twice (swapping labels) and averaging scores for logic, evidence, and rebuttal.
-                      </p>
-                    </div>
-                    <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-1.5 hover:bg-white/[0.08] transition-colors duration-300">
-                      <div className="flex items-center space-x-2">
-                        <Zap className="h-4 w-4 text-indigo-400" />
-                        <h5 className="font-bold text-sm text-slate-200">Real-Time Streaming</h5>
-                      </div>
-                      <p className="text-xs text-brand-textMuted leading-relaxed">
-                        Uses Server-Sent Events (SSE) to stream live arguments, factual verdict badges, and judgment scores on the fly.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Usage Card */}
-                <div className="glass rounded-2xl p-6 border border-white/10 hover-lift">
-                  <h4 className="text-xl font-bold font-serif mb-4 text-slate-100 flex items-center space-x-2">
-                    <BookOpen className="h-5 w-5 text-brand-accentAmber" />
-                    <span>How to Use</span>
-                  </h4>
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center flex-shrink-0 text-xs font-bold text-brand-accent">1</div>
-                      <div>
-                        <h5 className="text-sm font-bold text-slate-200">Enter your topic</h5>
-                        <p className="text-xs text-brand-textMuted mt-0.5 leading-relaxed">Type any debate statement or query in the main input box on the landing page.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center flex-shrink-0 text-xs font-bold text-brand-accent">2</div>
-                      <div>
-                        <h5 className="text-sm font-bold text-slate-200">Select Mode &amp; Stance</h5>
-                        <p className="text-xs text-brand-textMuted mt-0.5 leading-relaxed">Choose "Debate" for live argumentation or "Fact-Check" for a structured source-audited synthesis. Optionally select a specific stance preference.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center flex-shrink-0 text-xs font-bold text-brand-accent">3</div>
-                      <div>
-                        <h5 className="text-sm font-bold text-slate-200">Inspect Verifications</h5>
-                        <p className="text-xs text-brand-textMuted mt-0.5 leading-relaxed">Click on any claim's color-coded verdict badge (Confirmed, Disputed, Unverifiable) to view source references and reasoning logs.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Developer Profile (Span 1) */}
-              <div className="md:col-span-1 space-y-6">
-                <div className="glass rounded-2xl p-6 glow-accent border border-white/10 flex flex-col items-center text-center space-y-5 hover-lift relative overflow-hidden">
-                  <div className="absolute -top-10 -right-10 w-24 h-24 bg-brand-accent/10 rounded-full blur-xl"></div>
-                  
-                  {/* Developer Avatar */}
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-brand-accent to-purple-500 p-[2px] shadow-lg animate-float">
-                    <div className="w-full h-full rounded-full bg-[#120F17] flex items-center justify-center overflow-hidden">
-                      <span className="text-3xl font-bold font-serif text-brand-textLight tracking-wider">KA</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xl font-bold font-serif text-slate-100">Ketan Arora</h4>
-                    <p className="text-xs text-brand-accent font-sans font-semibold mt-0.5">Lead Developer &amp; Creator</p>
-                  </div>
-
-                  <p className="text-xs text-slate-300 font-sans leading-relaxed">
-                    Passionate about building intelligent AI agents, robust full-stack applications, and polished user interfaces that prioritize speed and clarity.
-                  </p>
-
-                  <div className="w-full border-t border-brand-border/40 my-1"></div>
-
-                  <div className="w-full space-y-3">
-                    <span className="text-xs font-semibold text-brand-textMuted font-sans block text-left">Connect with me:</span>
-                    
-                    <div className="grid grid-cols-1 gap-2.5 w-full">
-                      {/* GitHub */}
-                      <a 
-                        href="https://github.com/Ketan2707" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
-                      >
-                        <GithubIcon className="h-4 w-4 text-slate-400 group-hover:scale-110 transition-transform" />
-                        <span className="font-medium">GitHub / Ketan2707</span>
-                      </a>
-
-                      {/* LinkedIn */}
-                      <a 
-                        href="https://www.linkedin.com/in/ketan-karan-arora-5a729b28b/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
-                      >
-                        <LinkedinIcon className="h-4 w-4 text-indigo-400 group-hover:scale-110 transition-transform" />
-                        <span className="font-medium">LinkedIn / Ketan Arora</span>
-                      </a>
-
-                      {/* Instagram */}
-                      <a 
-                        href="https://www.instagram.com/ketannarora/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
-                      >
-                        <InstagramIcon className="h-4 w-4 text-pink-400 group-hover:scale-110 transition-transform" />
-                        <span className="font-medium">Instagram / ketannarora</span>
-                      </a>
-
-                      {/* Gmail */}
-                      <a 
-                        href="mailto:ketanarora7890@gmail.com" 
-                        className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:border-white/30 hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-sans text-slate-300 hover:text-white transition-all duration-300 group cursor-pointer"
-                      >
-                        <Mail className="h-4 w-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                        <span className="font-medium">Email / ketanarora7890@gmail.com</span>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-brand-border/40 bg-brand-dark/30 backdrop-blur-sm py-8 px-6 text-center text-xs text-brand-textMuted font-sans relative z-10">
-        <div className="max-w-7xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
-          <p className="flex items-center space-x-2">
-            <img src={logo} className="h-5 w-5 object-contain" alt="Logo" />
-            <span>&copy; {new Date().getFullYear()} ArguForge AI — Fact-Checked AI Analysis Platform.</span>
-          </p>
-          <div className="flex items-center space-x-2">
-            <span className="bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-bold">Tier 1: AP / Reuters / PIB</span>
-            <span className="bg-brand-accent/10 text-brand-accent border border-brand-accent/20 px-2 py-0.5 rounded text-[10px] font-bold">Tier 2: BBC / NYT / Guardian</span>
-            <span className="bg-slate-800/60 text-slate-400 border border-slate-700/50 px-2 py-0.5 rounded text-[10px] font-bold">Tier 3: CFR / Brookings</span>
+      {/* ── ACETERNITY-STYLE MULTI-COLUMN MEGA FOOTER ── */}
+      <footer id="site-footer" className="relative z-10 border-t border-brand-border/30 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-xl pt-14 pb-8 px-6 sm:px-12 mt-16 font-sans">
+        <div className="max-w-7xl mx-auto">
+          
+          {/* Top Brand Section */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-10 border-b border-brand-border/20 dark:border-white/10">
+            <div className="space-y-2 max-w-xl">
+              <div className="flex items-center space-x-2.5">
+                <img src={logo} className="h-7 w-7 object-contain" alt="ArguForge AI Logo" />
+                <h3 className="text-xl font-bold font-sans tracking-tight text-slate-900 dark:text-white">ArguForge AI</h3>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Source-integrity-first adversarial debate &amp; factual analysis platform. Temperature-tuned dual AI agents clashing with multi-tier source verification and bias-free scoring.
+              </p>
+              <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                Engineered by <span className="font-bold underline decoration-indigo-400/50">Ketan Karan Arora</span> &bull; <a href="https://github.com/Ketan2707" target="_blank" rel="noopener noreferrer" className="hover:underline">Building in public @Ketan2707</a>
+              </p>
+            </div>
+
+            {/* Floating Dock on Top Right of Mega Footer */}
+            <div className="flex items-center self-start md:self-center">
+              <FloatingDock
+                items={[
+                  {
+                    title: "GitHub / Ketan2707",
+                    icon: <GithubIcon className="h-full w-full" />,
+                    href: "https://github.com/Ketan2707",
+                  },
+                  {
+                    title: "LinkedIn / Ketan Karan Arora",
+                    icon: <LinkedinIcon className="h-full w-full" />,
+                    href: "https://www.linkedin.com/in/ketan-karan-arora-5a729b28b/",
+                  },
+                  {
+                    title: "Instagram / @ketannarora",
+                    icon: <InstagramIcon className="h-full w-full" />,
+                    href: "https://www.instagram.com/ketannarora/",
+                  },
+                  {
+                    title: "Email Developer",
+                    icon: <Mail className="h-full w-full" />,
+                    href: "mailto:ketanarora7890@gmail.com",
+                  },
+                ]}
+              />
+            </div>
           </div>
+
+          {/* 5-Column Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 py-10 text-xs">
+            
+            {/* Col 1: Debate Arena */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Debate Arena</h4>
+              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Adversarial AI Engine</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Temperature Tuning</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Cross-Examination</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Live SSE Streaming</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Real-Time Rebuttals</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Stance Focus Selector</li>
+              </ul>
+            </div>
+
+            {/* Col 2: Fact-Check Tiers */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Fact-Check Tiers</h4>
+              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                <li className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-default">Tier 1: AP &amp; Reuters Wire</li>
+                <li className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-default">Tier 1: PIB Public Records</li>
+                <li className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-default">Tier 2: BBC, NYT &amp; Guardian</li>
+                <li className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-default">Tier 3: CFR &amp; Brookings</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Domain Whitelist Index</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Zero-Hallucination Rule</li>
+              </ul>
+            </div>
+
+            {/* Col 3: Bias-Free Judge */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Bias-Free Judge</h4>
+              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Double-Blind Scoring</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Position Label Swapping</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Logic &amp; Fallacy Audit</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Evidence Weight Analysis</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Rebuttal Strength Index</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Verdict Synthesis Reports</li>
+              </ul>
+            </div>
+
+            {/* Col 4: Platform & Tech */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Platform</h4>
+              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                <li>
+                  <button onClick={() => { loadHistory(); setActiveView('history'); }} className="hover:text-indigo-600 dark:hover:text-white transition-colors text-left cursor-pointer">
+                    Debate Archive
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setActiveView('login')} className="hover:text-indigo-600 dark:hover:text-white transition-colors text-left cursor-pointer">
+                    OAuth Sign In
+                  </button>
+                </li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Day &amp; Night Sky Themes</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Claim Drawer Inspector</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">FastAPI Backend Engine</li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Groq &amp; Llama 3.3 LLMs</li>
+              </ul>
+            </div>
+
+            {/* Col 5: Creator & Connect */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Developer</h4>
+              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                <li>
+                  <a href="https://github.com/Ketan2707" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
+                    <span>GitHub / Ketan2707</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="https://www.linkedin.com/in/ketan-karan-arora-5a729b28b/" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
+                    <span>LinkedIn / Ketan Karan Arora</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="https://www.instagram.com/ketannarora/" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
+                    <span>Instagram / @ketannarora</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:ketanarora7890@gmail.com" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
+                    <span>Email Developer</span>
+                  </a>
+                </li>
+                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Full-Stack AI Engineering</li>
+                <li>
+                  <a href="https://github.com/Ketan2707/Debate-Arena" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
+                    ★ Star on GitHub
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-brand-border/20 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400">
+            <p>
+              &copy; {new Date().getFullYear()} ArguForge AI. All rights reserved. &bull; Engineered by <span className="font-semibold text-slate-700 dark:text-slate-300">Ketan Karan Arora</span>
+            </p>
+            
+            <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>All Verification Systems Operational</span>
+            </div>
+          </div>
+
         </div>
       </footer>
 

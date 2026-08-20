@@ -12,13 +12,13 @@ export default {
       },
       colors: {
         brand: {
-          dark: '#0e1013',      // Premium deep charcoal background
-          panel: '#16191f',     // Slightly lighter panels
-          border: '#242731',    // Fine border lines
-          accent: '#6366f1',    // confident electric indigo accent
-          accentAmber: '#f59e0b', // warm amber for verdicts
-          textMuted: '#8e9aa8', // readable muted text
-          textLight: '#f8fafc',
+          dark: '#dbeafe',            // Light sky blue background
+          panel: 'rgba(255,255,255,0.55)',  // Frosted white panels
+          border: '#bfdbfe',          // Light blue borders
+          accent: '#4f46e5',          // Deeper indigo for light bg
+          accentAmber: '#d97706',     // Darker amber for readability
+          textMuted: '#475569',       // Slate-600 for muted text
+          textLight: '#1e293b',       // Dark slate for primary text
         }
       }
     },
