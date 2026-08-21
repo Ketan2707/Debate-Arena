@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Zap, Shield, Swords, Sparkles, Flame, Trophy, Cpu } from 'lucide-react';
+import { Sparkles, Cpu, Orbit, Zap } from 'lucide-react';
 import logo from './assets/logo.png';
 
 /**
- * 🎬 CONCEPT 4: HIGH-CONTRAST CINEMATIC MATCHUP LETTERBOX
- * - 100% Opaque & Crisp Backdrop (No background bleed-through)
- * - Ultra-high contrast cards with bold white serif typography
- * - Top & Bottom widescreen cinematic bars (y: -100% / +100%)
- * - Retracts smoothly when debate starts
+ * 🌟 FINAL TRANSITION — CONCEPT 1: THE GLASS WARP & NEURAL GYROSCOPE (Apple / Linear Style)
+ * - Heavy frosted glass depth-of-field overlay (No background bleed-through)
+ * - 3D Nested Concentric Gyroscope Rings spinning on multi-axis orbits
+ * - Radial neural warp particle rays pulling inward toward center
+ * - Neural frequency equalizer audio bars
+ * - High-contrast contested motion card (Theme-adaptive)
+ * - Silky smooth luxury expansion dissolve reveal
  */
 export default function BattleTransition({
   isActive = false,
   topic = '',
   mode = 'debate',
-  statusMessage = 'Orchestrating Adversarial Clash...',
+  statusMessage = 'Synthesizing Dual-Agent Stances...',
   darkMode = false,
 }) {
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -31,173 +33,216 @@ export default function BattleTransition({
     <AnimatePresence>
       {isActive && (
         <motion.div
-          key="cinematic-matchup-transition"
+          key="neural-gyroscope-transition-final"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          className="fixed inset-0 z-[100] pointer-events-auto flex items-center justify-center overflow-hidden select-none bg-[#050714]"
+          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed inset-0 z-[100] pointer-events-auto flex items-center justify-center overflow-hidden select-none"
           style={{ willChange: 'transform, opacity' }}
         >
-          {/* Ambient Glow Atmosphere (Contained inside transition) */}
-          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 rounded-full bg-indigo-600/20 blur-[100px] pointer-events-none" />
-          <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 rounded-full bg-amber-600/20 blur-[100px] pointer-events-none" />
+          {/* ═══════════ 1. HEAVY FROSTED BACKDROP (ZERO BLEED) ═══════════ */}
+          <div
+            className={`absolute inset-0 backdrop-blur-3xl transition-colors duration-500 ${
+              darkMode
+                ? 'bg-[#060813]/95'
+                : 'bg-gradient-to-b from-[#2a62a0]/95 via-[#4a85c8]/95 to-[#7cb0dc]/95'
+            }`}
+          />
 
-          {/* ═══════════ 1. TOP CINEMATIC LETTERBOX BAR ═══════════ */}
-          <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { y: '-100%' }}
-            animate={reduceMotion ? { opacity: 1 } : { y: '0%' }}
-            exit={
-              reduceMotion
-                ? { opacity: 0 }
-                : {
-                    y: '-100%',
-                    transition: { duration: 0.35, ease: [0.75, 0, 0.2, 1] },
-                  }
-            }
-            transition={{ duration: 0.28, ease: [0.12, 0.95, 0.2, 1.0] }}
-            className="absolute top-0 left-0 right-0 h-[22vh] z-20 bg-[#02040a] border-b border-indigo-500/40 shadow-2xl"
-          >
-            {/* Top Glowing Laser Seam */}
-            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 via-white to-amber-500 shadow-[0_0_15px_#818cf8]" />
-          </motion.div>
+          {/* Ambient Glow Orbs */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-indigo-500/30 via-blue-400/25 to-amber-400/25 blur-[120px] pointer-events-none animate-pulse" />
 
-          {/* ═══════════ 2. BOTTOM CINEMATIC LETTERBOX BAR ═══════════ */}
-          <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { y: '100%' }}
-            animate={reduceMotion ? { opacity: 1 } : { y: '0%' }}
-            exit={
-              reduceMotion
-                ? { opacity: 0 }
-                : {
-                    y: '100%',
-                    transition: { duration: 0.35, ease: [0.75, 0, 0.2, 1] },
-                  }
-            }
-            transition={{ duration: 0.28, ease: [0.12, 0.95, 0.2, 1.0] }}
-            className="absolute bottom-0 left-0 right-0 h-[22vh] z-20 bg-[#02040a] border-t border-amber-500/40 shadow-2xl"
-          >
-            {/* Bottom Glowing Laser Seam */}
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 via-white to-amber-500 shadow-[0_0_15px_#fbbf24]" />
-          </motion.div>
+          {/* ═══════════ 2. RADIAL NEURAL WARP RAYS ═══════════ */}
+          {!reduceMotion && (
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
+              {[...Array(16)].map((_, i) => (
+                <motion.div
+                  key={`ray-${i}`}
+                  initial={{ scaleY: 0, opacity: 0 }}
+                  animate={{
+                    scaleY: [0.2, 1.4, 0.4],
+                    opacity: [0.1, 0.45, 0.1],
+                  }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 2.2 + (i % 4) * 0.3,
+                    delay: i * 0.1,
+                    ease: 'easeInOut',
+                  }}
+                  className={`absolute w-[1.5px] h-[45vh] origin-bottom ${
+                    i % 2 === 0
+                      ? 'bg-gradient-to-t from-indigo-400/80 via-blue-300/40 to-transparent'
+                      : 'bg-gradient-to-t from-amber-400/80 via-amber-200/40 to-transparent'
+                  }`}
+                  style={{
+                    transform: `rotate(${i * 22.5}deg) translateY(-20px)`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
-          {/* ═══════════ 3. CENTRAL CINEMATIC MATCHUP STAGE (z-30) ═══════════ */}
+          {/* ═══════════ 3. 3D GYROSCOPE ORBITAL RINGS & CORE ═══════════ */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ scale: 0.82, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             exit={{
+              scale: 1.75,
               opacity: 0,
-              scale: 1.08,
-              filter: 'blur(8px)',
-              transition: { duration: 0.25, ease: [0.7, 0, 0.2, 1] },
+              filter: 'blur(12px)',
+              transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
             }}
-            transition={{ delay: 0.06, duration: 0.28, ease: 'easeOut' }}
-            className="relative z-30 w-full max-w-5xl px-4 sm:px-6 flex flex-col items-center justify-center"
+            transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-lg"
           >
-            {/* 3-Column Matchup Grid */}
-            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-center">
+            {/* The Gyroscope Mechanism */}
+            <div className="relative w-44 h-44 sm:w-52 sm:h-52 mb-6 flex items-center justify-center">
               
-              {/* ── LEFT: AGENT A (AFFIRMATIVE) ── */}
+              {/* Outer Ring 1 (Cobalt Indigo Orbit) */}
               <motion.div
-                initial={reduceMotion ? { opacity: 0 } : { x: -30, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.12, duration: 0.28 }}
-                className="flex flex-col items-start space-y-2 p-4 sm:p-5 rounded-2xl bg-[#090d24] border-2 border-indigo-500/60 shadow-[0_12px_32px_rgba(0,0,0,0.6)] relative overflow-hidden"
+                animate={
+                  reduceMotion
+                    ? {}
+                    : {
+                        rotate: 360,
+                        rotateX: [0, 45, 0],
+                      }
+                }
+                transition={{
+                  rotate: { repeat: Infinity, duration: 8, ease: 'linear' },
+                  rotateX: { repeat: Infinity, duration: 4, ease: 'easeInOut' },
+                }}
+                className="absolute inset-0 rounded-full border-2 border-indigo-400/50 shadow-[0_0_24px_rgba(99,102,241,0.3)]"
+                style={{ borderDasharray: '6 4' }}
               >
-                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-900/90 border border-indigo-400 text-indigo-200 text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-md">
-                  <Zap className="w-3.5 h-3.5 text-indigo-300 animate-pulse" />
-                  <span>{mode === 'factcheck' ? 'EVIDENCE BASE' : 'AGENT A • PRO'}</span>
-                </div>
-
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-black text-white tracking-tight leading-tight drop-shadow-md">
-                  {mode === 'factcheck' ? 'SUPPORT' : 'PRO POSITION'}
-                </h2>
-
-                <p className="text-xs font-mono font-semibold text-indigo-300">
-                  Temp 0.6 &bull; Strict Logical Axioms
-                </p>
+                {/* Orbiting Spark 1 */}
+                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-indigo-300 shadow-[0_0_12px_#818cf8]" />
               </motion.div>
 
-              {/* ── CENTER: "VS" EMBLEM & CONTESTED TOPIC ── */}
-              <div className="flex flex-col items-center justify-center text-center space-y-3">
-                
-                {/* Glowing Hexagonal VS Emblem */}
-                <motion.div
-                  initial={{ scale: 1.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.3, ease: [0.15, 1.25, 0.3, 1.0] }}
-                  className="relative flex items-center justify-center"
-                >
-                  <div className="absolute -inset-5 rounded-full bg-gradient-to-r from-indigo-500/50 via-amber-500/50 to-indigo-500/50 blur-2xl animate-pulse" />
-                  
-                  <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-3xl bg-[#0a0e27] border-2 border-amber-400 shadow-[0_16px_40px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center p-2">
-                    <img
-                      src={logo}
-                      className="w-10 h-10 sm:w-11 sm:h-11 object-contain drop-shadow-md mb-0.5"
-                      alt="Logo"
-                    />
-                    <span className="text-lg sm:text-xl font-black italic tracking-tighter text-amber-300 font-sans leading-none drop-shadow-[0_2px_8px_rgba(245,158,11,0.8)]">
-                      VS
-                    </span>
+              {/* Middle Ring 2 (Amber Gold Counter-Orbit) */}
+              <motion.div
+                animate={
+                  reduceMotion
+                    ? {}
+                    : {
+                        rotate: -360,
+                        rotateY: [0, 55, 0],
+                      }
+                }
+                transition={{
+                  rotate: { repeat: Infinity, duration: 6, ease: 'linear' },
+                  rotateY: { repeat: Infinity, duration: 3.5, ease: 'easeInOut' },
+                }}
+                className="absolute inset-3 rounded-full border-2 border-amber-400/60 shadow-[0_0_24px_rgba(245,158,11,0.3)]"
+              >
+                {/* Orbiting Spark 2 */}
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-amber-300 shadow-[0_0_12px_#fbbf24]" />
+              </motion.div>
 
-                    {/* Corner Sparkle */}
-                    <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black p-1 rounded-full shadow-lg border border-amber-200">
-                      <Sparkles className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} />
-                    </div>
-                  </div>
-                </motion.div>
+              {/* Inner Ring 3 (High-Speed Gyro) */}
+              <motion.div
+                animate={
+                  reduceMotion
+                    ? {}
+                    : {
+                        rotate: 360,
+                        scale: [1, 1.05, 1],
+                      }
+                }
+                transition={{
+                  rotate: { repeat: Infinity, duration: 4, ease: 'linear' },
+                  scale: { repeat: Infinity, duration: 2, ease: 'easeInOut' },
+                }}
+                className="absolute inset-7 rounded-full border-2 border-dashed border-white/70"
+              />
 
-                {/* Contested Motion Card (High-Contrast Solid Surface) */}
-                {topic && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.18, duration: 0.22 }}
-                    className="w-full max-w-sm sm:max-w-md bg-[#090d24] border-2 border-white/25 rounded-2xl p-3.5 sm:p-4 shadow-2xl"
-                  >
-                    <div className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex items-center justify-center space-x-1.5 mb-1">
-                      <Swords className="w-3.5 h-3.5" />
-                      <span>CONTESTED MOTION</span>
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-serif font-extrabold text-white line-clamp-2 leading-relaxed drop-shadow">
-                      "{topic}"
-                    </h3>
-                  </motion.div>
-                )}
+              {/* Central Glowing Core with ArguForge Logo */}
+              <motion.div
+                animate={{
+                  scale: [1, 1.06, 1],
+                }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-3xl p-3 flex items-center justify-center border-2 shadow-2xl backdrop-blur-2xl ${
+                  darkMode
+                    ? 'bg-[#090d24] border-white/20 shadow-[0_0_35px_rgba(99,102,241,0.4)]'
+                    : 'bg-white/95 border-white shadow-[0_16px_40px_rgba(30,58,138,0.35)]'
+                }`}
+              >
+                <img
+                  src={logo}
+                  className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-md"
+                  alt="ArguForge AI Logo"
+                />
+              </motion.div>
+            </div>
 
-                {/* Live Status Pill */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.24, duration: 0.2 }}
-                  className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-[#050716] border-2 border-amber-400/60 shadow-xl text-amber-300 text-xs font-mono font-bold uppercase tracking-wider"
-                >
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" style={{ animationDuration: '1s' }} />
-                  <span>{statusMessage}</span>
-                </motion.div>
+            {/* ═══════════ 4. HUD STATUS & TOPIC CARD ═══════════ */}
+            <div className="w-full space-y-3.5">
+              
+              {/* Minimalist Top Badge */}
+              <div className={`inline-flex items-center space-x-2 px-4 py-1 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-widest border backdrop-blur-xl shadow-lg ${
+                darkMode
+                  ? 'bg-indigo-950/80 border-indigo-500/40 text-indigo-300'
+                  : 'bg-white/95 border-white text-indigo-950 shadow-md'
+              }`}>
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-spin" style={{ animationDuration: '4s' }} />
+                <span>{mode === 'factcheck' ? 'FACT AUDIT MATRIX' : 'NEURAL DEBATE SYNTHESIS'}</span>
               </div>
 
-              {/* ── RIGHT: AGENT B (NEGATIVE) ── */}
-              <motion.div
-                initial={reduceMotion ? { opacity: 0 } : { x: 30, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.12, duration: 0.28 }}
-                className="flex flex-col items-end text-right space-y-2 p-4 sm:p-5 rounded-2xl bg-[#241305] border-2 border-amber-500/60 shadow-[0_12px_32px_rgba(0,0,0,0.6)] relative overflow-hidden"
+              {/* Contested Topic Glass Panel (High Contrast & Crisp) */}
+              {topic && (
+                <div
+                  className={`p-4 sm:p-5 rounded-2xl border-2 shadow-2xl backdrop-blur-2xl ${
+                    darkMode
+                      ? 'bg-[#090d24]/95 border-white/20 text-white shadow-[0_16px_40px_rgba(0,0,0,0.5)]'
+                      : 'bg-white/95 border-white text-slate-900 shadow-[0_20px_45px_rgba(0,0,0,0.15)]'
+                  }`}
+                >
+                  <span className={`text-[10px] font-bold uppercase tracking-widest block mb-1 ${
+                    darkMode ? 'text-indigo-300' : 'text-indigo-600'
+                  }`}>
+                    Contested Motion
+                  </span>
+                  <h3 className="text-sm sm:text-base font-serif font-extrabold line-clamp-2 leading-relaxed">
+                    "{topic}"
+                  </h3>
+                </div>
+              )}
+
+              {/* Neural Frequency Equalizer & Live Status */}
+              <div
+                className={`inline-flex items-center space-x-3 px-5 py-2 rounded-full border-2 shadow-xl backdrop-blur-xl ${
+                  darkMode
+                    ? 'bg-[#090d24]/95 border-amber-400/50 text-amber-300'
+                    : 'bg-white/95 border-white text-slate-900 shadow-md'
+                }`}
               >
-                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-900/90 border border-amber-400 text-amber-200 text-[11px] sm:text-xs font-black uppercase tracking-wider ml-auto shadow-md">
-                  <Flame className="w-3.5 h-3.5 text-amber-300 animate-bounce" />
-                  <span>{mode === 'factcheck' ? 'COUNTER ANALYSIS' : 'AGENT B • CONTRA'}</span>
+                {/* 5 Equalizer Frequency Bars */}
+                <div className="flex items-center space-x-1 h-3.5">
+                  {[0.4, 0.9, 0.6, 1.0, 0.5].map((h, idx) => (
+                    <motion.span
+                      key={idx}
+                      animate={{
+                        scaleY: [h * 0.3, h, h * 0.4],
+                      }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 0.8 + idx * 0.15,
+                        ease: 'easeInOut',
+                      }}
+                      className={`w-1 rounded-full origin-bottom ${
+                        idx % 2 === 0 ? 'bg-indigo-500' : 'bg-amber-400'
+                      }`}
+                      style={{ height: '100%' }}
+                    />
+                  ))}
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-black text-white tracking-tight leading-tight drop-shadow-md">
-                  {mode === 'factcheck' ? 'COUNTER' : 'CONTRA STANCE'}
-                </h2>
-
-                <p className="text-xs font-mono font-semibold text-amber-300">
-                  Temp 0.8 &bull; Adversarial Rebuttals
-                </p>
-              </motion.div>
-
+                <span className="text-xs font-mono font-bold tracking-wide">
+                  {statusMessage}
+                </span>
+              </div>
             </div>
           </motion.div>
         </motion.div>
