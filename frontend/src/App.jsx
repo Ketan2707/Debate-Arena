@@ -9,6 +9,7 @@ import {
 import CloudShader from './CloudShader';
 import NightSky from './NightSky';
 import FloatingDock from './FloatingDock';
+import ClashCloudWipe from './ClashCloudWipe';
 import logo from './assets/logo.png';
 import { ParticleCard, GlobalSpotlight } from './MagicBento';
 
@@ -253,6 +254,10 @@ function App() {
   const [activeRoundTab, setActiveRoundTab] = useState('all'); // 'all', '1', '2', '3', '4', '5', 'verdict'
   const [claimFilter, setClaimFilter] = useState('all'); // 'all', 'Confirmed', 'Disputed', 'Unverifiable'
   const [mobileAgentView, setMobileAgentView] = useState('both'); // 'both', 'Agent A', 'Agent B'
+  
+  // Clash of Clans Cloud-Wipe Transition state
+  const [isCloudWiping, setIsCloudWiping] = useState(false);
+  const [cloudWipeStatus, setCloudWipeStatus] = useState('Summoning AI Debaters...');
   
   // History state
   const [historyList, setHistoryList] = useState([]);
@@ -548,8 +553,14 @@ function App() {
     setSelectedClaim(null);
     setActiveRoundTab('1');
     setClaimFilter('all');
+    setMobileAgentView('both');
     setDebateTopic(topic);
     setDebateMode(mode);
+
+    // ⚔️ Trigger Clash of Clans Cloud-Wipe Transition!
+    setIsCloudWiping(true);
+    setCloudWipeStatus(mode === 'factcheck' ? 'Auditing Factual Sources...' : 'Summoning AI Debaters...');
+    const startTime = Date.now();
     
     try {
       setStatus({ status: 'creating', agent: 'Orchestrator' });
@@ -571,15 +582,16 @@ function App() {
       
       const data = await res.json();
       setActiveDebateId(data.debate_id);
-      connectToStream(data.debate_id);
+      connectToStream(data.debate_id, startTime);
     } catch (err) {
       setError(err.message || "Something went wrong. Make sure backend is running.");
       setStatus({ status: 'idle' });
+      setIsCloudWiping(false);
     }
   };
 
   // Connect to the SSE stream with auto-reconnection and completion tracking
-  const connectToStream = (debateId) => {
+  const connectToStream = (debateId, startTime = null) => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
@@ -592,8 +604,16 @@ function App() {
       try {
         const data = JSON.parse(e.data);
         setStances(data);
+        setCloudWipeStatus('Arena Ready! Parting clouds...');
+        // Ensure at least 650ms total transition time so the user experiences the full puffy collision before parting
+        const elapsed = startTime ? Date.now() - startTime : 650;
+        const remaining = Math.max(0, 650 - elapsed);
+        setTimeout(() => {
+          setIsCloudWiping(false);
+        }, remaining);
       } catch (err) {
         console.error("Error parsing stances:", err);
+        setIsCloudWiping(false);
       }
     });
     
@@ -612,6 +632,7 @@ function App() {
     source.addEventListener('turn', (e) => {
       try {
         const data = JSON.parse(e.data);
+        setIsCloudWiping(false);
         setTurns((prev) => {
           if (prev.some((t) => t.id === data.id)) return prev;
           return [...prev, data];
@@ -621,6 +642,7 @@ function App() {
         }
       } catch (err) {
         console.error("Error parsing turn:", err);
+        setIsCloudWiping(false);
       }
     });
     
@@ -636,10 +658,12 @@ function App() {
       streamCompletedRef.current = true;
       reconnectAttemptsRef.current = 0;
       source.close();
+      setIsCloudWiping(false);
     });
     
     source.addEventListener('error', (e) => {
       if (streamCompletedRef.current) return;
+      setIsCloudWiping(false);
       try {
         const data = JSON.parse(e.data);
         if (data && data.error) {
@@ -648,8 +672,8 @@ function App() {
           streamCompletedRef.current = true;
           source.close();
         }
-      } catch {
-        // Non-JSON error frame
+      } catch (err) {
+        // SSE network error
       }
     });
     
@@ -1127,6 +1151,14 @@ function App() {
         </div>
       )}
       <div className="dot-grid"></div>
+
+      {/* Clash of Clans Style Cloud-Wipe Transition Overlay */}
+      <ClashCloudWipe
+        isActive={isCloudWiping}
+        topic={debateTopic}
+        mode={debateMode}
+        statusMessage={cloudWipeStatus}
+      />
 
       {/* Top Header - Floating design matching the screenshot */}
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pt-3 sm:pt-4 relative z-40">
