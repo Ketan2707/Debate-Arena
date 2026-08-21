@@ -557,9 +557,9 @@ function App() {
     setDebateTopic(topic);
     setDebateMode(mode);
 
-    // 🌟 Trigger Concept 1: Glass Warp & Neural Gyroscope Transition!
+    // 🎬 Trigger Concept 4: Cinematic Matchup Letterbox Transition!
     setIsCloudWiping(true);
-    setCloudWipeStatus(mode === 'factcheck' ? 'Auditing Factual Sources...' : 'Synthesizing Dual-Agent Stances...');
+    setCloudWipeStatus(mode === 'factcheck' ? 'Auditing Factual Sources...' : 'Orchestrating Dual-Agent Matchup...');
     const startTime = Date.now();
     
     try {
@@ -604,7 +604,7 @@ function App() {
       try {
         const data = JSON.parse(e.data);
         setStances(data);
-        setCloudWipeStatus('Neural Arena Synchronized!');
+        setCloudWipeStatus('Matchup Initialized! Opening arena...');
         // Smooth luxury hold threshold
         const elapsed = startTime ? Date.now() - startTime : 480;
         const remaining = Math.max(0, 480 - elapsed);
