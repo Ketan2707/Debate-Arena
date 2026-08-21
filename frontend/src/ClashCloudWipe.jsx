@@ -1,94 +1,94 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Zap, Shield, Swords, Sparkles } from 'lucide-react';
+import { Zap, Shield, Swords, Sparkles, Flame } from 'lucide-react';
 import logo from './assets/logo.png';
 
 /**
- * Cartoon Puffy Cloud SVG Cluster (Left Bank)
- * Made of layered overlapping circular lobes for the iconic Clash of Clans cumulus silhouette
+ * High-Impact Cartoon Cumulus Cloud SVG (Left Bank)
+ * Overlapping spherical cloud lobes with heavy drop-shadows & cartoon top rim highlights
  */
 const LeftCloudCluster = ({ layer = 'front' }) => {
   const isBack = layer === 'back';
   const isMid = layer === 'mid';
 
-  // Gradient IDs
-  const gradId = `cloud-grad-left-${layer}`;
-  const shadowId = `cloud-shadow-left-${layer}`;
+  const gradId = `clash-grad-l-${layer}`;
+  const strokeColor = isBack ? '#93c5fd' : isMid ? '#e0e7ff' : '#ffffff';
 
   return (
     <svg
-      viewBox="0 0 800 1000"
+      viewBox="0 0 900 1000"
       preserveAspectRatio="none"
       className="w-full h-full pointer-events-none select-none"
       style={{
         filter: isBack
-          ? 'drop-shadow(8px 12px 16px rgba(0,0,0,0.10))'
+          ? 'drop-shadow(10px 14px 20px rgba(15,23,42,0.18))'
           : isMid
-          ? 'drop-shadow(14px 18px 24px rgba(0,0,0,0.15))'
-          : 'drop-shadow(20px 24px 36px rgba(0,0,0,0.22))',
+          ? 'drop-shadow(18px 22px 32px rgba(15,23,42,0.25))'
+          : 'drop-shadow(26px 30px 45px rgba(15,23,42,0.35))',
       }}
     >
       <defs>
-        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={gradId} x1="0%" y1="20%" x2="100%" y2="80%">
           {isBack ? (
             <>
-              <stop offset="0%" stopColor="#dbeafe" />
-              <stop offset="60%" stopColor="#cbd5e1" />
-              <stop offset="100%" stopColor="#94a3b8" />
+              <stop offset="0%" stopColor="#bfdbfe" />
+              <stop offset="40%" stopColor="#93c5fd" />
+              <stop offset="100%" stopColor="#64748b" />
             </>
           ) : isMid ? (
             <>
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="50%" stopColor="#f1f5f9" />
-              <stop offset="100%" stopColor="#cbd5e1" />
+              <stop offset="45%" stopColor="#e2e8f0" />
+              <stop offset="100%" stopColor="#94a3b8" />
             </>
           ) : (
             <>
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="35%" stopColor="#ffffff" />
-              <stop offset="80%" stopColor="#f8fafc" />
-              <stop offset="100%" stopColor="#e2e8f0" />
+              <stop offset="30%" stopColor="#ffffff" />
+              <stop offset="70%" stopColor="#f1f5f9" />
+              <stop offset="100%" stopColor="#cbd5e1" />
             </>
           )}
         </linearGradient>
-
-        <filter id={shadowId} x="-10%" y="-10%" width="130%" height="130%">
-          <feDropShadow dx="4" dy="10" stdDeviation="8" floodColor="#0f172a" floodOpacity={isBack ? "0.12" : "0.20"} />
-        </filter>
       </defs>
 
       <g fill={`url(#${gradId})`}>
-        {/* Solid base rectangle covering left edge */}
-        <rect x="0" y="0" width="450" height="1000" />
+        {/* Solid Anchor Block */}
+        <rect x="0" y="0" width="480" height="1000" />
 
-        {/* Overlapping organic circular cloud lobes protruding into center */}
-        {/* Top Tier */}
-        <circle cx="420" cy="120" r="140" />
-        <circle cx="530" cy="80" r="120" />
-        <circle cx="630" cy="160" r="110" />
-        <circle cx="540" cy="240" r="150" />
+        {/* Aggressive overlapping cumulus lobes protruding into center */}
+        {/* Top Header Canopy */}
+        <circle cx="460" cy="80" r="160" />
+        <circle cx="590" cy="50" r="140" />
+        <circle cx="720" cy="130" r="130" />
+        <circle cx="610" cy="220" r="170" />
 
-        {/* Middle Tier (Main Central Bulge) */}
-        <circle cx="480" cy="380" r="160" />
-        <circle cx="620" cy="360" r="140" />
-        <circle cx="720" cy="450" r="135" />
-        <circle cx="640" cy="560" r="165" />
-        <circle cx="500" cy="540" r="150" />
+        {/* Upper-Mid Power Bulge */}
+        <circle cx="520" cy="360" r="180" />
+        <circle cx="690" cy="330" r="160" />
+        <circle cx="830" cy="430" r="150" />
+        
+        {/* Core Collision Center */}
+        <circle cx="740" cy="540" r="185" />
+        <circle cx="560" cy="530" r="170" />
 
-        {/* Bottom Tier */}
-        <circle cx="480" cy="700" r="160" />
-        <circle cx="620" cy="720" r="140" />
-        <circle cx="700" cy="820" r="130" />
-        <circle cx="580" cy="910" r="160" />
-        <circle cx="440" cy="920" r="150" />
+        {/* Lower-Mid Bulge */}
+        <circle cx="530" cy="700" r="180" />
+        <circle cx="700" cy="690" r="160" />
+        <circle cx="810" cy="790" r="145" />
+
+        {/* Bottom Base */}
+        <circle cx="640" cy="900" r="180" />
+        <circle cx="480" cy="920" r="170" />
       </g>
 
-      {/* Subtle puffy cartoon highlight arcs */}
+      {/* Chunky Cartoon Highlights */}
       {!isBack && (
-        <g fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" opacity="0.6">
-          <path d="M 440 30 A 110 110 0 0 1 580 80" />
-          <path d="M 530 310 A 130 130 0 0 1 690 380" />
-          <path d="M 540 680 A 130 130 0 0 1 680 750" />
+        <g fill="none" stroke={strokeColor} strokeWidth="8" strokeLinecap="round" opacity={isMid ? "0.5" : "0.75"}>
+          <path d="M 460 20 A 130 130 0 0 1 630 60" />
+          <path d="M 570 270 A 150 150 0 0 1 770 350" />
+          <path d="M 590 640 A 150 150 0 0 1 780 710" />
+          <path d="M 520 840 A 140 140 0 0 1 680 890" />
         </g>
       )}
     </svg>
@@ -96,84 +96,90 @@ const LeftCloudCluster = ({ layer = 'front' }) => {
 };
 
 /**
- * Cartoon Puffy Cloud SVG Cluster (Right Bank)
+ * High-Impact Cartoon Cumulus Cloud SVG (Right Bank)
  */
 const RightCloudCluster = ({ layer = 'front' }) => {
   const isBack = layer === 'back';
   const isMid = layer === 'mid';
 
-  const gradId = `cloud-grad-right-${layer}`;
+  const gradId = `clash-grad-r-${layer}`;
+  const strokeColor = isBack ? '#93c5fd' : isMid ? '#e0e7ff' : '#ffffff';
 
   return (
     <svg
-      viewBox="0 0 800 1000"
+      viewBox="0 0 900 1000"
       preserveAspectRatio="none"
       className="w-full h-full pointer-events-none select-none"
       style={{
         filter: isBack
-          ? 'drop-shadow(-8px 12px 16px rgba(0,0,0,0.10))'
+          ? 'drop-shadow(-10px 14px 20px rgba(15,23,42,0.18))'
           : isMid
-          ? 'drop-shadow(-14px 18px 24px rgba(0,0,0,0.15))'
-          : 'drop-shadow(-20px 24px 36px rgba(0,0,0,0.22))',
+          ? 'drop-shadow(-18px 22px 32px rgba(15,23,42,0.25))'
+          : 'drop-shadow(-26px 30px 45px rgba(15,23,42,0.35))',
       }}
     >
       <defs>
-        <linearGradient id={gradId} x1="100%" y1="0%" x2="0%" y2="100%">
+        <linearGradient id={gradId} x1="100%" y1="20%" x2="0%" y2="80%">
           {isBack ? (
             <>
-              <stop offset="0%" stopColor="#dbeafe" />
-              <stop offset="60%" stopColor="#cbd5e1" />
-              <stop offset="100%" stopColor="#94a3b8" />
+              <stop offset="0%" stopColor="#bfdbfe" />
+              <stop offset="40%" stopColor="#93c5fd" />
+              <stop offset="100%" stopColor="#64748b" />
             </>
           ) : isMid ? (
             <>
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="50%" stopColor="#f1f5f9" />
-              <stop offset="100%" stopColor="#cbd5e1" />
+              <stop offset="45%" stopColor="#e2e8f0" />
+              <stop offset="100%" stopColor="#94a3b8" />
             </>
           ) : (
             <>
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="35%" stopColor="#ffffff" />
-              <stop offset="80%" stopColor="#f8fafc" />
-              <stop offset="100%" stopColor="#e2e8f0" />
+              <stop offset="30%" stopColor="#ffffff" />
+              <stop offset="70%" stopColor="#f1f5f9" />
+              <stop offset="100%" stopColor="#cbd5e1" />
             </>
           )}
         </linearGradient>
       </defs>
 
       <g fill={`url(#${gradId})`}>
-        {/* Solid base rectangle covering right edge */}
-        <rect x="350" y="0" width="450" height="1000" />
+        {/* Solid Anchor Block */}
+        <rect x="420" y="0" width="480" height="1000" />
 
-        {/* Overlapping organic circular cloud lobes protruding into center */}
-        {/* Top Tier */}
-        <circle cx="380" cy="110" r="145" />
-        <circle cx="270" cy="90" r="125" />
-        <circle cx="160" cy="180" r="115" />
-        <circle cx="260" cy="250" r="155" />
+        {/* Aggressive overlapping cumulus lobes protruding into center */}
+        {/* Top Header Canopy */}
+        <circle cx="440" cy="80" r="160" />
+        <circle cx="310" cy="50" r="140" />
+        <circle cx="180" cy="130" r="130" />
+        <circle cx="290" cy="220" r="170" />
 
-        {/* Middle Tier (Main Central Bulge) */}
-        <circle cx="320" cy="390" r="165" />
-        <circle cx="180" cy="370" r="145" />
-        <circle cx="80" cy="460" r="140" />
-        <circle cx="160" cy="570" r="170" />
-        <circle cx="300" cy="550" r="155" />
+        {/* Upper-Mid Power Bulge */}
+        <circle cx="380" cy="360" r="180" />
+        <circle cx="210" cy="330" r="160" />
+        <circle cx="70" cy="430" r="150" />
+        
+        {/* Core Collision Center */}
+        <circle cx="160" cy="540" r="185" />
+        <circle cx="340" cy="530" r="170" />
 
-        {/* Bottom Tier */}
-        <circle cx="320" cy="710" r="165" />
-        <circle cx="180" cy="730" r="145" />
-        <circle cx="90" cy="830" r="135" />
-        <circle cx="220" cy="920" r="165" />
-        <circle cx="360" cy="930" r="155" />
+        {/* Lower-Mid Bulge */}
+        <circle cx="370" cy="700" r="180" />
+        <circle cx="200" cy="690" r="160" />
+        <circle cx="90" cy="790" r="145" />
+
+        {/* Bottom Base */}
+        <circle cx="260" cy="900" r="180" />
+        <circle cx="420" cy="920" r="170" />
       </g>
 
-      {/* Subtle puffy cartoon highlight arcs */}
+      {/* Chunky Cartoon Highlights */}
       {!isBack && (
-        <g fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" opacity="0.6">
-          <path d="M 360 30 A 110 110 0 0 0 220 80" />
-          <path d="M 270 310 A 130 130 0 0 0 110 380" />
-          <path d="M 260 680 A 130 130 0 0 0 120 750" />
+        <g fill="none" stroke={strokeColor} strokeWidth="8" strokeLinecap="round" opacity={isMid ? "0.5" : "0.75"}>
+          <path d="M 440 20 A 130 130 0 0 0 270 60" />
+          <path d="M 330 270 A 150 150 0 0 0 130 350" />
+          <path d="M 310 640 A 150 150 0 0 0 120 710" />
+          <path d="M 380 840 A 140 140 0 0 0 220 890" />
         </g>
       )}
     </svg>
@@ -187,6 +193,7 @@ export default function ClashCloudWipe({
   statusMessage = 'Summoning AI Debaters...',
 }) {
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [hasImpacted, setHasImpacted] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -196,106 +203,86 @@ export default function ClashCloudWipe({
     return () => mq.removeEventListener('change', handler);
   }, []);
 
+  // Trigger visceral micro-impact shake & flash right at collision point (t = 280ms)
+  useEffect(() => {
+    if (isActive) {
+      setHasImpacted(false);
+      const timer = setTimeout(() => {
+        setHasImpacted(true);
+      }, 280);
+      return () => clearTimeout(timer);
+    } else {
+      setHasImpacted(false);
+    }
+  }, [isActive]);
+
   return (
     <AnimatePresence>
       {isActive && (
         <motion.div
           key="clash-cloud-wipe-overlay"
-          initial={{ opacity: reduceMotion ? 0 : 1 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 1 }}
+          animate={{
+            opacity: 1,
+            x: hasImpacted ? [0, -4, 4, -3, 3, -1, 0] : 0,
+            y: hasImpacted ? [0, 3, -3, 2, -1, 0] : 0,
+          }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.35 }}
+          transition={{
+            opacity: { duration: 0.25 },
+            x: { duration: 0.22, ease: 'easeOut' },
+            y: { duration: 0.22, ease: 'easeOut' },
+          }}
           className="fixed inset-0 z-[100] pointer-events-auto flex items-center justify-center overflow-hidden"
           style={{ willChange: 'transform, opacity' }}
         >
-          {/* Subtle Ambient Sky Tint during collision */}
+          {/* Dynamic Sky Dimmer */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.25 }}
+            animate={{ opacity: 0.35 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className="absolute inset-0 bg-[#0f172a] backdrop-blur-[2px]"
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0 bg-[#060813] backdrop-blur-[4px]"
           />
 
-          {/* ═══════════ DEPTH LAYER 1: BACK CLOUDS (Parallax Slower) ═══════════ */}
+          {/* ═══════════ IMPACT LIGHTNING / CLASH SHOCKWAVE FLASH ═══════════ */}
           <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { x: '-105%' }}
+            initial={{ opacity: 0, scale: 0.8 }}
             animate={
-              reduceMotion
-                ? { opacity: 1 }
-                : {
-                    x: ['-105%', '0%', '0%'],
-                    y: [0, -6, 0, 4, 0],
-                  }
+              hasImpacted
+                ? { opacity: [0, 0.85, 0], scale: [0.9, 1.25, 1.5] }
+                : { opacity: 0 }
             }
-            exit={reduceMotion ? { opacity: 0 } : { x: '-110%' }}
-            transition={{
-              x: {
-                duration: 0.58,
-                ease: [0.16, 1, 0.3, 1], // snappy ease-out with soft settle
-              },
-              y: {
-                repeat: Infinity,
-                duration: 3.2,
-                ease: 'easeInOut',
-              },
-              exit: {
-                duration: 0.55,
-                ease: [0.7, 0, 0.84, 0], // ease-in exit acceleration
-              },
-            }}
-            className="absolute top-0 bottom-0 left-0 w-[65vw] h-full z-10"
-          >
-            <LeftCloudCluster layer="back" />
-          </motion.div>
+            transition={{ duration: 0.28, ease: 'easeOut' }}
+            className="absolute inset-0 z-45 pointer-events-none flex items-center justify-center bg-gradient-to-r from-transparent via-amber-300/30 to-transparent"
+          />
 
-          <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { x: '105%' }}
-            animate={
-              reduceMotion
-                ? { opacity: 1 }
-                : {
-                    x: ['105%', '0%', '0%'],
-                    y: [0, 6, 0, -4, 0],
-                  }
-            }
-            exit={reduceMotion ? { opacity: 0 } : { x: '110%' }}
-            transition={{
-              x: {
-                duration: 0.58,
-                ease: [0.16, 1, 0.3, 1],
-              },
-              y: {
-                repeat: Infinity,
-                duration: 3.4,
-                ease: 'easeInOut',
-              },
-              exit: {
-                duration: 0.55,
-                ease: [0.7, 0, 0.84, 0],
-              },
-            }}
-            className="absolute top-0 bottom-0 right-0 w-[65vw] h-full z-10"
-          >
-            <RightCloudCluster layer="back" />
-          </motion.div>
+          {/* Vertical Clash Seam Lightning Streak */}
+          {hasImpacted && (
+            <motion.div
+              initial={{ scaleY: 0, opacity: 1 }}
+              animate={{ scaleY: [0, 1.2, 1], opacity: [1, 0.8, 0] }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="absolute inset-y-0 w-3 bg-gradient-to-b from-amber-300 via-white to-amber-300 blur-[2px] z-45"
+            />
+          )}
 
-          {/* ═══════════ DEPTH LAYER 2: MID CLOUDS ═══════════ */}
+          {/* ═══════════ DEPTH LAYER 1: BACK SMOKE CLOUDS (Fast Follower) ═══════════ */}
           <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { x: '-105%' }}
+            initial={reduceMotion ? { opacity: 0 } : { x: '-125%' }}
             animate={
               reduceMotion
                 ? { opacity: 1 }
                 : {
-                    x: ['-105%', '0%', '0%'],
-                    y: [0, 4, 0, -5, 0],
+                    x: ['-125%', '0%', '0%'],
+                    y: [0, -8, 0, 6, 0],
                   }
             }
-            exit={reduceMotion ? { opacity: 0 } : { x: '-112%' }}
+            exit={reduceMotion ? { opacity: 0 } : { x: '-135%' }}
             transition={{
               x: {
-                duration: 0.50,
-                ease: [0.16, 1, 0.3, 1],
+                duration: 0.38,
+                ease: [0.12, 0.95, 0.2, 1.0], // explosive snap
               },
               y: {
                 repeat: Infinity,
@@ -303,62 +290,62 @@ export default function ClashCloudWipe({
                 ease: 'easeInOut',
               },
               exit: {
-                duration: 0.52,
-                ease: [0.7, 0, 0.84, 0],
+                duration: 0.36,
+                ease: [0.75, 0, 0.2, 1.0], // violent rip-out
               },
             }}
-            className="absolute top-0 bottom-0 left-0 w-[65vw] h-full z-20"
+            className="absolute top-0 bottom-0 left-0 w-[68vw] h-full z-10"
           >
-            <LeftCloudCluster layer="mid" />
+            <LeftCloudCluster layer="back" />
           </motion.div>
 
           <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { x: '105%' }}
+            initial={reduceMotion ? { opacity: 0 } : { x: '125%' }}
             animate={
               reduceMotion
                 ? { opacity: 1 }
                 : {
-                    x: ['105%', '0%', '0%'],
-                    y: [0, -5, 0, 4, 0],
+                    x: ['125%', '0%', '0%'],
+                    y: [0, 8, 0, -6, 0],
                   }
             }
-            exit={reduceMotion ? { opacity: 0 } : { x: '112%' }}
+            exit={reduceMotion ? { opacity: 0 } : { x: '135%' }}
             transition={{
               x: {
-                duration: 0.50,
-                ease: [0.16, 1, 0.3, 1],
+                duration: 0.38,
+                ease: [0.12, 0.95, 0.2, 1.0],
               },
               y: {
                 repeat: Infinity,
-                duration: 2.9,
+                duration: 3.0,
                 ease: 'easeInOut',
               },
               exit: {
-                duration: 0.52,
-                ease: [0.7, 0, 0.84, 0],
+                duration: 0.36,
+                ease: [0.75, 0, 0.2, 1.0],
               },
             }}
-            className="absolute top-0 bottom-0 right-0 w-[65vw] h-full z-20"
+            className="absolute top-0 bottom-0 right-0 w-[68vw] h-full z-10"
           >
-            <RightCloudCluster layer="mid" />
+            <RightCloudCluster layer="back" />
           </motion.div>
 
-          {/* ═══════════ DEPTH LAYER 3: FRONT HERO CLOUDS ═══════════ */}
+          {/* ═══════════ DEPTH LAYER 2: MID THUNDER CLOUDS ═══════════ */}
           <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { x: '-105%' }}
+            initial={reduceMotion ? { opacity: 0 } : { x: '-125%' }}
             animate={
               reduceMotion
                 ? { opacity: 1 }
                 : {
-                    x: ['-105%', '2%', '0%'],
-                    y: [0, -3, 0, 3, 0],
+                    x: ['-125%', '0%', '0%'],
+                    y: [0, 6, 0, -6, 0],
                   }
             }
-            exit={reduceMotion ? { opacity: 0 } : { x: '-115%' }}
+            exit={reduceMotion ? { opacity: 0 } : { x: '-138%' }}
             transition={{
               x: {
-                duration: 0.44,
-                ease: [0.22, 1, 0.36, 1], // slightly bouncy collision
+                duration: 0.34,
+                ease: [0.10, 0.98, 0.18, 1.0],
               },
               y: {
                 repeat: Infinity,
@@ -366,30 +353,30 @@ export default function ClashCloudWipe({
                 ease: 'easeInOut',
               },
               exit: {
-                duration: 0.50,
-                ease: [0.65, 0, 0.85, 0],
+                duration: 0.34,
+                ease: [0.75, 0, 0.2, 1.0],
               },
             }}
-            className="absolute top-0 bottom-0 left-0 w-[66vw] h-full z-30"
+            className="absolute top-0 bottom-0 left-0 w-[68vw] h-full z-20"
           >
-            <LeftCloudCluster layer="front" />
+            <LeftCloudCluster layer="mid" />
           </motion.div>
 
           <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { x: '105%' }}
+            initial={reduceMotion ? { opacity: 0 } : { x: '125%' }}
             animate={
               reduceMotion
                 ? { opacity: 1 }
                 : {
-                    x: ['105%', '-2%', '0%'],
-                    y: [0, 3, 0, -3, 0],
+                    x: ['125%', '0%', '0%'],
+                    y: [0, -6, 0, 6, 0],
                   }
             }
-            exit={reduceMotion ? { opacity: 0 } : { x: '115%' }}
+            exit={reduceMotion ? { opacity: 0 } : { x: '138%' }}
             transition={{
               x: {
-                duration: 0.44,
-                ease: [0.22, 1, 0.36, 1],
+                duration: 0.34,
+                ease: [0.10, 0.98, 0.18, 1.0],
               },
               y: {
                 repeat: Infinity,
@@ -397,61 +384,135 @@ export default function ClashCloudWipe({
                 ease: 'easeInOut',
               },
               exit: {
-                duration: 0.50,
-                ease: [0.65, 0, 0.85, 0],
+                duration: 0.34,
+                ease: [0.75, 0, 0.2, 1.0],
               },
             }}
-            className="absolute top-0 bottom-0 right-0 w-[66vw] h-full z-30"
+            className="absolute top-0 bottom-0 right-0 w-[68vw] h-full z-20"
+          >
+            <RightCloudCluster layer="mid" />
+          </motion.div>
+
+          {/* ═══════════ DEPTH LAYER 3: FRONT HERO BATTLE CLOUDS (Aggressive Smash) ═══════════ */}
+          <motion.div
+            initial={reduceMotion ? { opacity: 0 } : { x: '-125%' }}
+            animate={
+              reduceMotion
+                ? { opacity: 1 }
+                : {
+                    x: ['-125%', '3%', '0%'],
+                    y: [0, -4, 0, 4, 0],
+                  }
+            }
+            exit={reduceMotion ? { opacity: 0 } : { x: '-140%' }}
+            transition={{
+              x: {
+                duration: 0.30,
+                ease: [0.08, 0.99, 0.16, 1.0], // ultra-aggressive smash
+              },
+              y: {
+                repeat: Infinity,
+                duration: 2.0,
+                ease: 'easeInOut',
+              },
+              exit: {
+                duration: 0.32,
+                ease: [0.8, 0, 0.15, 1.0], // explosive burst out
+              },
+            }}
+            className="absolute top-0 bottom-0 left-0 w-[70vw] h-full z-30"
+          >
+            <LeftCloudCluster layer="front" />
+          </motion.div>
+
+          <motion.div
+            initial={reduceMotion ? { opacity: 0 } : { x: '125%' }}
+            animate={
+              reduceMotion
+                ? { opacity: 1 }
+                : {
+                    x: ['125%', '-3%', '0%'],
+                    y: [0, 4, 0, -4, 0],
+                  }
+            }
+            exit={reduceMotion ? { opacity: 0 } : { x: '140%' }}
+            transition={{
+              x: {
+                duration: 0.30,
+                ease: [0.08, 0.99, 0.16, 1.0],
+              },
+              y: {
+                repeat: Infinity,
+                duration: 2.1,
+                ease: 'easeInOut',
+              },
+              exit: {
+                duration: 0.32,
+                ease: [0.8, 0, 0.15, 1.0],
+              },
+            }}
+            className="absolute top-0 bottom-0 right-0 w-[70vw] h-full z-30"
           >
             <RightCloudCluster layer="front" />
           </motion.div>
 
-          {/* ═══════════ CENTER BATTLE CREST & LOADING DISPLAY (z-40) ═══════════ */}
+          {/* ═══════════ SLAM IMPACT CREST & BATTLE BANNER (z-50) ═══════════ */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 15 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.85, y: -10 }}
-            transition={{ delay: 0.15, duration: 0.35, ease: 'easeOut' }}
-            className="relative z-40 flex flex-col items-center justify-center text-center px-4 max-w-lg select-none"
+            initial={{ opacity: 0, scale: 1.8, rotate: -4 }}
+            animate={{
+              opacity: 1,
+              scale: [1.8, 0.92, 1.0],
+              rotate: [-4, 2, 0],
+            }}
+            exit={{
+              opacity: 0,
+              scale: 1.25,
+              filter: 'blur(8px)',
+              transition: { duration: 0.22, ease: 'easeIn' }
+            }}
+            transition={{
+              duration: 0.28,
+              delay: 0.12,
+              ease: [0.15, 1.15, 0.3, 1.0], // heavy impact spring
+            }}
+            className="relative z-50 flex flex-col items-center justify-center text-center px-4 max-w-md select-none"
           >
-            {/* Clash Style Emblem Crest */}
-            <div className="relative mb-4 flex items-center justify-center">
-              {/* Outer Golden/Indigo Energy Pulse */}
-              <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-indigo-500/30 via-amber-500/30 to-indigo-500/30 blur-xl animate-pulse" />
+            {/* Supercell Clash Crest */}
+            <div className="relative mb-3 flex items-center justify-center">
+              {/* Explosive Impact Glow Ring */}
+              <div className="absolute -inset-6 rounded-full bg-gradient-to-r from-amber-500/50 via-indigo-500/50 to-amber-500/50 blur-2xl animate-pulse" />
               
-              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-slate-900/90 border-2 border-amber-400/80 shadow-[0_12px_32px_rgba(0,0,0,0.4)] flex items-center justify-center p-3">
-                <img src={logo} className="w-14 h-14 sm:w-16 sm:h-16 object-contain animate-bounce" alt="ArguForge Logo" style={{ animationDuration: '2s' }} />
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-[#0b0f24] border-2 border-amber-400 shadow-[0_16px_40px_rgba(0,0,0,0.6)] flex items-center justify-center p-3">
+                <img
+                  src={logo}
+                  className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-[0_4px_12px_rgba(245,158,11,0.5)]"
+                  alt="ArguForge Logo"
+                />
                 
-                {/* Floating Clash Sparks */}
-                <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-black p-1 rounded-full shadow-lg border border-amber-300">
-                  <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '4s' }} />
+                {/* Clash Sparks */}
+                <div className="absolute -top-2 -right-2 bg-gradient-to-br from-amber-400 to-amber-600 text-black p-1.5 rounded-full shadow-xl border border-amber-200 animate-spin" style={{ animationDuration: '3s' }}>
+                  <Flame className="w-3.5 h-3.5 fill-black text-black" />
                 </div>
               </div>
             </div>
 
-            {/* Badge Title */}
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-slate-900/90 border border-amber-400/60 shadow-lg mb-2">
-              <Swords className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-300 font-sans">
-                {mode === 'factcheck' ? 'INITIALIZING FACT AUDIT' : 'FORGING BATTLE ARENA'}
+            {/* Battle Ready Pill */}
+            <div className="inline-flex items-center space-x-2 px-4 py-1 rounded-full bg-[#0b0f24]/95 border border-amber-400/80 shadow-2xl mb-2">
+              <Swords className="w-4 h-4 text-amber-400 animate-bounce" />
+              <span className="text-xs font-black uppercase tracking-widest text-amber-300 font-sans">
+                {mode === 'factcheck' ? 'FACT AUDIT INITIALIZING' : 'BATTLE ARENA FORGING'}
               </span>
             </div>
 
-            {/* Topic preview during transition */}
-            {topic && (
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100 max-w-sm line-clamp-2 leading-snug drop-shadow-sm font-sans mb-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-1.5 rounded-xl border border-slate-200 dark:border-white/10">
-                "{topic}"
-              </h3>
-            )}
-
-            {/* Dynamic Status / Loading Dots */}
-            <div className="flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-1.5 rounded-full border border-slate-200 dark:border-white/10 shadow-sm">
-              <div className="flex space-x-1">
-                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: '300ms' }} />
+            {/* Dynamic Status / Progress */}
+            <div className="flex items-center space-x-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-5 py-2 rounded-full border border-slate-200 dark:border-white/15 shadow-xl">
+              <div className="flex space-x-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" style={{ animationDuration: '1s' }} />
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
               </div>
-              <span className="font-mono tracking-wide">{statusMessage}</span>
+              <span className="font-mono uppercase tracking-wider text-[11px] sm:text-xs text-slate-900 dark:text-white">
+                {statusMessage}
+              </span>
             </div>
           </motion.div>
         </motion.div>

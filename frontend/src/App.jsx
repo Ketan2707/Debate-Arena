@@ -605,9 +605,9 @@ function App() {
         const data = JSON.parse(e.data);
         setStances(data);
         setCloudWipeStatus('Arena Ready! Parting clouds...');
-        // Ensure at least 650ms total transition time so the user experiences the full puffy collision before parting
-        const elapsed = startTime ? Date.now() - startTime : 650;
-        const remaining = Math.max(0, 650 - elapsed);
+        // Ensure at least 480ms total transition time for a snappy, high-impact battle slam
+        const elapsed = startTime ? Date.now() - startTime : 480;
+        const remaining = Math.max(0, 480 - elapsed);
         setTimeout(() => {
           setIsCloudWiping(false);
         }, remaining);
