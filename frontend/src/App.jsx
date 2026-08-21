@@ -74,7 +74,7 @@ const InstagramIcon = ({ className }) => (
   </svg>
 );
 
-const BattleArenaLoader = ({ mode, topic }) => {
+const BattleArenaLoader = ({ mode, topic, darkMode }) => {
   const [dots, setDots] = useState('.');
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -83,24 +83,8 @@ const BattleArenaLoader = ({ mode, topic }) => {
       setDots(prev => (prev.length >= 3 ? '.' : prev + '.'));
     }, 500);
 
-    const steps = mode === 'factcheck' 
-      ? [
-          "Resolving whitelisted domain index...",
-          "Checking Tier 1 resources (AP News, Reuters, PIB)...",
-          "Analyzing claims against Tier 2 publications (BBC, NYT)...",
-          "Connecting to secure fact-checking database...",
-          "Compiling support and opposition case briefs..."
-        ]
-      : [
-          "Orchestrating AI agents in the arena...",
-          "Tuning Agent A (Affirmative) parameters...",
-          "Tuning Agent B (Negative) parameters...",
-          "Generating initial stances & boundaries...",
-          "Forging arguments and source integrity filters..."
-        ];
-
     const stepsInterval = setInterval(() => {
-      setCurrentStep(prev => (prev + 1) % steps.length);
+      setCurrentStep(prev => (prev + 1) % 5);
     }, 3000);
 
     return () => {
@@ -127,109 +111,116 @@ const BattleArenaLoader = ({ mode, topic }) => {
 
   if (mode === 'factcheck') {
     return (
-      <div className="glass rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-6 shadow-2xl relative overflow-hidden min-h-[400px] border border-white/10 glow-emerald">
-        {/* Particle effect container */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.05)_0%,transparent_60%)] pointer-events-none"></div>
-        
-        {/* Animated radar/scanner core */}
-        <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/30 animate-scan-pulse">
-          <div className="absolute w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-ping"></div>
-          <Search className="h-10 w-10 text-emerald-400" />
+      <div className={`rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center space-y-6 shadow-2xl relative overflow-hidden min-h-[380px] border backdrop-blur-xl ${
+        darkMode ? 'bg-slate-900/95 border-emerald-500/30 text-white' : 'bg-white/95 border-emerald-200 text-slate-900 shadow-xl'
+      }`}>
+        {/* Animated radar core */}
+        <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+          <div className="absolute w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-ping"></div>
+          <Search className="h-8 w-8 text-emerald-500" />
         </div>
 
-        <div className="space-y-2 z-10">
-          <h4 className="text-xl font-bold font-serif text-slate-100 uppercase tracking-widest">
+        <div className="space-y-1 z-10">
+          <h4 className="text-lg font-bold font-sans uppercase tracking-wider">
             Factual Integrity Core Active
           </h4>
-          <p className="text-sm text-brand-textMuted max-w-md mx-auto font-sans">
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto font-sans">
             Auditing claims for "{topic}"
           </p>
         </div>
 
         {/* Dynamic status ticker */}
-        <div className="bg-slate-900/60 border border-white/5 px-6 py-3 rounded-xl min-w-[280px] text-xs font-mono text-emerald-400 z-10 flex items-center justify-center space-x-2">
-          <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+        <div className={`px-5 py-2.5 rounded-xl text-xs font-mono font-medium z-10 flex items-center justify-center space-x-2 border ${
+          darkMode ? 'bg-slate-800/80 border-white/10 text-emerald-300' : 'bg-slate-50 border-slate-200 text-emerald-700 shadow-sm'
+        }`}>
+          <span className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></span>
           <span>{steps[currentStep]}{dots}</span>
-        </div>
-
-        {/* High tech progress scanner */}
-        <div className="w-full max-w-md space-y-2 z-10 pt-4">
-          <div className="h-1.5 bg-white/5 border border-white/10 rounded-full overflow-hidden relative">
-            <div className="h-full bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full animate-shimmer w-full"></div>
-          </div>
-          <div className="flex justify-between text-[10px] text-brand-textMuted font-mono uppercase tracking-wider">
-            <span>Scan Rate: 100%</span>
-            <span>Integrity Tier: Whitelist Only</span>
-          </div>
         </div>
       </div>
     );
   }
 
-  // Debate Mode - Adversarial Clash Animation
+  // Debate Mode - Dual Agent Preparation Card
   return (
-    <div className="glass rounded-2xl p-8 md:p-12 shadow-2xl relative overflow-hidden min-h-[400px] border border-white/10 flex flex-col justify-between space-y-8">
-      {/* Background gradients */}
-      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-48 h-48 bg-brand-accent/5 rounded-full filter blur-3xl pointer-events-none"></div>
-      <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-48 h-48 bg-brand-accentAmber/5 rounded-full filter blur-3xl pointer-events-none"></div>
-
+    <div className={`rounded-2xl p-6 sm:p-10 shadow-2xl relative overflow-hidden min-h-[380px] border backdrop-blur-xl flex flex-col justify-between space-y-6 ${
+      darkMode ? 'bg-slate-900/95 border-white/10 text-white' : 'bg-white/95 border-blue-200 text-slate-900 shadow-xl'
+    }`}>
       {/* Header info */}
       <div className="text-center z-10 space-y-1">
-        <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 bg-indigo-950/40 border border-indigo-500/20 px-3 py-1 rounded-full">
+        <span className={`text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full border ${
+          darkMode ? 'text-indigo-400 bg-indigo-950/40 border-indigo-500/30' : 'text-indigo-700 bg-indigo-50 border-indigo-200'
+        }`}>
           Preparing Debate Arena
         </span>
-        <h4 className="text-base md:text-lg font-serif text-brand-textMuted italic pt-2 max-w-lg mx-auto">
+        <h4 className={`text-sm sm:text-base font-serif italic pt-1 max-w-lg mx-auto font-medium ${
+          darkMode ? 'text-slate-300' : 'text-slate-700'
+        }`}>
           "{topic}"
         </h4>
       </div>
 
       {/* The Clash Row */}
-      <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 relative z-10 py-4">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 relative z-10 py-2">
         {/* Agent A Card (Affirmative) */}
-        <div className="w-full max-w-[240px] glass rounded-2xl p-5 border border-brand-accent/30 text-center animate-clash-left glow-accent bg-gradient-to-b from-brand-accent/5 to-transparent">
-          <div className="w-12 h-12 rounded-full bg-brand-accent/20 border border-brand-accent/40 flex items-center justify-center mx-auto mb-3 text-brand-accent">
-            <Shield className="h-6 w-6" />
+        <div className={`w-full max-w-[240px] rounded-2xl p-4 sm:p-5 border text-center transition-all ${
+          darkMode ? 'bg-indigo-950/20 border-indigo-500/30 text-white' : 'bg-indigo-50/70 border-indigo-200 text-slate-900 shadow-sm'
+        }`}>
+          <div className="w-11 h-11 rounded-full bg-indigo-500/15 border border-indigo-400/40 flex items-center justify-center mx-auto mb-2 text-indigo-600 dark:text-indigo-400">
+            <Shield className="h-5 w-5" />
           </div>
-          <h5 className="font-bold text-sm text-slate-200">AGENT A</h5>
-          <p className="text-[10px] text-brand-accent font-semibold tracking-widest uppercase mt-0.5">Affirmative</p>
-          <div className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 mt-4 text-[10px] text-brand-textMuted font-mono leading-relaxed">
+          <h5 className="font-bold text-sm">AGENT A</h5>
+          <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold tracking-widest uppercase mt-0.5">Affirmative</p>
+          <div className={`rounded-xl p-2.5 mt-3 text-[11px] font-mono leading-relaxed border ${
+            darkMode ? 'bg-slate-800/60 border-white/10 text-slate-300' : 'bg-white border-indigo-100 text-slate-600 shadow-xs'
+          }`}>
             Formulating logical stance constraints...
           </div>
         </div>
 
-        {/* VS Badge */}
-        <div className="relative flex items-center justify-center">
-          <div className="absolute w-20 h-20 bg-indigo-500/10 rounded-full blur-xl animate-vs-pulse"></div>
-          <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-accent to-brand-accentAmber p-[2px] shadow-2xl relative z-20 animate-vs-pulse">
-            <div className="w-full h-full rounded-full bg-[#0e1013] flex items-center justify-center">
-              <span className="text-lg font-black font-serif italic text-white tracking-wider">VS</span>
-            </div>
+        {/* Themed Luxury VS Badge */}
+        <div className="relative flex items-center justify-center my-1 sm:my-0">
+          <div className={`w-12 h-12 rounded-2xl p-0.5 shadow-md relative z-20 flex items-center justify-center border ${
+            darkMode ? 'bg-slate-800 border-amber-400/40' : 'bg-white border-indigo-200 shadow-md'
+          }`}>
+            <span className={`text-sm font-black font-sans italic tracking-wider ${
+              darkMode ? 'text-amber-300' : 'text-indigo-900'
+            }`}>
+              VS
+            </span>
           </div>
         </div>
 
         {/* Agent B Card (Negative) */}
-        <div className="w-full max-w-[240px] glass rounded-2xl p-5 border border-brand-accentAmber/30 text-center animate-clash-right glow-amber bg-gradient-to-b from-brand-accentAmber/5 to-transparent">
-          <div className="w-12 h-12 rounded-full bg-brand-accentAmber/20 border border-brand-accentAmber/40 flex items-center justify-center mx-auto mb-3 text-brand-accentAmber">
-            <Zap className="h-6 w-6" />
+        <div className={`w-full max-w-[240px] rounded-2xl p-4 sm:p-5 border text-center transition-all ${
+          darkMode ? 'bg-amber-950/20 border-amber-500/30 text-white' : 'bg-amber-50/70 border-amber-200 text-slate-900 shadow-sm'
+        }`}>
+          <div className="w-11 h-11 rounded-full bg-amber-500/15 border border-amber-400/40 flex items-center justify-center mx-auto mb-2 text-amber-600 dark:text-amber-400">
+            <Zap className="h-5 w-5" />
           </div>
-          <h5 className="font-bold text-sm text-slate-200">AGENT B</h5>
-          <p className="text-[10px] text-brand-accentAmber font-semibold tracking-widest uppercase mt-0.5">Negative</p>
-          <div className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 mt-4 text-[10px] text-brand-textMuted font-mono leading-relaxed">
+          <h5 className="font-bold text-sm">AGENT B</h5>
+          <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold tracking-widest uppercase mt-0.5">Negative</p>
+          <div className={`rounded-xl p-2.5 mt-3 text-[11px] font-mono leading-relaxed border ${
+            darkMode ? 'bg-slate-800/60 border-white/10 text-slate-300' : 'bg-white border-amber-100 text-slate-600 shadow-xs'
+          }`}>
             Structuring adversarial counter-arguments...
           </div>
         </div>
       </div>
 
-      {/* Charging Progress / Footer */}
-      <div className="w-full max-w-lg mx-auto space-y-3 z-10">
-        <div className="bg-slate-900/60 border border-white/5 px-6 py-2.5 rounded-xl text-center text-xs font-mono text-indigo-300 flex items-center justify-center space-x-2">
-          <RefreshCw className="h-3 w-3 animate-spin text-brand-accent" />
+      {/* Progress Ticker / Footer */}
+      <div className="w-full max-w-lg mx-auto space-y-2.5 z-10">
+        <div className={`px-5 py-2 rounded-xl text-center text-xs font-mono flex items-center justify-center space-x-2 border ${
+          darkMode ? 'bg-slate-800/80 border-white/10 text-indigo-300' : 'bg-slate-50 border-slate-200 text-indigo-700 shadow-xs'
+        }`}>
+          <RefreshCw className="h-3 w-3 animate-spin text-indigo-500" />
           <span>{steps[currentStep]}{dots}</span>
         </div>
         
         {/* Animated charging bar */}
-        <div className="h-1.5 bg-white/5 border border-white/10 rounded-full overflow-hidden relative">
-          <div className="h-full bg-gradient-to-r from-brand-accent to-brand-accentAmber rounded-full animate-shimmer w-full"></div>
+        <div className={`h-1.5 rounded-full overflow-hidden relative border ${
+          darkMode ? 'bg-slate-800 border-white/10' : 'bg-slate-100 border-slate-200'
+        }`}>
+          <div className="h-full bg-gradient-to-r from-indigo-500 to-amber-500 rounded-full animate-shimmer w-full"></div>
         </div>
       </div>
     </div>
@@ -1827,7 +1818,7 @@ function App() {
               <div className="lg:col-span-2 space-y-4">
                 
                 {turns.length === 0 && status.status !== 'idle' && !error ? (
-                  <BattleArenaLoader mode={debateMode} topic={debateTopic} />
+                  <BattleArenaLoader mode={debateMode} topic={debateTopic} darkMode={darkMode} />
                 ) : (
                   <>
                     {/* ── FACTCHECK MODE DECK ── */}
