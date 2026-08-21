@@ -9,7 +9,7 @@ import {
 import CloudShader from './CloudShader';
 import NightSky from './NightSky';
 import FloatingDock from './FloatingDock';
-import ClashCloudWipe from './ClashCloudWipe';
+import BattleTransition from './BattleTransition';
 import logo from './assets/logo.png';
 import { ParticleCard, GlobalSpotlight } from './MagicBento';
 
@@ -557,9 +557,9 @@ function App() {
     setDebateTopic(topic);
     setDebateMode(mode);
 
-    // ⚔️ Trigger Clash of Clans Cloud-Wipe Transition!
+    // ⚔️ Trigger Versus Battle Clash Transition!
     setIsCloudWiping(true);
-    setCloudWipeStatus(mode === 'factcheck' ? 'Auditing Factual Sources...' : 'Summoning AI Debaters...');
+    setCloudWipeStatus(mode === 'factcheck' ? 'Auditing Factual Sources...' : 'Mobilizing Dual AI Agents...');
     const startTime = Date.now();
     
     try {
@@ -604,7 +604,7 @@ function App() {
       try {
         const data = JSON.parse(e.data);
         setStances(data);
-        setCloudWipeStatus('Arena Ready! Parting clouds...');
+        setCloudWipeStatus('Engaging Combat Arena...');
         // Ensure at least 480ms total transition time for a snappy, high-impact battle slam
         const elapsed = startTime ? Date.now() - startTime : 480;
         const remaining = Math.max(0, 480 - elapsed);
@@ -1152,8 +1152,8 @@ function App() {
       )}
       <div className="dot-grid"></div>
 
-      {/* Clash of Clans Style Cloud-Wipe Transition Overlay */}
-      <ClashCloudWipe
+      {/* ⚔️ Epic Versus Battle Transition Overlay */}
+      <BattleTransition
         isActive={isCloudWiping}
         topic={debateTopic}
         mode={debateMode}
