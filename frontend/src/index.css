@@ -23,18 +23,44 @@
   html, body {
     margin: 0;
     padding: 0;
-    background-color: #bfdbfe !important;
+    background-color: #3876ba !important;
     color: #1e293b !important;
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .dark-mode html, .dark-mode body, html.dark, body.dark-mode {
+    background-color: #060813 !important;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: "Lora", Georgia, serif;
     color: #0f172a;
   }
+
+  /* Prevent auto-zoom on iOS inputs with font-size < 16px */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    input, select, textarea {
+      font-size: inherit;
+    }
+  }
+}
+
+/* ─── Mobile Scrollbar Utilities ─── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ─── Dual-Agent Arena Mesh Background (Dark Mode) ─── */

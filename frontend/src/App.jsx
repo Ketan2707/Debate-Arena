@@ -252,6 +252,7 @@ function App() {
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [activeRoundTab, setActiveRoundTab] = useState('all'); // 'all', '1', '2', '3', '4', '5', 'verdict'
   const [claimFilter, setClaimFilter] = useState('all'); // 'all', 'Confirmed', 'Disputed', 'Unverifiable'
+  const [mobileAgentView, setMobileAgentView] = useState('both'); // 'both', 'Agent A', 'Agent B'
   
   // History state
   const [historyList, setHistoryList] = useState([]);
@@ -1128,10 +1129,10 @@ function App() {
       <div className="dot-grid"></div>
 
       {/* Top Header - Floating design matching the screenshot */}
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-4 relative z-40">
-        <header className="glass rounded-2xl px-6 py-3 flex items-center justify-between border border-white/10 shadow-2xl">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pt-3 sm:pt-4 relative z-40">
+        <header className="glass rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between border border-white/10 shadow-xl">
           <div 
-            className="flex items-center space-x-3 cursor-pointer group"
+            className="flex items-center space-x-2 sm:space-x-3 cursor-pointer group"
             onClick={() => {
               if (status.status === 'idle') {
                 setActiveView('landing');
@@ -1139,14 +1140,14 @@ function App() {
             }}
           >
             <div className="text-white font-extrabold flex items-center justify-center transition-transform group-hover:scale-105">
-              <img src={logo} className="h-9 w-9 object-contain" alt="Logo" />
+              <img src={logo} className="h-7 w-7 sm:h-9 sm:w-9 object-contain" alt="Logo" />
             </div>
             <div>
-              <h1 className="text-sm sm:text-lg font-bold tracking-tight font-sans text-brand-textLight">ArguForge AI</h1>
+              <h1 className="text-xs sm:text-lg font-bold tracking-tight font-sans text-brand-textLight">ArguForge AI</h1>
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <button 
               onClick={() => {
                 if (status.status === 'idle' || confirm("Leave active session?")) {
@@ -1156,7 +1157,7 @@ function App() {
                   setActiveView('history');
                 }
               }}
-              className="text-sm text-slate-400 hover:text-white transition-colors font-sans"
+              className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors font-sans py-1"
             >
               Archive
             </button>
@@ -1164,7 +1165,7 @@ function App() {
               onClick={() => {
                 document.getElementById('site-footer')?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="text-sm text-slate-400 hover:text-white transition-colors font-sans cursor-pointer"
+              className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors font-sans cursor-pointer py-1"
             >
               About
             </button>
@@ -1175,21 +1176,21 @@ function App() {
               className="theme-toggle"
               title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {darkMode ? <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
             </button>
 
             {/* Auth Button */}
             {currentUser ? (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 glass px-3 py-1.5 rounded-xl border border-white/10">
-                  <div className="w-5 h-5 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-brand-accent">{currentUser.email?.[0]?.toUpperCase()}</span>
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <div className="flex items-center space-x-1.5 sm:space-x-2 glass px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-white/10">
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-brand-accent">{currentUser.email?.[0]?.toUpperCase()}</span>
                   </div>
-                  <span className="text-xs text-brand-textMuted font-sans hidden sm:inline">{currentUser.email}</span>
+                  <span className="text-xs text-brand-textMuted font-sans hidden md:inline">{currentUser.email}</span>
                 </div>
                 <button 
                   onClick={handleLogout}
-                  className="text-xs text-slate-400 hover:text-white transition-colors font-sans"
+                  className="text-[11px] sm:text-xs text-slate-400 hover:text-white transition-colors font-sans py-1"
                 >
                   Log Out
                 </button>
@@ -1197,7 +1198,7 @@ function App() {
             ) : (
               <button 
                 onClick={() => setActiveView('login')}
-                className="bg-white hover:bg-slate-200 text-black px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-md font-sans cursor-pointer"
+                className="bg-white hover:bg-slate-200 text-black px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all shadow-md font-sans cursor-pointer"
               >
                 Sign In
               </button>
@@ -1207,7 +1208,7 @@ function App() {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col justify-center relative z-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 flex flex-col justify-center relative z-10">
         
         {/* ── LOGIN / REGISTER VIEW ── */}
         {/* ── LOGIN VIEW ── */}
@@ -1513,11 +1514,11 @@ function App() {
             </div>
 
             {/* Hero Heading - matching font and text style */}
-            <h2 className={`text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight font-sans mb-4 leading-tight max-w-3xl mx-auto ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight font-sans mb-3 sm:mb-4 leading-tight max-w-3xl mx-auto px-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               Rise above the noise, forge the truth
             </h2>
 
-            <p className={`text-base sm:text-lg mb-8 max-w-xl font-sans font-light leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className={`text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-xl font-sans font-light leading-relaxed px-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               Submit any topic. Settle claims with verified sources. Choose a full adversarial AI debate or a quick factual deep-dive analysis.
             </p>
             
@@ -1531,14 +1532,14 @@ function App() {
                 glowColor="168, 85, 247"
                 className="w-full magic-bento-card rounded-2xl"
               >
-                <div className={`flex items-center w-full backdrop-blur-xl px-5 py-2.5 rounded-2xl transition-all duration-300 ${darkMode ? 'bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.02)] focus-within:border-white/40 focus-within:shadow-[0_0_30px_rgba(255,255,255,0.08)]' : 'bg-white/70 hover:bg-white/80 border border-blue-200 shadow-lg shadow-black/5 focus-within:border-indigo-400 focus-within:shadow-[0_0_20px_rgba(79,70,229,0.12)]'}`}>
-                  <Search className="h-5 w-5 text-slate-400 mr-3 flex-shrink-0" />
+                <div className={`flex items-center w-full backdrop-blur-xl px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 ${darkMode ? 'bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.02)] focus-within:border-white/40 focus-within:shadow-[0_0_30px_rgba(255,255,255,0.08)]' : 'bg-white/70 hover:bg-white/80 border border-blue-200 shadow-lg shadow-black/5 focus-within:border-indigo-400 focus-within:shadow-[0_0_20px_rgba(79,70,229,0.12)]'}`}>
+                  <Search className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 mr-2.5 sm:mr-3 flex-shrink-0" />
                   <input 
                     type="text" 
                     value={topicInput}
                     onChange={(e) => setTopicInput(e.target.value)}
                     placeholder="Should electric vehicles be mandatory by 2035?"
-                    className={`w-full bg-transparent py-3 focus:outline-none font-sans text-md ${darkMode ? 'text-slate-100 placeholder-slate-500' : 'text-slate-800 placeholder-slate-400'}`}
+                    className={`w-full bg-transparent py-2.5 sm:py-3 focus:outline-none font-sans text-sm sm:text-base ${darkMode ? 'text-slate-100 placeholder-slate-500' : 'text-slate-800 placeholder-slate-400'}`}
                   />
                 </div>
               </ParticleCard>
@@ -1550,11 +1551,11 @@ function App() {
                 enableMagnetism={false}
                 clickEffect={false}
                 glowColor="168, 85, 247"
-                className="mt-6 w-full max-w-lg magic-bento-card rounded-2xl"
+                className="mt-4 sm:mt-6 w-full max-w-lg magic-bento-card rounded-2xl"
               >
-                <div className={`flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 backdrop-blur-md px-5 py-3 rounded-2xl ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white/65 border border-blue-200 shadow-md shadow-black/5'}`}>
-                  <span className={`text-xs font-sans font-bold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Analysis Focus:</span>
-                  <div className={`flex p-1 rounded-xl ${darkMode ? 'bg-black/40 border border-white/10' : 'bg-slate-200/80 border border-blue-200'}`}>
+                <div className={`flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-3 backdrop-blur-md px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-2xl ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white/65 border border-blue-200 shadow-md shadow-black/5'}`}>
+                  <span className={`text-[11px] sm:text-xs font-sans font-bold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Analysis Focus:</span>
+                  <div className={`flex p-1 rounded-xl w-full sm:w-auto justify-center ${darkMode ? 'bg-black/40 border border-white/10' : 'bg-slate-200/80 border border-blue-200'}`}>
                     {[
                       { value: 'both', label: 'Both Sides' },
                       { value: 'for', label: 'Supporting' },
@@ -1564,7 +1565,7 @@ function App() {
                         key={opt.value}
                         type="button"
                         onClick={() => setStancePreference(opt.value)}
-                        className={`text-[11px] px-4 py-1.5 rounded-lg font-bold uppercase tracking-wide transition-all ${
+                        className={`text-[10px] sm:text-[11px] px-3 sm:px-4 py-1.5 rounded-lg font-bold uppercase tracking-wide transition-all flex-1 sm:flex-initial text-center ${
                           stancePreference === opt.value
                             ? (darkMode ? 'bg-white text-black shadow-lg' : 'bg-indigo-600 text-white shadow-lg')
                             : (darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900')
@@ -1578,19 +1579,19 @@ function App() {
               </ParticleCard>
 
               {/* Action Buttons - clearly differentiated features with React Bits magic animations */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8 w-full max-w-2xl">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 mt-6 sm:mt-8 w-full max-w-xl">
                 <ParticleCard
                   enableStars={true}
                   enableTilt={true}
                   enableMagnetism={true}
                   clickEffect={true}
                   glowColor="255, 255, 255"
-                  className="magic-bento-card w-full sm:w-auto rounded-xl"
+                  className="magic-bento-card w-full sm:w-auto rounded-xl flex-1"
                 >
                   <button 
                     type="submit"
                     onClick={() => setDebateMode('debate')}
-                    className="bg-white hover:bg-slate-200 text-black font-bold px-8 py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200"
+                    className="bg-white hover:bg-slate-200 text-black font-bold px-6 sm:px-8 py-3 sm:py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200 text-xs sm:text-sm"
                   >
                     <Play className="h-4 w-4 fill-black text-black" />
                     <span>Start AI Debate</span>
@@ -1603,7 +1604,7 @@ function App() {
                   enableMagnetism={true}
                   clickEffect={true}
                   glowColor="168, 85, 247"
-                  className="magic-bento-card w-full sm:w-auto rounded-xl"
+                  className="magic-bento-card w-full sm:w-auto rounded-xl flex-1"
                 >
                   <button 
                     type="button"
@@ -1611,7 +1612,7 @@ function App() {
                       setDebateMode('factcheck');
                       handleStartDebate(null, 'factcheck');
                     }}
-                    className={`font-bold px-8 py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200 ${darkMode ? 'bg-transparent text-white border border-white/15 hover:bg-white/5' : 'bg-white/60 text-slate-800 border border-blue-200 hover:bg-white/80'}`}
+                    className={`font-bold px-6 sm:px-8 py-3 sm:py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200 text-xs sm:text-sm ${darkMode ? 'bg-transparent text-white border border-white/15 hover:bg-white/5' : 'bg-white/60 text-slate-800 border border-blue-200 hover:bg-white/80'}`}
                   >
                     <Shield className="h-4 w-4 text-white" />
                     <span>Run Fact-Check</span>
@@ -1621,19 +1622,18 @@ function App() {
             </form>
             
             {/* Quick prefill examples */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-2 max-w-2xl">
-              <span className="text-xs text-slate-500 mr-1 flex items-center font-sans"><Sparkles className="h-3 w-3 mr-1 text-slate-400" />Try:</span>
+            <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-2xl px-2">
+              <span className="text-[11px] sm:text-xs text-slate-500 mr-1 flex items-center font-sans"><Sparkles className="h-3 w-3 mr-1 text-slate-400" />Try:</span>
               {["Should electric vehicles be mandatory by 2035?", "Is artificial intelligence a net benefit to public education?", "Should lab-grown meat be certified for commercial scale distribution?"].map((ex) => (
                 <button 
                   key={ex}
                   onClick={() => setTopicInput(ex)}
-                  className={`text-xs px-3.5 py-1.5 rounded-full transition-all duration-300 font-sans ${darkMode ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20' : 'bg-white/60 border border-blue-200 text-slate-600 hover:text-slate-900 hover:border-blue-300'}`}
+                  className={`text-[11px] sm:text-xs px-3 py-1.5 rounded-full transition-all duration-300 font-sans truncate max-w-[280px] sm:max-w-none ${darkMode ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20' : 'bg-white/60 border border-blue-200 text-slate-600 hover:text-slate-900 hover:border-blue-300'}`}
                 >
                   {ex.length > 38 ? ex.substring(0, 38) + '...' : ex}
                 </button>
               ))}
             </div>
-
 
             {!currentUser && (
               <div className={`mt-5 rounded-xl px-4 py-2.5 max-w-md backdrop-blur-md ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white/60 border border-blue-200'}`}>
@@ -1648,11 +1648,11 @@ function App() {
 
         {/* ── ACTIVE DEBATE / COMMAND CENTER ── */}
         {activeView === 'debate' && (
-          <div className="flex flex-col space-y-6 animate-fade-in w-full max-w-7xl mx-auto">
+          <div className="flex flex-col space-y-4 sm:space-y-6 animate-fade-in w-full max-w-7xl mx-auto">
             
             {/* 1. Header Control Bar */}
-            <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl shadow-lg border ${darkMode ? 'bg-slate-900/95 border-white/10 text-white' : 'bg-white/95 border-blue-200 text-slate-900 shadow-md'}`}>
-              <div className="flex items-center space-x-3">
+            <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-lg border ${darkMode ? 'bg-slate-900/95 border-white/10 text-white' : 'bg-white/95 border-blue-200 text-slate-900 shadow-md'}`}>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
                 <button 
                   onClick={() => {
                     if (status.status === 'idle' || confirm("Cancel active analysis and return home?")) {
@@ -1661,31 +1661,31 @@ function App() {
                       setActiveView('landing');
                     }
                   }}
-                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${darkMode ? 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-slate-900'}`}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${darkMode ? 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-slate-900'}`}
                 >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>{status.status === 'idle' ? "Back to Home" : "Cancel"}</span>
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <span>{status.status === 'idle' ? "Home" : "Cancel"}</span>
                 </button>
 
-                <div className={`h-5 w-[1px] ${darkMode ? 'bg-white/10' : 'bg-slate-300'}`}></div>
+                <div className={`h-4 w-[1px] hidden sm:block ${darkMode ? 'bg-white/10' : 'bg-slate-300'}`}></div>
 
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                <div className="flex items-center space-x-1.5 sm:space-x-2">
+                  <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     debateMode === 'factcheck'
                       ? (darkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-200')
                       : (darkMode ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-700 border border-indigo-200')
                   }`}>
-                    {debateMode === 'factcheck' ? '🛡️ Factual Deep-Dive' : '⚔️ Debate Arena'}
+                    {debateMode === 'factcheck' ? '🛡️ Fact-Check' : '⚔️ Arena'}
                   </span>
                   
                   {status.status !== 'idle' ? (
-                    <span className={`flex items-center space-x-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${darkMode ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-amber-700 bg-amber-50 border-amber-200'}`}>
-                      <RefreshCw className="h-3 w-3 animate-spin" />
-                      <span>{status.status === 'writing' ? `${status.agent} speaking...` : 'Evaluating claims...'}</span>
+                    <span className={`flex items-center space-x-1 text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border ${darkMode ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-amber-700 bg-amber-50 border-amber-200'}`}>
+                      <RefreshCw className="h-2.5 w-2.5 sm:h-3 sm:w-3 animate-spin" />
+                      <span className="truncate max-w-[110px] sm:max-w-none">{status.status === 'writing' ? `${status.agent} speaking...` : 'Evaluating...'}</span>
                     </span>
                   ) : (
-                    <span className={`flex items-center space-x-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${darkMode ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-emerald-700 bg-emerald-50 border-emerald-200'}`}>
-                      <CheckCircle className="h-3 w-3" />
+                    <span className={`flex items-center space-x-1 text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border ${darkMode ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-emerald-700 bg-emerald-50 border-emerald-200'}`}>
+                      <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       <span>Completed</span>
                     </span>
                   )}
@@ -1693,33 +1693,33 @@ function App() {
               </div>
 
               {/* Stance Indicator */}
-              <div className={`text-xs font-sans ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              <div className={`text-[11px] sm:text-xs font-sans self-end sm:self-center ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                 Focus: <strong className={`capitalize ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>{stancePreference}</strong>
               </div>
             </div>
 
             {/* 2. Topic Display Card */}
-            <div className={`rounded-2xl p-6 shadow-xl relative overflow-hidden border ${darkMode ? 'bg-slate-900/95 border-white/10 text-white shadow-2xl' : 'bg-white/95 border-blue-200 text-slate-900 shadow-lg'}`}>
-              <div className={`text-[11px] font-bold uppercase tracking-wider mb-1.5 flex items-center space-x-2 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
+            <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden border ${darkMode ? 'bg-slate-900/95 border-white/10 text-white shadow-2xl' : 'bg-white/95 border-blue-200 text-slate-900 shadow-lg'}`}>
+              <div className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center space-x-2 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
                 <Target className="h-3.5 w-3.5" />
                 <span>Central Motion / Query</span>
               </div>
-              <h2 className={`text-2xl sm:text-3xl font-extrabold font-sans leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+              <h2 className={`text-lg sm:text-2xl md:text-3xl font-extrabold font-sans leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                 {debateTopic}
               </h2>
 
               {/* Stances Matrix */}
               {debateMode === 'debate' && stances.stance_a && (
-                <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
-                  <div className={`rounded-xl p-4 border ${darkMode ? 'bg-indigo-950/20 border-indigo-500/30' : 'bg-indigo-50/70 border-indigo-200'}`}>
-                    <div className={`text-xs font-bold uppercase tracking-wider mb-1 flex items-center space-x-1.5 ${darkMode ? 'text-indigo-400' : 'text-indigo-700'}`}>
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4 mt-3 sm:mt-5 pt-3 sm:pt-5 border-t ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
+                  <div className={`rounded-xl p-3 sm:p-4 border ${darkMode ? 'bg-indigo-950/20 border-indigo-500/30' : 'bg-indigo-50/70 border-indigo-200'}`}>
+                    <div className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider mb-1 flex items-center space-x-1.5 ${darkMode ? 'text-indigo-400' : 'text-indigo-700'}`}>
                       <Zap className="h-3.5 w-3.5" />
                       <span>Agent A (Affirmative)</span>
                     </div>
                     <p className={`text-xs leading-relaxed font-sans ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{stances.stance_a}</p>
                   </div>
-                  <div className={`rounded-xl p-4 border ${darkMode ? 'bg-amber-950/20 border-amber-500/30' : 'bg-amber-50/70 border-amber-200'}`}>
-                    <div className={`text-xs font-bold uppercase tracking-wider mb-1 flex items-center space-x-1.5 ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
+                  <div className={`rounded-xl p-3 sm:p-4 border ${darkMode ? 'bg-amber-950/20 border-amber-500/30' : 'bg-amber-50/70 border-amber-200'}`}>
+                    <div className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider mb-1 flex items-center space-x-1.5 ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
                       <Shield className="h-3.5 w-3.5" />
                       <span>Agent B (Negative)</span>
                     </div>
@@ -1731,8 +1731,8 @@ function App() {
 
             {/* 3. Stage Round Navigator (Concept 1: Interactive Stage) */}
             {debateMode === 'debate' && (
-              <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-2 rounded-2xl border border-blue-200/80 dark:border-white/10 shadow-sm">
-                <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-blue-200/80 dark:border-white/10 shadow-sm">
+                <div className="flex items-center space-x-1 sm:space-x-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
                   {[1, 2, 3, 4, 5].map((rnd) => {
                     const hasTurns = turns.some(t => t.round_number === rnd);
                     const isStreamingThis = status.round_number === rnd && status.status !== 'idle';
@@ -1742,7 +1742,7 @@ function App() {
                       <button
                         key={rnd}
                         onClick={() => setActiveRoundTab(String(rnd))}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
+                        className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1 sm:space-x-1.5 min-h-[34px] sm:min-h-[36px] ${
                           activeRoundTab === String(rnd)
                             ? 'bg-indigo-600 text-white shadow-md'
                             : (darkMode 
@@ -1750,7 +1750,7 @@ function App() {
                                 : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs')
                         }`}
                       >
-                        {isStreamingThis && <RefreshCw className="h-3 w-3 animate-spin text-amber-400" />}
+                        {isStreamingThis && <RefreshCw className="h-2.5 w-2.5 sm:h-3 sm:w-3 animate-spin text-amber-400" />}
                         <span>{roundTitle}</span>
                       </button>
                     );
@@ -1759,34 +1759,36 @@ function App() {
                   {scores && scores.length > 0 && (
                     <button
                       onClick={() => setActiveRoundTab('verdict')}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 ${
+                      className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1 sm:space-x-1.5 min-h-[34px] sm:min-h-[36px] ${
                         activeRoundTab === 'verdict'
                           ? 'bg-amber-600 text-white shadow-md'
                           : (darkMode ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 shadow-xs')
                       }`}
                     >
-                      <Award className="h-3.5 w-3.5" />
+                      <Award className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
                       <span>Scorecard</span>
                     </button>
                   )}
                 </div>
 
                 {/* All Rounds Full Log Toggle */}
-                <button
-                  onClick={() => setActiveRoundTab(activeRoundTab === 'all' ? '1' : 'all')}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
-                    activeRoundTab === 'all'
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : (darkMode ? 'text-slate-400 border-white/10 hover:text-white hover:bg-white/5' : 'text-slate-600 border-slate-200 hover:bg-slate-100')
-                  }`}
-                >
-                  📜 {activeRoundTab === 'all' ? "Stage View" : "Full Transcript"}
-                </button>
+                <div className="flex items-center justify-end">
+                  <button
+                    onClick={() => setActiveRoundTab(activeRoundTab === 'all' ? '1' : 'all')}
+                    className={`text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto text-center ${
+                      activeRoundTab === 'all'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : (darkMode ? 'text-slate-400 border-white/10 hover:text-white hover:bg-white/5' : 'text-slate-600 border-slate-200 hover:bg-slate-100')
+                    }`}
+                  >
+                    📜 {activeRoundTab === 'all' ? "Stage View" : "Full Transcript"}
+                  </button>
+                </div>
               </div>
             )}
 
             {/* 4. Main Stage Arena (Concept 1: 2 Speech Columns + Right Fact Radar) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               
               {/* Left & Center 2 Columns: Speech Stage Decks */}
               <div className="lg:col-span-2 space-y-4">
@@ -1797,38 +1799,38 @@ function App() {
                   <>
                     {/* ── FACTCHECK MODE DECK ── */}
                     {debateMode === 'factcheck' && (
-                      <div className="space-y-5">
+                      <div className="space-y-4 sm:space-y-5">
                         {turns.filter(t => t.agent === 'FOR').map(turn => (
-                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-emerald-500/30 text-slate-200' : 'bg-white/95 border-emerald-200 text-slate-900 shadow-md'}`}>
+                          <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-emerald-500/30 text-slate-200' : 'bg-white/95 border-emerald-200 text-slate-900 shadow-md'}`}>
                             <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
-                              <CheckCircle className="h-5 w-5" />
-                              <span className="text-sm font-bold uppercase tracking-wider">Supporting Evidence (FOR)</span>
+                              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Supporting Evidence (FOR)</span>
                             </div>
-                            <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                            <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                               {renderContentWithClaims(turn.content, turn.claims)}
                             </div>
                           </div>
                         ))}
 
                         {turns.filter(t => t.agent === 'AGAINST').map(turn => (
-                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-rose-500/30 text-slate-200' : 'bg-white/95 border-rose-200 text-slate-900 shadow-md'}`}>
+                          <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-rose-500/30 text-slate-200' : 'bg-white/95 border-rose-200 text-slate-900 shadow-md'}`}>
                             <div className="flex items-center space-x-2 text-rose-600 dark:text-rose-400">
-                              <AlertTriangle className="h-5 w-5" />
-                              <span className="text-sm font-bold uppercase tracking-wider">Counter Arguments (AGAINST)</span>
+                              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
+                              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Counter Arguments (AGAINST)</span>
                             </div>
-                            <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                            <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                               {renderContentWithClaims(turn.content, turn.claims)}
                             </div>
                           </div>
                         ))}
 
                         {turns.filter(t => t.agent === 'VERDICT').map(turn => (
-                          <div key={turn.id} className={`rounded-2xl p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-200' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
+                          <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-200' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
                             <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
-                              <Award className="h-5 w-5" />
-                              <span className="text-sm font-bold uppercase tracking-wider">Balanced Factual Synthesis</span>
+                              <Award className="h-4 w-4 sm:h-5 sm:w-5" />
+                              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Balanced Factual Synthesis</span>
                             </div>
-                            <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                            <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                               {renderContentWithClaims(turn.content, turn.claims)}
                             </div>
                           </div>
@@ -1839,11 +1841,34 @@ function App() {
                     {/* ── DEBATE MODE STAGE (Concept 1: Single Round or All Rounds) ── */}
                     {debateMode === 'debate' && activeRoundTab !== 'verdict' && (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                        {/* Mobile Segmented Agent Selector (Visible on mobile < md) */}
+                        <div className="flex md:hidden items-center justify-center p-1 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-blue-200/80 dark:border-white/10 shadow-xs mb-2">
+                          {[
+                            { id: 'both', label: '⚔️ Both Decks' },
+                            { id: 'Agent A', label: '⚡ Agent A' },
+                            { id: 'Agent B', label: '🛡️ Agent B' }
+                          ].map(opt => (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => setMobileAgentView(opt.id)}
+                              className={`flex-1 py-1.5 px-1.5 rounded-lg text-xs font-bold transition-all text-center ${
+                                mobileAgentView === opt.id
+                                  ? 'bg-indigo-600 text-white shadow-xs'
+                                  : (darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900')
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                           
                           {/* Agent A Column */}
-                          <div className="space-y-3 flex flex-col">
-                            <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${darkMode ? 'bg-indigo-950/40 border-indigo-500/30' : 'bg-indigo-50/90 border-indigo-200 shadow-sm'}`}>
+                          <div className={`space-y-3 flex-col ${mobileAgentView === 'Agent B' ? 'hidden md:flex' : 'flex'}`}>
+                            <div className={`flex items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border ${darkMode ? 'bg-indigo-950/40 border-indigo-500/30' : 'bg-indigo-50/90 border-indigo-200 shadow-sm'}`}>
                               <div className="flex items-center space-x-2">
                                 <div className="h-2.5 w-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></div>
                                 <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-indigo-300' : 'text-indigo-900'}`}>Agent A (Affirmative)</span>
@@ -1855,13 +1880,13 @@ function App() {
                               .filter(t => t.agent === 'Agent A')
                               .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
                               .map((turn) => (
-                                <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 border max-h-[520px] overflow-y-auto ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-100' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
+                                <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-md space-y-3 border max-h-[440px] sm:max-h-[520px] overflow-y-auto ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-100' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
                                   <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-indigo-400' : 'border-slate-200 text-indigo-600'}`}>
                                     <span>
                                       Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : `Rebuttal ${turn.round_number - 1}`}
                                     </span>
                                   </div>
-                                  <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                  <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                                     {renderContentWithClaims(turn.content, turn.claims)}
                                   </div>
                                 </div>
@@ -1869,8 +1894,8 @@ function App() {
 
                             {/* Loading state for Agent A */}
                             {status.agent === 'Agent A' && (activeRoundTab === 'all' || String(status.round_number) === activeRoundTab) && (
-                              <div className={`border border-dashed rounded-2xl p-6 text-center space-y-3 ${darkMode ? 'bg-slate-900/80 border-indigo-500/40' : 'bg-white/90 border-indigo-300 shadow-sm'}`}>
-                                <RefreshCw className={`h-6 w-6 animate-spin mx-auto ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                              <div className={`border border-dashed rounded-xl sm:rounded-2xl p-5 sm:p-6 text-center space-y-2.5 ${darkMode ? 'bg-slate-900/80 border-indigo-500/40' : 'bg-white/90 border-indigo-300 shadow-sm'}`}>
+                                <RefreshCw className={`h-5 w-5 sm:h-6 sm:w-6 animate-spin mx-auto ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
                                 <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
                                   Agent A is formulating {status.round_number === 1 ? 'Opening Statement' : status.round_number === 5 ? 'Closing Statement' : `Rebuttal ${status.round_number - 1}`}...
                                 </p>
@@ -1879,16 +1904,16 @@ function App() {
 
                             {/* Empty placeholder if not reached yet in single round view */}
                             {activeRoundTab !== 'all' && !turns.some(t => t.agent === 'Agent A' && String(t.round_number) === activeRoundTab) && status.agent !== 'Agent A' && (
-                              <div className={`rounded-2xl p-8 text-center space-y-2 border border-dashed ${darkMode ? 'bg-slate-900/40 border-white/10 text-slate-500' : 'bg-white/50 border-slate-200 text-slate-400'}`}>
-                                <Zap className="h-6 w-6 mx-auto opacity-30" />
+                              <div className={`rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center space-y-2 border border-dashed ${darkMode ? 'bg-slate-900/40 border-white/10 text-slate-500' : 'bg-white/50 border-slate-200 text-slate-400'}`}>
+                                <Zap className="h-5 w-5 sm:h-6 sm:w-6 mx-auto opacity-30" />
                                 <p className="text-xs font-medium">Speech will appear once round starts</p>
                               </div>
                             )}
                           </div>
 
                           {/* Agent B Column */}
-                          <div className="space-y-3 flex flex-col">
-                            <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${darkMode ? 'bg-amber-950/40 border-amber-500/30' : 'bg-amber-50/90 border-amber-200 shadow-sm'}`}>
+                          <div className={`space-y-3 flex-col ${mobileAgentView === 'Agent A' ? 'hidden md:flex' : 'flex'}`}>
+                            <div className={`flex items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border ${darkMode ? 'bg-amber-950/40 border-amber-500/30' : 'bg-amber-50/90 border-amber-200 shadow-sm'}`}>
                               <div className="flex items-center space-x-2">
                                 <div className="h-2.5 w-2.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse"></div>
                                 <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-amber-300' : 'text-amber-900'}`}>Agent B (Negative)</span>
@@ -1900,13 +1925,13 @@ function App() {
                               .filter(t => t.agent === 'Agent B')
                               .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
                               .map((turn) => (
-                                <div key={turn.id} className={`rounded-2xl p-5 shadow-md space-y-3 border max-h-[520px] overflow-y-auto ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-md'}`}>
+                                <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-md space-y-3 border max-h-[440px] sm:max-h-[520px] overflow-y-auto ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-md'}`}>
                                   <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-amber-400' : 'border-slate-200 text-amber-600'}`}>
                                     <span>
                                       Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : `Rebuttal ${turn.round_number - 1}`}
                                     </span>
                                   </div>
-                                  <div className={`font-sans leading-relaxed text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                  <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                                     {renderContentWithClaims(turn.content, turn.claims)}
                                   </div>
                                 </div>
@@ -1914,8 +1939,8 @@ function App() {
 
                             {/* Loading state for Agent B */}
                             {status.agent === 'Agent B' && (activeRoundTab === 'all' || String(status.round_number) === activeRoundTab) && (
-                              <div className={`border border-dashed rounded-2xl p-6 text-center space-y-3 ${darkMode ? 'bg-slate-900/80 border-amber-500/40' : 'bg-white/90 border-amber-300 shadow-sm'}`}>
-                                <RefreshCw className={`h-6 w-6 animate-spin mx-auto ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
+                              <div className={`border border-dashed rounded-xl sm:rounded-2xl p-5 sm:p-6 text-center space-y-2.5 ${darkMode ? 'bg-slate-900/80 border-amber-500/40' : 'bg-white/90 border-amber-300 shadow-sm'}`}>
+                                <RefreshCw className={`h-5 w-5 sm:h-6 sm:w-6 animate-spin mx-auto ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
                                 <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
                                   Agent B is formulating {status.round_number === 1 ? 'Opening Statement' : status.round_number === 5 ? 'Closing Statement' : `Rebuttal ${status.round_number - 1}`}...
                                 </p>
@@ -1924,8 +1949,8 @@ function App() {
 
                             {/* Empty placeholder if not reached yet in single round view */}
                             {activeRoundTab !== 'all' && !turns.some(t => t.agent === 'Agent B' && String(t.round_number) === activeRoundTab) && status.agent !== 'Agent B' && (
-                              <div className={`rounded-2xl p-8 text-center space-y-2 border border-dashed ${darkMode ? 'bg-slate-900/40 border-white/10 text-slate-500' : 'bg-white/50 border-slate-200 text-slate-400'}`}>
-                                <Shield className="h-6 w-6 mx-auto opacity-30" />
+                              <div className={`rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center space-y-2 border border-dashed ${darkMode ? 'bg-slate-900/40 border-white/10 text-slate-500' : 'bg-white/50 border-slate-200 text-slate-400'}`}>
+                                <Shield className="h-5 w-5 sm:h-6 sm:w-6 mx-auto opacity-30" />
                                 <p className="text-xs font-medium">Speech will appear once round starts</p>
                               </div>
                             )}
@@ -1935,25 +1960,25 @@ function App() {
 
                         {/* Stage Bottom Navigation Controls */}
                         {activeRoundTab !== 'all' && ['1', '2', '3', '4', '5'].includes(activeRoundTab) && (
-                          <div className={`flex items-center justify-between p-3 rounded-xl border ${darkMode ? 'bg-slate-900/80 border-white/10' : 'bg-white/90 border-blue-200 shadow-xs'}`}>
+                          <div className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl border ${darkMode ? 'bg-slate-900/80 border-white/10' : 'bg-white/90 border-blue-200 shadow-xs'}`}>
                             <button
                               disabled={activeRoundTab === '1'}
                               onClick={() => setActiveRoundTab(String(parseInt(activeRoundTab) - 1))}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold border disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:bg-indigo-500/10"
+                              className="px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold border disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:bg-indigo-500/10"
                             >
-                              &larr; Previous Round
+                              &larr; <span className="hidden sm:inline">Previous Round</span><span className="sm:hidden">Prev</span>
                             </button>
 
-                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                              Round {activeRoundTab} of 5: {activeRoundTab === '1' ? 'Opening Statement' : activeRoundTab === '5' ? 'Closing Statement' : `Rebuttal ${parseInt(activeRoundTab) - 1}`}
+                            <span className="text-[11px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 text-center px-1 truncate">
+                              Round {activeRoundTab} of 5<span className="hidden sm:inline">: {activeRoundTab === '1' ? 'Opening Statement' : activeRoundTab === '5' ? 'Closing Statement' : `Rebuttal ${parseInt(activeRoundTab) - 1}`}</span>
                             </span>
 
                             <button
                               disabled={activeRoundTab === '5'}
                               onClick={() => setActiveRoundTab(String(parseInt(activeRoundTab) + 1))}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold border disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:bg-indigo-500/10"
+                              className="px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold border disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:bg-indigo-500/10"
                             >
-                              Next Round &rarr;
+                              <span className="hidden sm:inline">Next Round</span><span className="sm:hidden">Next</span> &rarr;
                             </button>
                           </div>
                         )}
@@ -2033,7 +2058,7 @@ function App() {
 
               {/* Right 1 Column: Live Fact-Checker Command Matrix */}
               <div className="lg:col-span-1 space-y-4">
-                <div className={`rounded-2xl p-5 shadow-xl sticky top-20 space-y-4 border ${darkMode ? 'bg-slate-900/95 border-white/10 text-slate-100 shadow-2xl' : 'bg-white/95 border-blue-200 text-slate-900 shadow-lg'}`}>
+                <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-xl lg:sticky lg:top-20 space-y-4 border ${darkMode ? 'bg-slate-900/95 border-white/10 text-slate-100 shadow-2xl' : 'bg-white/95 border-blue-200 text-slate-900 shadow-lg'}`}>
                   
                   {/* Radar Header */}
                   <div className={`flex items-center justify-between pb-3 border-b ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
@@ -2225,37 +2250,37 @@ function App() {
                 </div>
               </div>
             ) : !currentUser ? (
-              <div className="glass rounded-2xl p-16 text-center flex flex-col items-center justify-center space-y-4 glow-accent">
-                <div className="p-5 rounded-2xl animate-float">
-                  <img src={logo} className="h-12 w-12 object-contain opacity-50" alt="Logo" />
+              <div className="glass rounded-2xl p-6 sm:p-16 text-center flex flex-col items-center justify-center space-y-4 glow-accent">
+                <div className="p-4 sm:p-5 rounded-2xl animate-float">
+                  <img src={logo} className="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-50" alt="Logo" />
                 </div>
                 <div>
-                  <h4 className="font-serif text-lg font-semibold text-slate-300">Sign in to view your archive</h4>
+                  <h4 className="font-serif text-base sm:text-lg font-semibold text-slate-300">Sign in to view your archive</h4>
                   <p className="text-xs text-brand-textMuted font-sans mt-1 max-w-xs mx-auto leading-relaxed">
                     Completed debates and fact-checks are stored privately in your personal archive.
                   </p>
                 </div>
                 <button 
                   onClick={() => setActiveView('login')}
-                  className="mt-2 bg-white hover:bg-slate-200 text-black px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md"
+                  className="mt-2 bg-white hover:bg-slate-200 text-black px-5 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md"
                 >
                   Sign In to Your Account
                 </button>
               </div>
             ) : historyList.length === 0 ? (
-              <div className="glass rounded-2xl p-16 text-center flex flex-col items-center justify-center space-y-4 glow-accent">
-                <div className="p-5 rounded-2xl animate-float">
-                  <img src={logo} className="h-12 w-12 object-contain opacity-50" alt="Logo" />
+              <div className="glass rounded-2xl p-6 sm:p-16 text-center flex flex-col items-center justify-center space-y-4 glow-accent">
+                <div className="p-4 sm:p-5 rounded-2xl animate-float">
+                  <img src={logo} className="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-50" alt="Logo" />
                 </div>
                 <div>
-                  <h4 className="font-serif text-lg font-semibold text-slate-300">No entries in archive</h4>
+                  <h4 className="font-serif text-base sm:text-lg font-semibold text-slate-300">No entries in archive</h4>
                   <p className="text-xs text-brand-textMuted font-sans mt-1 max-w-xs mx-auto leading-relaxed">
                     Create your first debate or fact-check. Completed analyses are saved here automatically.
                   </p>
                 </div>
                 <button 
                   onClick={() => setActiveView('landing')}
-                  className="mt-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-5 py-2.5 rounded-xl text-sm font-bold transition-all animate-shine"
+                  className="mt-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all animate-shine"
                 >
                   Start Your First Debate
                 </button>
@@ -2335,15 +2360,15 @@ function App() {
 
       {/* ── ACETERNITY-STYLE MULTI-COLUMN MEGA FOOTER (Only shown on Landing View) ── */}
       {activeView === 'landing' && (
-        <footer id="site-footer" className="relative z-10 border-t border-brand-border/30 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-xl pt-14 pb-8 px-6 sm:px-12 mt-16 font-sans">
+        <footer id="site-footer" className="relative z-10 border-t border-brand-border/30 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-xl pt-10 sm:pt-14 pb-8 px-4 sm:px-12 mt-12 sm:mt-16 font-sans">
         <div className="max-w-7xl mx-auto">
           
           {/* Top Brand Section */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-10 border-b border-brand-border/20 dark:border-white/10">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 pb-6 sm:pb-10 border-b border-brand-border/20 dark:border-white/10">
             <div className="space-y-2 max-w-xl">
               <div className="flex items-center space-x-2.5">
                 <img src={logo} className="h-7 w-7 object-contain" alt="ArguForge AI Logo" />
-                <h3 className="text-xl font-bold font-sans tracking-tight text-slate-900 dark:text-white">ArguForge AI</h3>
+                <h3 className="text-lg sm:text-xl font-bold font-sans tracking-tight text-slate-900 dark:text-white">ArguForge AI</h3>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 Source-integrity-first adversarial debate &amp; factual analysis platform. Temperature-tuned dual AI agents clashing with multi-tier source verification and bias-free scoring.
@@ -2383,7 +2408,7 @@ function App() {
           </div>
 
           {/* 5-Column Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 py-10 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 py-8 sm:py-10 text-xs">
             
             {/* Col 1: Debate Arena */}
             <div className="space-y-3">
