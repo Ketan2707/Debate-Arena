@@ -4,18 +4,20 @@ import { Zap, Shield, Swords, Sparkles, Flame, Trophy, Cpu } from 'lucide-react'
 import logo from './assets/logo.png';
 
 /**
- * ⚔️ EPIC VERSUS BATTLE TRANSITION (Esports / Fighting Game Style)
- * - Dynamic 35° diagonal split screen
- * - Agent A (Electric Indigo / Affirmative) slams from Top-Left
- * - Agent B (Blazing Amber / Negative) slams from Bottom-Right
- * - Massive Metallic "VS" Emblem with shockwave flash & clash sparks
- * - Dynamic async hold & explosive shatter blade exit
+ * ⚔️ THEME-HARMONIZED VERSUS BATTLE TRANSITION
+ * - Seamlessly styled to match the ArguForge AI Sky/Clouds (Light Mode) or Cosmic Starry Arena (Dark Mode)
+ * - 35° Dynamic diagonal split screen with frosted glassmorphism & dual-agent energy
+ * - Agent A: Cobalt / Cerulean Blue Affirmative Wing with electric pulses
+ * - Agent B: Sunlit Amber / Gold Negative Wing with glowing embers
+ * - Frosted Glass "VS" Emblem with ArguForge Logo & Contested Motion Banner
+ * - High-speed entrance (0.28s) & explosive blade-slice reveal
  */
 export default function BattleTransition({
   isActive = false,
   topic = '',
   mode = 'debate',
   statusMessage = 'Summoning AI Debaters...',
+  darkMode = false,
 }) {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [hasClashed, setHasClashed] = useState(false);
@@ -28,11 +30,11 @@ export default function BattleTransition({
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // Clash impact trigger at t = 220ms
+  // Micro impact timing
   useEffect(() => {
     if (isActive) {
       setHasClashed(false);
-      const timer = setTimeout(() => setHasClashed(true), 220);
+      const timer = setTimeout(() => setHasClashed(true), 200);
       return () => clearTimeout(timer);
     } else {
       setHasClashed(false);
@@ -43,31 +45,38 @@ export default function BattleTransition({
     <AnimatePresence>
       {isActive && (
         <motion.div
-          key="battle-transition-overlay"
+          key="theme-battle-transition-overlay"
           initial={{ opacity: 1 }}
           animate={{
             opacity: 1,
-            x: hasClashed ? [0, -6, 6, -4, 4, -1, 0] : 0,
-            y: hasClashed ? [0, 4, -4, 3, -2, 0] : 0,
+            x: hasClashed ? [0, -4, 4, -2, 2, 0] : 0,
+            y: hasClashed ? [0, 3, -3, 2, -1, 0] : 0,
           }}
           exit={{ opacity: 0 }}
           transition={{
             opacity: { duration: 0.25 },
-            x: { duration: 0.25, ease: 'easeOut' },
-            y: { duration: 0.25, ease: 'easeOut' },
+            x: { duration: 0.22, ease: 'easeOut' },
+            y: { duration: 0.22, ease: 'easeOut' },
           }}
-          className="fixed inset-0 z-[100] pointer-events-auto flex items-center justify-center overflow-hidden bg-[#030612] select-none"
+          className={`fixed inset-0 z-[100] pointer-events-auto flex items-center justify-center overflow-hidden select-none ${
+            darkMode 
+              ? 'bg-[#060813]' 
+              : 'bg-gradient-to-b from-[#3876ba] via-[#5a96d8] to-[#8cbfe8]'
+          }`}
           style={{ willChange: 'transform, opacity' }}
         >
+          {/* Subtle Ambient Sky Mist / Star grid */}
+          <div className="absolute inset-0 pointer-events-none opacity-30 bg-[radial-gradient(#ffffff_1.2px,transparent_1.2px)] [background-size:28px_28px]" />
+
           {/* ═══════════ LEFT/TOP-LEFT SHARD: AGENT A (AFFIRMATIVE) ═══════════ */}
           <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { x: '-120%', y: '-40%' }}
+            initial={reduceMotion ? { opacity: 0 } : { x: '-120%', y: '-35%' }}
             animate={
               reduceMotion
                 ? { opacity: 1 }
                 : {
                     x: ['-120%', '0%'],
-                    y: ['-40%', '0%'],
+                    y: ['-35%', '0%'],
                   }
             }
             exit={
@@ -75,57 +84,72 @@ export default function BattleTransition({
                 ? { opacity: 0 }
                 : {
                     x: '-130%',
-                    y: '-45%',
-                    transition: { duration: 0.32, ease: [0.75, 0, 0.2, 1] },
+                    y: '-40%',
+                    transition: { duration: 0.30, ease: [0.75, 0, 0.2, 1] },
                   }
             }
             transition={{
               duration: 0.26,
-              ease: [0.08, 0.95, 0.18, 1.0],
+              ease: [0.08, 0.96, 0.16, 1.0],
             }}
             className="absolute inset-0 z-10 overflow-hidden"
             style={{
               clipPath: 'polygon(0 0, 100% 0, 42% 100%, 0 100%)',
             }}
           >
-            {/* Deep Indigo/Cyan Energy Field */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#0f172a] to-[#020617] border-r-4 border-indigo-500/80 shadow-[0_0_50px_rgba(99,102,241,0.5)]">
-              {/* Electric Background Grid Lines */}
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px]" />
+            {/* Themed Affirmative Wing */}
+            <div
+              className={`absolute inset-0 border-r-4 shadow-2xl ${
+                darkMode
+                  ? 'bg-gradient-to-br from-[#1e1b4b]/95 via-[#0f172a]/95 to-[#020617]/95 border-indigo-500/80 shadow-[0_0_60px_rgba(99,102,241,0.4)]'
+                  : 'bg-gradient-to-br from-[#1e3a8a]/90 via-[#2563eb]/85 to-[#3b82f6]/80 border-white/60 shadow-[0_0_60px_rgba(37,99,235,0.4)] backdrop-blur-xl'
+              }`}
+            >
+              {/* Electric Aura / Sky Highlight */}
+              <div className={`absolute -top-16 -left-16 w-96 h-96 rounded-full blur-3xl animate-pulse ${
+                darkMode ? 'bg-indigo-600/30' : 'bg-white/25'
+              }`} />
 
-              {/* Glowing Aura Ring */}
-              <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-indigo-600/30 blur-3xl animate-pulse" />
-
-              {/* Left Agent Branding */}
-              <div className="absolute top-1/4 left-6 sm:left-14 max-w-xs sm:max-w-sm space-y-2">
-                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-lg bg-indigo-950/80 border border-indigo-500/50 shadow-lg">
-                  <Zap className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-                  <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-indigo-300">
-                    {mode === 'factcheck' ? 'FOR EVIDENCE' : 'AGENT A • AFFIRMATIVE'}
+              {/* Left Agent Branding Card */}
+              <div className="absolute top-1/4 left-6 sm:left-14 max-w-xs sm:max-w-md space-y-3">
+                <div className={`inline-flex items-center space-x-2 px-3.5 py-1 rounded-full shadow-lg border backdrop-blur-md ${
+                  darkMode 
+                    ? 'bg-indigo-950/80 border-indigo-500/50 text-indigo-300' 
+                    : 'bg-white/90 border-white text-indigo-900 shadow-md'
+                }`}>
+                  <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
+                  <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest font-sans">
+                    {mode === 'factcheck' ? 'EVIDENCE AUDIT' : 'AGENT A • AFFIRMATIVE'}
                   </span>
                 </div>
-                <h2 className="text-3xl sm:text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-200 to-indigo-400 drop-shadow-[0_4px_16px_rgba(99,102,241,0.6)]">
+
+                <h2 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
                   {mode === 'factcheck' ? 'SUPPORT' : 'PRO POSITION'}
                 </h2>
-                <p className="text-xs font-mono text-indigo-300/80 hidden sm:block">
-                  Temp: 0.6 &bull; Strict Logical Axioms &bull; Evidence Weight
-                </p>
+
+                <div className={`text-xs font-sans font-medium px-3 py-1.5 rounded-xl border backdrop-blur-md inline-block ${
+                  darkMode
+                    ? 'bg-indigo-950/40 border-indigo-500/30 text-indigo-200'
+                    : 'bg-white/20 border-white/40 text-blue-50 shadow-sm'
+                }`}>
+                  Temp: 0.6 &bull; Logical Axioms &bull; Evidence Weight
+                </div>
               </div>
 
-              {/* Slash Energy Blade Streak */}
-              <div className="absolute top-0 right-0 bottom-0 w-2 bg-gradient-to-b from-indigo-300 via-cyan-200 to-indigo-500 blur-[1px] shadow-[0_0_20px_#818cf8]" />
+              {/* Slash Energy Streak */}
+              <div className="absolute top-0 right-0 bottom-0 w-2.5 bg-gradient-to-b from-white via-cyan-200 to-indigo-400 blur-[1px] shadow-[0_0_25px_#ffffff]" />
             </div>
           </motion.div>
 
           {/* ═══════════ RIGHT/BOTTOM-RIGHT SHARD: AGENT B (NEGATIVE) ═══════════ */}
           <motion.div
-            initial={reduceMotion ? { opacity: 0 } : { x: '120%', y: '40%' }}
+            initial={reduceMotion ? { opacity: 0 } : { x: '120%', y: '35%' }}
             animate={
               reduceMotion
                 ? { opacity: 1 }
                 : {
                     x: ['120%', '0%'],
-                    y: ['40%', '0%'],
+                    y: ['35%', '0%'],
                   }
             }
             exit={
@@ -133,134 +157,163 @@ export default function BattleTransition({
                 ? { opacity: 0 }
                 : {
                     x: '130%',
-                    y: '45%',
-                    transition: { duration: 0.32, ease: [0.75, 0, 0.2, 1] },
+                    y: '40%',
+                    transition: { duration: 0.30, ease: [0.75, 0, 0.2, 1] },
                   }
             }
             transition={{
               duration: 0.26,
-              ease: [0.08, 0.95, 0.18, 1.0],
+              ease: [0.08, 0.96, 0.16, 1.0],
             }}
             className="absolute inset-0 z-10 overflow-hidden"
             style={{
               clipPath: 'polygon(100% 0, 100% 100%, 0 100%, 58% 0)',
             }}
           >
-            {/* Blazing Amber/Crimson Energy Field */}
-            <div className="absolute inset-0 bg-gradient-to-tl from-[#451a03] via-[#1c1917] to-[#0c0a09] border-l-4 border-amber-500/80 shadow-[0_0_50px_rgba(245,158,11,0.5)]">
-              {/* Embers Background Pattern */}
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:24px_24px]" />
+            {/* Themed Negative Wing */}
+            <div
+              className={`absolute inset-0 border-l-4 shadow-2xl ${
+                darkMode
+                  ? 'bg-gradient-to-tl from-[#451a03]/95 via-[#1c1917]/95 to-[#0c0a09]/95 border-amber-500/80 shadow-[0_0_60px_rgba(245,158,11,0.4)]'
+                  : 'bg-gradient-to-tl from-[#b45309]/90 via-[#d97706]/85 to-[#f59e0b]/80 border-white/60 shadow-[0_0_60px_rgba(245,158,11,0.4)] backdrop-blur-xl'
+              }`}
+            >
+              {/* Solar Flare / Amber Aura */}
+              <div className={`absolute -bottom-16 -right-16 w-96 h-96 rounded-full blur-3xl animate-pulse ${
+                darkMode ? 'bg-amber-600/30' : 'bg-amber-200/30'
+              }`} />
 
-              {/* Glowing Aura Ring */}
-              <div className="absolute -bottom-20 -right-20 w-96 h-96 rounded-full bg-amber-600/30 blur-3xl animate-pulse" />
-
-              {/* Right Agent Branding */}
-              <div className="absolute bottom-1/4 right-6 sm:right-14 max-w-xs sm:max-w-sm text-right space-y-2">
-                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-lg bg-amber-950/80 border border-amber-500/50 shadow-lg ml-auto">
-                  <Flame className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
-                  <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-amber-300">
-                    {mode === 'factcheck' ? 'AGAINST EVIDENCE' : 'AGENT B • NEGATIVE'}
+              {/* Right Agent Branding Card */}
+              <div className="absolute bottom-1/4 right-6 sm:right-14 max-w-xs sm:max-w-md text-right space-y-3">
+                <div className={`inline-flex items-center space-x-2 px-3.5 py-1 rounded-full shadow-lg border backdrop-blur-md ml-auto ${
+                  darkMode 
+                    ? 'bg-amber-950/80 border-amber-500/50 text-amber-300' 
+                    : 'bg-white/90 border-white text-amber-900 shadow-md'
+                }`}>
+                  <Flame className="w-3.5 h-3.5 text-amber-500 animate-bounce" />
+                  <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest font-sans">
+                    {mode === 'factcheck' ? 'COUNTER ANALYSIS' : 'AGENT B • NEGATIVE'}
                   </span>
                 </div>
-                <h2 className="text-3xl sm:text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-l from-white via-amber-200 to-amber-400 drop-shadow-[0_4px_16px_rgba(245,158,11,0.6)]">
+
+                <h2 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
                   {mode === 'factcheck' ? 'COUNTER' : 'CONTRA STANCE'}
                 </h2>
-                <p className="text-xs font-mono text-amber-300/80 hidden sm:block">
+
+                <div className={`text-xs font-sans font-medium px-3 py-1.5 rounded-xl border backdrop-blur-md inline-block ${
+                  darkMode
+                    ? 'bg-amber-950/40 border-amber-500/30 text-amber-200'
+                    : 'bg-white/20 border-white/40 text-amber-50 shadow-sm'
+                }`}>
                   Temp: 0.8 &bull; Adversarial Rebuttals &bull; Bias Audit
-                </p>
+                </div>
               </div>
 
-              {/* Slash Energy Blade Streak */}
-              <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-amber-300 via-yellow-200 to-amber-500 blur-[1px] shadow-[0_0_20px_#fbbf24]" />
+              {/* Slash Energy Streak */}
+              <div className="absolute top-0 left-0 bottom-0 w-2.5 bg-gradient-to-b from-white via-amber-200 to-amber-500 blur-[1px] shadow-[0_0_25px_#ffffff]" />
             </div>
           </motion.div>
 
-          {/* ═══════════ IMPACT FLASH / CLASH SHOCKWAVE ═══════════ */}
+          {/* ═══════════ IMPACT SHOCKWAVE & DIAGONAL SLICE LINE ═══════════ */}
           {hasClashed && (
             <motion.div
-              initial={{ opacity: 1, scale: 0.7 }}
-              animate={{ opacity: 0, scale: 1.6 }}
+              initial={{ opacity: 0.8, scale: 0.8 }}
+              animate={{ opacity: 0, scale: 1.5 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="absolute inset-0 z-30 pointer-events-none bg-gradient-to-r from-indigo-500/40 via-white/80 to-amber-500/40"
+              className="absolute inset-0 z-30 pointer-events-none bg-gradient-to-r from-blue-400/40 via-white/80 to-amber-400/40"
             />
           )}
 
-          {/* Diagonal Clash Lightning Slice Line */}
+          {/* Diagonal Clash Blade Beam */}
           <motion.div
             initial={{ scaleX: 0, opacity: 0 }}
             animate={
               hasClashed
-                ? { scaleX: [0, 1.2, 1], opacity: [0, 1, 0.8] }
+                ? { scaleX: [0, 1.15, 1], opacity: [0, 1, 0.9] }
                 : { scaleX: 0, opacity: 0 }
             }
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
             className="absolute inset-0 z-25 pointer-events-none flex items-center justify-center"
           >
             <div
-              className="w-[140vw] h-1.5 bg-gradient-to-r from-indigo-400 via-white to-amber-400 shadow-[0_0_30px_#ffffff] transform -rotate-[35deg]"
+              className="w-[140vw] h-2 bg-gradient-to-r from-blue-200 via-white to-amber-200 shadow-[0_0_35px_#ffffff] transform -rotate-[35deg]"
             />
           </motion.div>
 
-          {/* ═══════════ CENTER SLAM: "VS" EMBLEM & BATTLE DATA (z-40) ═══════════ */}
+          {/* ═══════════ CENTER "VS" EMBLEM & THEMED CARD (z-40) ═══════════ */}
           <motion.div
-            initial={{ scale: 2.2, opacity: 0, rotate: -8 }}
+            initial={{ scale: 2.0, opacity: 0, rotate: -6 }}
             animate={{
-              scale: [2.2, 0.9, 1.0],
+              scale: [2.0, 0.92, 1.0],
               opacity: 1,
-              rotate: [-8, 2, 0],
+              rotate: [-6, 2, 0],
             }}
             exit={{
-              scale: 1.4,
+              scale: 1.3,
               opacity: 0,
-              filter: 'blur(10px)',
-              transition: { duration: 0.22, ease: 'easeIn' },
+              filter: 'blur(8px)',
+              transition: { duration: 0.2, ease: 'easeIn' },
             }}
             transition={{
-              duration: 0.30,
-              delay: 0.15,
-              ease: [0.15, 1.25, 0.3, 1.0],
+              duration: 0.28,
+              delay: 0.12,
+              ease: [0.15, 1.2, 0.25, 1.0],
             }}
             className="relative z-40 flex flex-col items-center justify-center text-center px-4 max-w-lg select-none"
           >
-            {/* The Iconic Metallic "VS" Badge */}
+            {/* Themed "VS" Glass Badge */}
             <div className="relative mb-3 flex items-center justify-center">
-              {/* Radiant Clash Glow */}
-              <div className="absolute -inset-8 rounded-full bg-gradient-to-r from-indigo-500/60 via-amber-500/60 to-indigo-500/60 blur-3xl animate-pulse" />
+              {/* Outer Glow Halo */}
+              <div className={`absolute -inset-8 rounded-full blur-3xl animate-pulse ${
+                darkMode ? 'bg-gradient-to-r from-indigo-500/60 via-amber-500/60 to-indigo-500/60' : 'bg-gradient-to-r from-blue-400/50 via-white/80 to-amber-400/50'
+              }`} />
 
-              {/* Chrome Hexagonal Emblem */}
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-[#090d21] border-2 border-amber-400/90 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center p-2 transform hover:scale-105 transition-transform">
+              {/* Frosted Hex Badge */}
+              <div className={`relative w-22 h-22 sm:w-26 sm:h-26 rounded-3xl border-2 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-2xl flex flex-col items-center justify-center p-2.5 ${
+                darkMode
+                  ? 'bg-[#090d21]/95 border-amber-400/80 text-white'
+                  : 'bg-white/95 border-white text-slate-900 shadow-2xl'
+              }`}>
                 <img
                   src={logo}
-                  className="w-10 h-10 sm:w-12 sm:h-12 object-contain drop-shadow-[0_4px_12px_rgba(245,158,11,0.6)] mb-0.5"
-                  alt="Logo"
+                  className="w-10 h-10 sm:w-12 sm:h-12 object-contain drop-shadow-md mb-0.5"
+                  alt="ArguForge AI"
                 />
-                <span className="text-xl sm:text-2xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-amber-300 via-white to-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.8)] font-sans leading-none">
+                <span className={`text-lg sm:text-xl font-black italic tracking-tighter font-sans leading-none ${
+                  darkMode 
+                    ? 'text-transparent bg-clip-text bg-gradient-to-b from-amber-300 via-white to-amber-500' 
+                    : 'text-indigo-950 font-black'
+                }`}>
                   VS
                 </span>
 
-                {/* Floating Corner Energy Sparks */}
-                <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-amber-400 to-amber-600 text-black p-1 rounded-full shadow-lg border border-amber-200">
+                {/* Floating Corner Sparks */}
+                <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white p-1 rounded-full shadow-lg border border-amber-200">
                   <Sparkles className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} />
                 </div>
-                <div className="absolute -bottom-1.5 -left-1.5 bg-gradient-to-br from-indigo-400 to-indigo-600 text-white p-1 rounded-full shadow-lg border border-indigo-200">
+                <div className="absolute -bottom-1.5 -left-1.5 bg-blue-600 text-white p-1 rounded-full shadow-lg border border-blue-200">
                   <Zap className="w-3 h-3 animate-pulse" />
                 </div>
               </div>
             </div>
 
-            {/* Central Motion Banner */}
+            {/* Contested Motion Card (Themed & Crystal Clear) */}
             {topic && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25, duration: 0.25 }}
-                className="w-full max-w-sm sm:max-w-md bg-slate-900/95 backdrop-blur-xl border border-white/20 rounded-2xl p-3 sm:p-4 shadow-2xl mb-3"
+                transition={{ delay: 0.22, duration: 0.22 }}
+                className={`w-full max-w-sm sm:max-w-md rounded-2xl p-3.5 sm:p-4 shadow-2xl mb-3 border backdrop-blur-2xl ${
+                  darkMode
+                    ? 'bg-slate-900/95 border-white/20 text-white'
+                    : 'bg-white/95 border-white/80 text-slate-900 shadow-[0_16px_36px_rgba(0,0,0,0.18)]'
+                }`}
               >
-                <div className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex items-center justify-center space-x-1.5 mb-1">
+                <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-amber-400 flex items-center justify-center space-x-1.5 mb-1">
                   <Swords className="w-3 h-3" />
                   <span>CONTESTED MOTION</span>
                 </div>
-                <h3 className="text-xs sm:text-sm font-extrabold text-white line-clamp-2 leading-snug drop-shadow-sm font-sans">
+                <h3 className="text-xs sm:text-sm font-serif font-extrabold line-clamp-2 leading-snug">
                   "{topic}"
                 </h3>
               </motion.div>
@@ -270,14 +323,18 @@ export default function BattleTransition({
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.2 }}
-              className="inline-flex items-center space-x-2.5 px-4 py-1.5 rounded-full bg-[#060813]/90 border border-indigo-400/50 shadow-xl"
+              transition={{ delay: 0.28, duration: 0.2 }}
+              className={`inline-flex items-center space-x-2.5 px-4 py-1.5 rounded-full shadow-xl border backdrop-blur-xl ${
+                darkMode
+                  ? 'bg-[#060813]/90 border-indigo-400/40 text-slate-200'
+                  : 'bg-white/95 border-white text-slate-800 shadow-lg'
+              }`}
             >
               <div className="flex space-x-1">
-                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" style={{ animationDuration: '1s' }} />
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" style={{ animationDuration: '1s' }} />
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
               </div>
-              <span className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider text-slate-200">
+              <span className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider">
                 {statusMessage}
               </span>
             </motion.div>

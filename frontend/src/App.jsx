@@ -1158,6 +1158,7 @@ function App() {
         topic={debateTopic}
         mode={debateMode}
         statusMessage={cloudWipeStatus}
+        darkMode={darkMode}
       />
 
       {/* Top Header - Floating design matching the screenshot */}
