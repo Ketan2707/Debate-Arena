@@ -557,9 +557,9 @@ function App() {
     setDebateTopic(topic);
     setDebateMode(mode);
 
-    // ⚔️ Trigger Versus Battle Clash Transition!
+    // 🌟 Trigger Concept 1: Glass Warp & Neural Gyroscope Transition!
     setIsCloudWiping(true);
-    setCloudWipeStatus(mode === 'factcheck' ? 'Auditing Factual Sources...' : 'Mobilizing Dual AI Agents...');
+    setCloudWipeStatus(mode === 'factcheck' ? 'Auditing Factual Sources...' : 'Synthesizing Dual-Agent Stances...');
     const startTime = Date.now();
     
     try {
@@ -604,8 +604,8 @@ function App() {
       try {
         const data = JSON.parse(e.data);
         setStances(data);
-        setCloudWipeStatus('Engaging Combat Arena...');
-        // Ensure at least 480ms total transition time for a snappy, high-impact battle slam
+        setCloudWipeStatus('Neural Arena Synchronized!');
+        // Smooth luxury hold threshold
         const elapsed = startTime ? Date.now() - startTime : 480;
         const remaining = Math.max(0, 480 - elapsed);
         setTimeout(() => {
