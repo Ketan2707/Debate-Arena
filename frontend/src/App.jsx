@@ -1539,7 +1539,7 @@ function App() {
 
             {/* Hero Heading - matching font and text style */}
             <h2 className={`text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight font-sans mb-3 sm:mb-4 leading-tight max-w-3xl mx-auto px-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-              Rise above the noise, forge the truth
+              Beneath the Noise, the Truth Awaits.
             </h2>
 
             <p className={`text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-xl font-sans font-light leading-relaxed px-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
