@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Volume2, VolumeX, Play, Pause, Square, SkipForward, Sparkles, Mic, Radio, Globe, ChevronDown } from 'lucide-react';
+import { Volume2, VolumeX, Play, Pause, Square, SkipForward, Sparkles, Mic, Radio, Globe, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 /**
@@ -11,10 +11,10 @@ import { motion, AnimatePresence } from 'motion/react';
  */
 
 export const VOICE_ACCENTS = [
-  { id: 'en-IN', name: 'Indian English', flag: '🇮🇳', short: 'Indian' },
-  { id: 'en-GB', name: 'British English', flag: '🇬🇧', short: 'British' },
-  { id: 'en-US', name: 'American English', flag: '🇺🇸', short: 'American' },
-  { id: 'en-AU', name: 'Australian English', flag: '🇦🇺', short: 'Australian' },
+  { id: 'en-IN', name: 'Indian English', flag: '🇮🇳', tag: 'IN', short: 'Indian', badgeColor: 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-400/40' },
+  { id: 'en-GB', name: 'British English', flag: '🇬🇧', tag: 'UK', short: 'British', badgeColor: 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-400/40' },
+  { id: 'en-US', name: 'American English', flag: '🇺🇸', tag: 'US', short: 'American', badgeColor: 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-400/40' },
+  { id: 'en-AU', name: 'Australian English', flag: '🇦🇺', tag: 'AU', short: 'Australian', badgeColor: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-400/40' },
 ];
 
 // Helper to strip markdown and citation noise for clean, natural speech
@@ -242,12 +242,28 @@ export default function DebateSpeechPlayer({
   } = audioState;
 
   const [showAccentMenu, setShowAccentMenu] = useState(false);
+  const dropdownRef = useRef(null);
   const currentAccentObj = VOICE_ACCENTS.find(a => a.id === selectedAccent) || VOICE_ACCENTS[0];
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowAccentMenu(false);
+      }
+    }
+    if (showAccentMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAccentMenu]);
 
   return (
     <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-2xl border shadow-lg backdrop-blur-xl transition-all relative ${
       darkMode
-        ? 'bg-slate-900/90 border-white/10 text-white'
+        ? 'bg-slate-900/95 border-white/10 text-white'
         : 'bg-white/95 border-blue-200 text-slate-900 shadow-md'
     }`}>
       {/* Left: Podcast / Live Broadcast Badge */}
@@ -306,53 +322,69 @@ export default function DebateSpeechPlayer({
       <div className="flex items-center space-x-2 ml-auto">
         
         {/* Voice Accent Picker Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowAccentMenu(!showAccentMenu)}
-            className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-xs ${
               darkMode 
-                ? 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-200' 
-                : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+                ? 'bg-slate-800 hover:bg-slate-700 border-white/15 text-white' 
+                : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-900'
             }`}
             title="Choose voice accent"
           >
-            <span>{currentAccentObj.flag}</span>
-            <span className="hidden sm:inline font-sans">{currentAccentObj.short}</span>
-            <ChevronDown className="w-3 h-3 opacity-60" />
+            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${currentAccentObj.badgeColor}`}>
+              {currentAccentObj.tag}
+            </span>
+            <span className="font-sans font-bold">{currentAccentObj.short}</span>
+            <ChevronDown className="w-3.5 h-3.5 opacity-70" />
           </button>
 
-          {/* Accent Menu Dropdown */}
+          {/* Accent Menu Dropdown (Solid, High-Contrast & High z-index) */}
           <AnimatePresence>
             {showAccentMenu && (
               <motion.div
-                initial={{ opacity: 0, y: 6, scale: 0.95 }}
+                initial={{ opacity: 0, y: 4, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className={`absolute right-0 top-full mt-2 w-44 rounded-xl border shadow-2xl p-1.5 z-50 backdrop-blur-2xl ${
-                  darkMode ? 'bg-slate-900/95 border-white/15 text-slate-200' : 'bg-white/95 border-slate-200 text-slate-800 shadow-xl'
+                exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                transition={{ duration: 0.12 }}
+                className={`absolute right-0 top-full mt-2 w-52 rounded-2xl border p-2 z-[999] shadow-2xl ${
+                  darkMode 
+                    ? 'bg-slate-900 border-white/20 text-white shadow-black/80' 
+                    : 'bg-white border-slate-300 text-slate-900 shadow-xl'
                 }`}
               >
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1.5 text-slate-500 dark:text-slate-400">
                   Select Voice Accent
                 </div>
-                {VOICE_ACCENTS.map(acc => (
-                  <button
-                    key={acc.id}
-                    onClick={() => {
-                      changeAccent(acc.id);
-                      setShowAccentMenu(false);
-                    }}
-                    className={`w-full flex items-center space-x-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-colors cursor-pointer ${
-                      selectedAccent === acc.id
-                        ? (darkMode ? 'bg-indigo-600 text-white font-bold' : 'bg-indigo-50 text-indigo-700 font-bold')
-                        : (darkMode ? 'hover:bg-white/10 text-slate-300' : 'hover:bg-slate-100 text-slate-700')
-                    }`}
-                  >
-                    <span className="text-sm">{acc.flag}</span>
-                    <span>{acc.name}</span>
-                  </button>
-                ))}
+                <div className="space-y-1 mt-1">
+                  {VOICE_ACCENTS.map(acc => {
+                    const isSelected = selectedAccent === acc.id;
+                    return (
+                      <button
+                        key={acc.id}
+                        onClick={() => {
+                          changeAccent(acc.id);
+                          setShowAccentMenu(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : (darkMode ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-800 hover:bg-slate-100')
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2.5">
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${
+                            isSelected ? 'bg-white/20 text-white border-white/40' : acc.badgeColor
+                          }`}>
+                            {acc.tag}
+                          </span>
+                          <span className="font-sans">{acc.name}</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -361,10 +393,10 @@ export default function DebateSpeechPlayer({
         {/* Auto-Narrate Stream Toggle */}
         <button
           onClick={() => setAutoNarrate(!autoNarrate)}
-          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-xs ${
             autoNarrate
               ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
-              : (darkMode ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200')
+              : (darkMode ? 'bg-slate-800 border-white/10 text-slate-300 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200')
           }`}
           title="Automatically speak new arguments as they stream in"
         >
