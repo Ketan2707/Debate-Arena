@@ -2089,7 +2089,7 @@ function App() {
 
                 {/* Scorecard Panel */}
                 {debateMode === 'debate' && scores && scores.length > 0 && (activeRoundTab === 'all' || activeRoundTab === 'verdict') && (
-                  <div className={`rounded-2xl p-6 shadow-2xl space-y-6 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-xl'}`}>
+                  <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-6 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-xl'}`}>
                     <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
                       <Award className="h-5 w-5" />
                       <span>Official Double-Blind Judgment Scorecard</span>

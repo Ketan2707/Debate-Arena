@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 /**
  * 🎙️ Real-Time Dual-Voice AI Speech Synthesizer & Podcast Player with Accent Picker
+ * - Mobile-First Responsive HUD
  * - Accents: Indian English (en-IN), British (en-GB), American (en-US), Australian (en-AU)
  * - Agent A: Distinct Assertive Voice
  * - Agent B: Distinct Analytical Counter-Voice
@@ -222,7 +223,7 @@ export function useDebateAudio() {
 }
 
 /**
- * Floating Audio Player & Waveform HUD with Accent Selector
+ * Mobile-Friendly Floating Audio Player & Waveform HUD
  */
 export default function DebateSpeechPlayer({
   audioState,
@@ -261,45 +262,117 @@ export default function DebateSpeechPlayer({
   }, [showAccentMenu]);
 
   return (
-    <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-2xl border shadow-lg backdrop-blur-xl transition-all relative ${
+    <div className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 p-3 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl border shadow-lg backdrop-blur-xl transition-all relative ${
       showAccentMenu ? 'z-50' : 'z-30'
     } ${
       darkMode
         ? 'bg-slate-900/95 border-white/10 text-white'
         : 'bg-white/95 border-blue-200 text-slate-900 shadow-md'
     }`}>
-      {/* Left: Podcast / Live Broadcast Badge */}
-      <div className="flex items-center space-x-2.5">
-        <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-          isSpeaking 
-            ? (currentSpeaker?.includes('B') || currentSpeaker === 'AGAINST' ? 'bg-amber-500 text-white shadow-md' : 'bg-indigo-600 text-white shadow-md')
-            : (darkMode ? 'bg-white/10 text-slate-400' : 'bg-slate-100 text-slate-600')
-        }`}>
-          <Radio className={`w-4 h-4 ${isSpeaking ? 'animate-pulse' : ''}`} />
+      
+      {/* ── Top Row on Mobile / Left Section on Desktop ── */}
+      <div className="flex items-center justify-between sm:justify-start gap-2">
+        <div className="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
+          <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex-shrink-0 flex items-center justify-center transition-colors ${
+            isSpeaking 
+              ? (currentSpeaker?.includes('B') || currentSpeaker === 'AGAINST' ? 'bg-amber-500 text-white shadow-md' : 'bg-indigo-600 text-white shadow-md')
+              : (darkMode ? 'bg-white/10 text-slate-400' : 'bg-slate-100 text-slate-600')
+          }`}>
+            <Radio className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isSpeaking ? 'animate-pulse' : ''}`} />
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center space-x-1.5 truncate">
+              <span className="text-xs sm:text-xs font-bold font-sans truncate">AI Narration</span>
+              {isSpeaking && (
+                <span className={`text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex-shrink-0 ${
+                  currentSpeaker?.includes('B') || currentSpeaker === 'AGAINST'
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    : 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+                }`}>
+                  {currentSpeaker}
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-sans truncate hidden sm:block">
+              {isSpeaking ? "Dual-voice adversarial audio active" : "Listen to arguments with AI voice synthesis"}
+            </p>
+          </div>
         </div>
 
-        <div>
-          <div className="flex items-center space-x-1.5">
-            <span className="text-xs font-bold font-sans">Live AI Voice Narration</span>
-            {isSpeaking && (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
-                currentSpeaker?.includes('B') || currentSpeaker === 'AGAINST'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                  : 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
-              }`}>
-                {currentSpeaker} Speaking
-              </span>
+        {/* Voice Accent Picker on Mobile (Visible top-right on mobile < sm) */}
+        <div className="relative sm:hidden" ref={dropdownRef}>
+          <button
+            onClick={() => setShowAccentMenu(!showAccentMenu)}
+            className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border shadow-xs ${
+              darkMode 
+                ? 'bg-slate-800 hover:bg-slate-700 border-white/15 text-white' 
+                : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-900'
+            }`}
+            title="Choose voice accent"
+          >
+            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${currentAccentObj.badgeColor}`}>
+              {currentAccentObj.tag}
+            </span>
+            <span className="font-sans font-bold text-[11px]">{currentAccentObj.short}</span>
+            <ChevronDown className="w-3 h-3 opacity-70" />
+          </button>
+
+          {/* Accent Menu Dropdown for Mobile */}
+          <AnimatePresence>
+            {showAccentMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: 4, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                transition={{ duration: 0.12 }}
+                className={`absolute right-0 top-full mt-1.5 w-48 rounded-xl border p-1.5 z-[1000] shadow-2xl ${
+                  darkMode 
+                    ? 'bg-slate-900 border-white/20 text-white shadow-black/80' 
+                    : 'bg-white border-slate-300 text-slate-900 shadow-xl'
+                }`}
+              >
+                <div className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-1 text-slate-500 dark:text-slate-400">
+                  Select Accent
+                </div>
+                <div className="space-y-0.5 mt-0.5">
+                  {VOICE_ACCENTS.map(acc => {
+                    const isSelected = selectedAccent === acc.id;
+                    return (
+                      <button
+                        key={acc.id}
+                        onClick={() => {
+                          changeAccent(acc.id);
+                          setShowAccentMenu(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-bold text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : (darkMode ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-800 hover:bg-slate-100')
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                            isSelected ? 'bg-white/20 text-white border-white/40' : acc.badgeColor
+                          }`}>
+                            {acc.tag}
+                          </span>
+                          <span className="font-sans">{acc.name}</span>
+                        </div>
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
             )}
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-sans">
-            {isSpeaking ? "Dual-voice adversarial audio active" : "Listen to debate arguments with AI voice synthesis"}
-          </p>
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Center: Real-time Audio Waveform */}
+      {/* ── Center: Real-time Audio Waveform (Desktop) ── */}
       {isSpeaking && (
-        <div className="hidden sm:flex items-center space-x-1 h-5 px-3 py-1 rounded-xl bg-black/10 dark:bg-white/5 border border-black/5 dark:border-white/10">
+        <div className="hidden md:flex items-center space-x-1 h-5 px-3 py-1 rounded-xl bg-black/10 dark:bg-white/5 border border-black/5 dark:border-white/10">
           {[0.4, 0.9, 0.6, 1.0, 0.7, 0.3, 0.8].map((h, i) => (
             <motion.span
               key={i}
@@ -320,11 +393,11 @@ export default function DebateSpeechPlayer({
         </div>
       )}
 
-      {/* Right: Controls & Accent Selector */}
-      <div className="flex items-center space-x-2 ml-auto">
+      {/* ── Right / Bottom Row: Controls & Desktop Accent Selector ── */}
+      <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
         
-        {/* Voice Accent Picker Dropdown */}
-        <div className="relative" ref={dropdownRef}>
+        {/* Desktop Accent Selector (Hidden on mobile < sm) */}
+        <div className="relative hidden sm:block" ref={dropdownRef}>
           <button
             onClick={() => setShowAccentMenu(!showAccentMenu)}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-xs ${
@@ -341,7 +414,7 @@ export default function DebateSpeechPlayer({
             <ChevronDown className="w-3.5 h-3.5 opacity-70" />
           </button>
 
-          {/* Accent Menu Dropdown (Solid, High-Contrast & High z-index) */}
+          {/* Accent Menu Dropdown for Desktop */}
           <AnimatePresence>
             {showAccentMenu && (
               <motion.div
@@ -349,7 +422,7 @@ export default function DebateSpeechPlayer({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 4, scale: 0.96 }}
                 transition={{ duration: 0.12 }}
-                className={`absolute right-0 top-full mt-2 w-52 rounded-2xl border p-2 z-[999] shadow-2xl ${
+                className={`absolute right-0 top-full mt-2 w-52 rounded-2xl border p-2 z-[1000] shadow-2xl ${
                   darkMode 
                     ? 'bg-slate-900 border-white/20 text-white shadow-black/80' 
                     : 'bg-white border-slate-300 text-slate-900 shadow-xl'
@@ -395,7 +468,7 @@ export default function DebateSpeechPlayer({
         {/* Auto-Narrate Stream Toggle */}
         <button
           onClick={() => setAutoNarrate(!autoNarrate)}
-          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-xs ${
+          className={`flex-1 sm:flex-initial flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-xs min-h-[34px] sm:min-h-[36px] ${
             autoNarrate
               ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
               : (darkMode ? 'bg-slate-800 border-white/10 text-slate-300 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200')
@@ -403,16 +476,16 @@ export default function DebateSpeechPlayer({
           title="Automatically speak new arguments as they stream in"
         >
           {autoNarrate ? <Volume2 className="w-3.5 h-3.5 text-white" /> : <VolumeX className="w-3.5 h-3.5" />}
-          <span>{autoNarrate ? 'Auto: ON' : 'Auto: OFF'}</span>
+          <span>{autoNarrate ? 'Auto-Voice: ON' : 'Auto-Voice: OFF'}</span>
         </button>
 
         {/* Play/Pause & Stop Controls (Active while speaking) */}
         {isSpeaking && (
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 flex-shrink-0">
             {isPaused ? (
               <button
                 onClick={resumeSpeech}
-                className="p-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 transition-all cursor-pointer shadow-xs"
+                className="p-1.5 sm:p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 transition-all cursor-pointer shadow-xs min-w-[34px] min-h-[34px] flex items-center justify-center"
                 title="Resume Voice"
               >
                 <Play className="w-3.5 h-3.5" />
@@ -420,7 +493,7 @@ export default function DebateSpeechPlayer({
             ) : (
               <button
                 onClick={pauseSpeech}
-                className="p-1.5 rounded-lg bg-amber-500 text-black hover:bg-amber-400 transition-all cursor-pointer shadow-xs"
+                className="p-1.5 sm:p-2 rounded-xl bg-amber-500 text-black hover:bg-amber-400 transition-all cursor-pointer shadow-xs min-w-[34px] min-h-[34px] flex items-center justify-center"
                 title="Pause Voice"
               >
                 <Pause className="w-3.5 h-3.5" />
@@ -429,7 +502,7 @@ export default function DebateSpeechPlayer({
 
             <button
               onClick={stopSpeech}
-              className="p-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-500 transition-all cursor-pointer shadow-xs"
+              className="p-1.5 sm:p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-500 transition-all cursor-pointer shadow-xs min-w-[34px] min-h-[34px] flex items-center justify-center"
               title="Stop Voice"
             >
               <Square className="w-3.5 h-3.5" />
