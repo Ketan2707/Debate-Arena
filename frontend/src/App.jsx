@@ -4,12 +4,13 @@ import {
   CheckCircle, HelpCircle, ChevronRight, History, ArrowLeft, 
   ExternalLink, Sparkles, MessageSquare, Info, Star,
   Search, LogIn, LogOut, UserPlus, Lock, Mail, Eye, EyeOff,
-  Zap, Crown, TrendingUp, Target, Globe, Sun, Moon
+  Zap, Crown, TrendingUp, Target, Globe, Sun, Moon, Volume2, VolumeX, Radio, Mic
 } from 'lucide-react';
 import CloudShader from './CloudShader';
 import NightSky from './NightSky';
 import FloatingDock from './FloatingDock';
 import BattleTransition from './BattleTransition';
+import DebateSpeechPlayer, { useDebateAudio } from './DebateSpeechPlayer';
 import logo from './assets/logo.png';
 import { ParticleCard, GlobalSpotlight } from './MagicBento';
 
@@ -273,6 +274,9 @@ function App() {
 
   // Score bar animation state
   const [scoreBarsVisible, setScoreBarsVisible] = useState(false);
+
+  // 🎙️ Live Dual-Voice AI Speech Narration Hook
+  const debateAudio = useDebateAudio();
 
   // SSE event source ref
   const eventSourceRef = useRef(null);
@@ -626,6 +630,10 @@ function App() {
         setIsCloudWiping(false);
         setTurns((prev) => {
           if (prev.some((t) => t.id === data.id)) return prev;
+          // Auto-narrate new turn if enabled
+          if (debateAudio.autoNarrate && data.content) {
+            debateAudio.speakText(data.content, data.agent);
+          }
           return [...prev, data];
         });
         if (data.round_number && data.round_number >= 1 && data.round_number <= 5) {
@@ -642,6 +650,13 @@ function App() {
         const data = JSON.parse(e.data);
         setScores(data.scores || []);
         setActiveRoundTab('verdict');
+        if (debateAudio.autoNarrate && data.scores && data.scores.length > 0) {
+          const winner = getWinner(data.scores);
+          const verdictSpeech = winner === 'Tie' 
+            ? "The double-blind judgment has concluded in a tie." 
+            : `The official verdict is in. The winner of this debate is ${winner}.`;
+          debateAudio.speakText(verdictSpeech, 'Judge');
+        }
       } catch (err) {
         console.error("Error parsing verdict:", err);
       }
@@ -1753,6 +1768,9 @@ function App() {
               )}
             </div>
 
+            {/* 🎙️ Live AI Dual-Voice Narration Player */}
+            <DebateSpeechPlayer audioState={debateAudio} darkMode={darkMode} />
+
             {/* 3. Stage Round Navigator (Concept 1: Interactive Stage) */}
             {debateMode === 'debate' && (
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-blue-200/80 dark:border-white/10 shadow-sm">
@@ -1826,9 +1844,21 @@ function App() {
                       <div className="space-y-4 sm:space-y-5">
                         {turns.filter(t => t.agent === 'FOR').map(turn => (
                           <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-emerald-500/30 text-slate-200' : 'bg-white/95 border-emerald-200 text-slate-900 shadow-md'}`}>
-                            <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
-                              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Supporting Evidence (FOR)</span>
+                            <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+                              <div className="flex items-center space-x-2">
+                                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Supporting Evidence (FOR)</span>
+                              </div>
+                              <button
+                                onClick={() => debateAudio.speakText(turn.content, 'FOR', true)}
+                                className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                                  darkMode ? 'bg-white/10 hover:bg-white/20 text-emerald-300 border-white/10' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                                }`}
+                                title="Listen to Supporting Evidence"
+                              >
+                                <Volume2 className="h-3 w-3" />
+                                <span>Listen</span>
+                              </button>
                             </div>
                             <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                               {renderContentWithClaims(turn.content, turn.claims)}
@@ -1838,9 +1868,21 @@ function App() {
 
                         {turns.filter(t => t.agent === 'AGAINST').map(turn => (
                           <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-rose-500/30 text-slate-200' : 'bg-white/95 border-rose-200 text-slate-900 shadow-md'}`}>
-                            <div className="flex items-center space-x-2 text-rose-600 dark:text-rose-400">
-                              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
-                              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Counter Arguments (AGAINST)</span>
+                            <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
+                              <div className="flex items-center space-x-2">
+                                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
+                                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Counter Arguments (AGAINST)</span>
+                              </div>
+                              <button
+                                onClick={() => debateAudio.speakText(turn.content, 'AGAINST', true)}
+                                className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                                  darkMode ? 'bg-white/10 hover:bg-white/20 text-rose-300 border-white/10' : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                                }`}
+                                title="Listen to Counter Arguments"
+                              >
+                                <Volume2 className="h-3 w-3" />
+                                <span>Listen</span>
+                              </button>
                             </div>
                             <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                               {renderContentWithClaims(turn.content, turn.claims)}
@@ -1850,9 +1892,21 @@ function App() {
 
                         {turns.filter(t => t.agent === 'VERDICT').map(turn => (
                           <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-200' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
-                            <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400">
-                              <Award className="h-4 w-4 sm:h-5 sm:w-5" />
-                              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Balanced Factual Synthesis</span>
+                            <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400">
+                              <div className="flex items-center space-x-2">
+                                <Award className="h-4 w-4 sm:h-5 sm:w-5" />
+                                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Balanced Factual Synthesis</span>
+                              </div>
+                              <button
+                                onClick={() => debateAudio.speakText(turn.content, 'Judge', true)}
+                                className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                                  darkMode ? 'bg-white/10 hover:bg-white/20 text-indigo-300 border-white/10' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+                                }`}
+                                title="Listen to Factual Synthesis"
+                              >
+                                <Volume2 className="h-3 w-3" />
+                                <span>Listen</span>
+                              </button>
                             </div>
                             <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                               {renderContentWithClaims(turn.content, turn.claims)}
@@ -1909,6 +1963,16 @@ function App() {
                                     <span>
                                       Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : `Rebuttal ${turn.round_number - 1}`}
                                     </span>
+                                    <button
+                                      onClick={() => debateAudio.speakText(turn.content, 'Agent A', true)}
+                                      className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                                        darkMode ? 'bg-white/10 hover:bg-white/20 text-indigo-300 border-white/10' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+                                      }`}
+                                      title="Listen to Agent A"
+                                    >
+                                      <Volume2 className="h-3 w-3" />
+                                      <span>Listen</span>
+                                    </button>
                                   </div>
                                   <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                                     {renderContentWithClaims(turn.content, turn.claims)}
@@ -1954,6 +2018,16 @@ function App() {
                                     <span>
                                       Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : `Rebuttal ${turn.round_number - 1}`}
                                     </span>
+                                    <button
+                                      onClick={() => debateAudio.speakText(turn.content, 'Agent B', true)}
+                                      className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                                        darkMode ? 'bg-white/10 hover:bg-white/20 text-amber-300 border-white/10' : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200'
+                                      }`}
+                                      title="Listen to Agent B"
+                                    >
+                                      <Volume2 className="h-3 w-3" />
+                                      <span>Listen</span>
+                                    </button>
                                   </div>
                                   <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                                     {renderContentWithClaims(turn.content, turn.claims)}
@@ -2068,7 +2142,19 @@ function App() {
                             </div>
 
                             <div className={`p-3 border rounded-lg text-xs leading-relaxed font-sans ${darkMode ? 'bg-slate-800/70 border-white/10 text-slate-300' : 'bg-white border-slate-200 text-slate-700 shadow-sm'}`}>
-                              <strong className={`block mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Judge Reasoning:</strong>
+                              <div className="flex items-center justify-between mb-1">
+                                <strong className={`block ${darkMode ? 'text-white' : 'text-slate-900'}`}>Judge Reasoning:</strong>
+                                <button
+                                  onClick={() => debateAudio.speakText(score.judge_reasoning, 'Judge', true)}
+                                  className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                                    darkMode ? 'bg-white/10 hover:bg-white/20 text-amber-300 border-white/10' : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200'
+                                  }`}
+                                  title="Listen to Judge Reasoning"
+                                >
+                                  <Volume2 className="h-3 w-3" />
+                                  <span>Listen</span>
+                                </button>
+                              </div>
                               {score.judge_reasoning}
                             </div>
                           </div>
