@@ -262,6 +262,8 @@ export default function DebateSpeechPlayer({
 
   return (
     <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-2xl border shadow-lg backdrop-blur-xl transition-all relative ${
+      showAccentMenu ? 'z-50' : 'z-30'
+    } ${
       darkMode
         ? 'bg-slate-900/95 border-white/10 text-white'
         : 'bg-white/95 border-blue-200 text-slate-900 shadow-md'

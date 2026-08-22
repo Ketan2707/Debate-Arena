@@ -1769,11 +1769,13 @@ function App() {
             </div>
 
             {/* 🎙️ Live AI Dual-Voice Narration Player */}
-            <DebateSpeechPlayer audioState={debateAudio} darkMode={darkMode} />
+            <div className="relative z-30">
+              <DebateSpeechPlayer audioState={debateAudio} darkMode={darkMode} />
+            </div>
 
             {/* 3. Stage Round Navigator (Concept 1: Interactive Stage) */}
             {debateMode === 'debate' && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-blue-200/80 dark:border-white/10 shadow-sm">
+              <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-blue-200/80 dark:border-white/10 shadow-sm">
                 <div className="flex items-center space-x-1 sm:space-x-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
                   {[1, 2, 3, 4, 5].map((rnd) => {
                     const hasTurns = turns.some(t => t.round_number === rnd);
