@@ -75,7 +75,8 @@ def get_best_model(requested_model: str = "") -> str:
 
 def strip_internal_thinking(text: str) -> str:
     """
-    Strips internal thinking tokens (<think>...</think>), reasoning blocks, and scratchpad meta notes.
+    Strips internal thinking tokens (<think>...</think>), reasoning blocks, 
+    scratchpad meta-planning notes, and prompt template leaks.
     """
     if not text:
         return ""
@@ -91,17 +92,30 @@ def strip_internal_thinking(text: str) -> str:
 
     # Strip "Thinking Process: ..." or "Thought Process: ..."
     cleaned = re.sub(r'^(?:Thinking Process|Thought Process|Reasoning):[\s\S]*?\n\n', '', cleaned.strip(), flags=re.IGNORECASE)
-    # Strip markdown scratchpad items like *Word Count:* ...
+    
+    # Strip meta-planning & outline scratchpad blocks (e.g. "**Review Transcript...**", "*Goal for Closing:* ...")
+    cleaned = re.sub(r'(?:^\s*\d+\.\s*\n+)?\s*\*{1,2}(?:Review Transcript|Identify Key Points|Goal for Closing|Agent [AB]\'s (?:Core|Previous) Arguments|Drafting Notes|Strategy|Plan|Debate Plan)[^*]*\*{1,2}[\s\S]*?(?=\n\n[A-Z0-9]|\Z)', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\*+(?:Word Count|Constraint|Cutting|Deconstruct)[^*]*\*+[\s\S]*?(?=\n\n|\Z)', '', cleaned, flags=re.IGNORECASE)
+    
+    # Clean leaked template placeholders like "[Source Name](exact URL from research)"
+    cleaned = re.sub(r'\[(?:Source Name|Source|Source Title)\]\(exact URL from research\)', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\(exact URL from research\)', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\[exact URL from research\]', '', cleaned, flags=re.IGNORECASE)
+    
     # Clean bracketed footnote tags <[1]> to [1]
     cleaned = re.sub(r'<\s*\[\s*(\d+)\s*\]\s*>', r'[\1]', cleaned)
     # Strip Asian citation brackets like 【4:0†source】 or 【1】
     cleaned = re.sub(r'[【\u3010][^】\u3011]*[】\u3011]', '', cleaned)
+    
     # Strip standalone References / Bibliography / Works Cited lists at the beginning or end of text
     cleaned = re.sub(r'^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)+', '', cleaned.strip(), flags=re.IGNORECASE)
     cleaned = re.sub(r'\n+(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)+$', '', cleaned.strip(), flags=re.IGNORECASE)
     cleaned = re.sub(r'^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):[ \t]*\n+', '', cleaned.strip(), flags=re.IGNORECASE)
     cleaned = re.sub(r'^(?:[-*•]\s+[A-Za-z\s,.\(\)\d]+(?:Retrieved from\s*)?<https?://[^\s>]+>\s*\n*)+', '', cleaned.strip(), flags=re.IGNORECASE)
+    
+    # Clean orphan numbers at the very beginning resulting from stripped numbered list items (e.g. "1.\n\n")
+    cleaned = re.sub(r'^\s*\d+\.\s*\n+', '', cleaned)
+    
     return cleaned.strip()
 
 def clean_and_parse_json(text: str):
@@ -320,14 +334,13 @@ def generate_debate_turn(
     1. Argue strongly and in good faith. Stick to your assigned stance.
     2. Write 100-150 words. Be concise and impactful.
     3. If this is a rebuttal round, directly address {opposing_agent}'s previous argument.
-    4. EVERY factual claim MUST have an inline citation inside your sentence: [Source Name](exact URL from research).
-    5. NEVER output a bibliography, "Reference(s):", "References:", or standalone citation list at the beginning or end of your speech.
-    6. Do NOT invent facts, statistics, or URLs. Only use what appears in the research sources.
-    7. Structure your argument in clear paragraphs. Separate factual claims so they can be independently verified.
-    8. If you cannot find supporting evidence for a point, argue using logic and reasoning instead of fabricating data.
-    9. CRITICAL: Output ONLY the speech paragraphs directly. Do NOT output thinking steps, scratchpad, <think> tags, word counts, or reference lists.
+    4. For factual claims, cite real sources inline (e.g. [Reuters](https://reuters.com) or [BBC](https://bbc.com)).
+    5. NEVER output a bibliography, "Reference(s):", "References:", or standalone citation lists.
+    6. Do NOT invent facts, statistics, or URLs.
+    7. Structure your argument in 1-2 clean, impactful paragraphs.
+    8. ABSOLUTELY FORBIDDEN: Do not write thinking outlines, "Review Transcript", "Identify Key Points", bulleted planning notes, meta-commentary, or template placeholders like "[Source Name](URL)". Output ONLY the raw spoken debate paragraphs.
     
-    Begin your response directly with your arguments. No salutations.
+    Begin your response directly with your speech arguments. No salutations or preambles.
     """
     
     try:
@@ -791,8 +804,8 @@ def run_single_judge_evaluation(
     Runs a single judge evaluation with strengthened scoring criteria.
     """
     prompt = f"""
-    You are an expert Debate Judge in a Fact-Checked ArguForge AI debate.
-    Analyze the following debate and score both participants.
+    You are an expert Debate Adjudicator in a competitive Fact-Checked ArguForge AI debate.
+    Analyze the following debate transcript and award standard collegiate debate marks (1-10 scale).
     
     Topic: {topic}
     Participant 1: {agent_a_name}
@@ -802,39 +815,38 @@ def run_single_judge_evaluation(
     {transcript}
     
     FACT-CHECK SUMMARY (from automated verification pipeline):
-    - {agent_a_name} Claims Fact-Checked: 
+    - {agent_a_name} Claims Verified: 
       Confirmed: {claim_stats_a['Confirmed']}, Disputed: {claim_stats_a['Disputed']}, Unverifiable: {claim_stats_a['Unverifiable']}
-    - {agent_b_name} Claims Fact-Checked: 
+    - {agent_b_name} Claims Verified: 
       Confirmed: {claim_stats_b['Confirmed']}, Disputed: {claim_stats_b['Disputed']}, Unverifiable: {claim_stats_b['Unverifiable']}
       
     ══════════════════════════════════════════
-    SCORING CRITERIA (1-10 each, BE DECISIVE — do NOT cluster around 5-7):
+    SCORING GUIDELINES (Standard Competitive Debate Scale 1-10):
     ══════════════════════════════════════════
     
-    1. LOGIC (1-10): 
-       - 9-10: Flawless logical chain, no fallacies, masterful argumentation
-       - 7-8: Strong logic with minor gaps  
-       - 5-6: Average, some logical inconsistencies
-       - 1-4: Major logical fallacies or incoherent arguments
+    1. LOGIC (1-10):
+       - 9-10: Exceptional coherence, rigorous syllogisms, seamless structure, no fallacies.
+       - 7-8: Strong, solid logical arguments with sound reasoning (Standard good debate).
+       - 5-6: Passable logic with some structural gaps or non-sequiturs.
+       - 1-4: Severe logical breakdowns, incoherence, or major fallacies.
     
-    2. EVIDENCE QUALITY (1-10) — This is the MOST important criterion:
-       - 9-10: >80% of claims Confirmed by fact-checker, zero Disputed, proper source citations
-       - 7-8: >60% Confirmed, minimal Disputed, mostly cited
-       - 5-6: Mixed results, significant Unverifiable claims
-       - 3-4: Majority Unverifiable, multiple Disputed claims  
-       - 1-2: Mostly fabricated or completely unsourced arguments
+    2. EVIDENCE & FACTUAL RIGOR (1-10):
+       - 9-10: Grounded in confirmed data, statistics, authoritative sources, highly persuasive.
+       - 7-8: Well-contextualized arguments, plausible real-world evidence, valid source citations.
+       - 5-6: General knowledge claims with moderate empirical backing.
+       - 3-4: Multiple disputed/contradicted claims or ungrounded assertions.
+       - 1-2: Outright disinformation or fabricated sources.
        
-    3. REBUTTAL QUALITY (1-10):
-       - 9-10: Devastating, precise counter-arguments that dismantle opponent's key points
-       - 7-8: Effective rebuttals that address core arguments
-       - 5-6: Surface-level rebuttals
-       - 1-4: Ignored opponent's arguments or strawmanned them
+    3. REBUTTAL & ENGAGEMENT (1-10):
+       - 9-10: Masterful clash; directly counters and dismantles the opponent's core premises.
+       - 7-8: Effective rebuttals directly engaging key points made in the previous round.
+       - 5-6: Generalized response with partial engagement.
+       - 1-4: Ignored opponent's arguments completely.
     
-    IMPORTANT: 
-    - An agent with MOSTLY CONFIRMED claims and good citations deserves 8-10 in Evidence.
-    - An agent with MOSTLY UNVERIFIABLE claims deserves 3-5 in Evidence.
-    - An agent with DISPUTED claims deserves 1-3 in Evidence.
-    - Write 3-4 sentences of detailed reasoning for each agent.
+    GUIDANCE:
+    - Reward well-structured debaters fairly (standard strong debates score in the 7.5 - 9.2 range).
+    - Unverifiable claims represent plausible debate points that lacked exact web snippet match; evaluate their logical plausibility fairly rather than heavily penalizing.
+    - Write 3-4 sentences of insightful adjudication reasoning for each debater.
     
     Output as JSON:
     {{
