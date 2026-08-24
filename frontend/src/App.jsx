@@ -4,7 +4,10 @@ import {
   CheckCircle, HelpCircle, ChevronRight, History, ArrowLeft, 
   ExternalLink, Sparkles, MessageSquare, Info, Star,
   Search, LogIn, LogOut, UserPlus, Lock, Mail, Eye, EyeOff,
-  Zap, Crown, TrendingUp, Target, Globe, Sun, Moon, Volume2, VolumeX, Radio, Mic
+  Zap, Crown, TrendingUp, Target, Globe, Sun, Moon, Volume2, VolumeX, Radio, Mic, MicOff,
+  PanelLeft, Plus, Paperclip, ChevronDown, Check, Trash2, Settings, Download, Cpu, Send, Layers, Terminal, Sliders, Share2, Home,
+  PlusCircle, LayoutList, Copy, Maximize2, ArrowDown, Code2, Image as ImageIcon, Video, Square, X,
+  Scale, Swords, ShieldCheck, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import CloudShader from './CloudShader';
 import NightSky from './NightSky';
@@ -12,17 +15,58 @@ import FloatingDock from './FloatingDock';
 import BattleTransition from './BattleTransition';
 import DebateSpeechPlayer, { useDebateAudio } from './DebateSpeechPlayer';
 import logo from './assets/logo.png';
-import { ParticleCard, GlobalSpotlight } from './MagicBento';
+import { ParticleCard } from './MagicBento';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-// ─── Dark mode helper (outside component to avoid re-creation) ───
+export const STANCE_OPTIONS = [
+  {
+    id: 'both',
+    name: 'Both Sides',
+    subtitle: 'Dual-Agent Adversarial Clash',
+    desc: 'Assistant A defends, Assistant B counters across 5 structured debate rounds.',
+    icon: <Scale className="h-4 w-4" />
+  },
+  {
+    id: 'for',
+    name: 'Affirmative (Pro)',
+    subtitle: 'Supporting Thesis & Evidence',
+    desc: 'Formulates an evidence-backed pro-motion case brief with multi-tier source links.',
+    icon: <ThumbsUp className="h-4 w-4" />
+  },
+  {
+    id: 'against',
+    name: 'Negative (Con)',
+    subtitle: 'Opposition & Counter-Audit',
+    desc: 'Formulates an adversarial critique exposing logical fallacies, risks & counter-evidence.',
+    icon: <ThumbsDown className="h-4 w-4" />
+  }
+];
+
+export const MODE_OPTIONS = [
+  {
+    id: 'debate',
+    name: 'Debate Arena',
+    subtitle: '5-Round Multi-Agent Arena',
+    desc: 'Temperature-tuned Assistant A and B clash live with cross-examination and scorecard.',
+    icon: <Swords className="h-4 w-4" />
+  },
+  {
+    id: 'factcheck',
+    name: 'Fact-Check Audit',
+    subtitle: 'Whitelisted Ground-Truth Audit',
+    desc: 'Fact-checks claims against Tier 1/2/3 official record databases and registries.',
+    icon: <ShieldCheck className="h-4 w-4" />
+  }
+];
+
+// ─── Dark mode helper ───
 function getInitialDarkMode() {
   try {
     const saved = localStorage.getItem('arguforge-dark-mode');
     if (saved !== null) return saved === 'true';
   } catch (_) {}
-  return false; // default: light mode
+  return false;
 }
 
 const GithubIcon = ({ className }) => (
@@ -86,7 +130,7 @@ const BattleArenaLoader = ({ mode, topic, darkMode }) => {
 
     const stepsInterval = setInterval(() => {
       setCurrentStep(prev => (prev + 1) % 5);
-    }, 3000);
+    }, 2800);
 
     return () => {
       clearInterval(dotsInterval);
@@ -103,133 +147,44 @@ const BattleArenaLoader = ({ mode, topic, darkMode }) => {
         "Compiling support and opposition case briefs..."
       ]
     : [
-        "Orchestrating AI agents in the arena...",
-        "Tuning Agent A (Affirmative) parameters...",
-        "Tuning Agent B (Negative) parameters...",
-        "Generating initial stances & boundaries...",
-        "Forging arguments and source integrity filters..."
+        "Orchestrating Assistant A (Affirmative) and Assistant B (Negative)...",
+        "Tuning Assistant A parameters (Temp: 0.6)...",
+        "Tuning Assistant B parameters (Temp: 0.8)...",
+        "Synthesizing argument boundaries & ground truth...",
+        "Opening Round 1 statements..."
       ];
 
-  if (mode === 'factcheck') {
-    return (
-      <div className={`rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center space-y-6 shadow-2xl relative overflow-hidden min-h-[380px] border backdrop-blur-xl ${
-        darkMode ? 'bg-slate-900/95 border-emerald-500/30 text-white' : 'bg-white/95 border-emerald-200 text-slate-900 shadow-xl'
-      }`}>
-        {/* Animated radar core */}
-        <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/30">
-          <div className="absolute w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-ping"></div>
-          <Search className="h-8 w-8 text-emerald-500" />
-        </div>
-
-        <div className="space-y-1 z-10">
-          <h4 className="text-lg font-bold font-sans uppercase tracking-wider">
-            Factual Integrity Core Active
-          </h4>
-          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto font-sans">
-            Auditing claims for "{topic}"
-          </p>
-        </div>
-
-        {/* Dynamic status ticker */}
-        <div className={`px-5 py-2.5 rounded-xl text-xs font-mono font-medium z-10 flex items-center justify-center space-x-2 border ${
-          darkMode ? 'bg-slate-800/80 border-white/10 text-emerald-300' : 'bg-slate-50 border-slate-200 text-emerald-700 shadow-sm'
-        }`}>
-          <span className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></span>
-          <span>{steps[currentStep]}{dots}</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Debate Mode - Dual Agent Preparation Card
   return (
-    <div className={`rounded-2xl p-6 sm:p-10 shadow-2xl relative overflow-hidden min-h-[380px] border backdrop-blur-xl flex flex-col justify-between space-y-6 ${
-      darkMode ? 'bg-slate-900/95 border-white/10 text-white' : 'bg-white/95 border-blue-200 text-slate-900 shadow-xl'
+    <div className={`w-full rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center justify-center space-y-6 shadow-2xl relative overflow-hidden min-h-[360px] border backdrop-blur-2xl ${
+      darkMode ? 'bg-[#080d19]/85 border-white/15 text-white' : 'bg-white/85 border-blue-200 text-slate-900'
     }`}>
-      {/* Header info */}
-      <div className="text-center z-10 space-y-1">
-        <span className={`text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full border ${
-          darkMode ? 'text-indigo-400 bg-indigo-950/40 border-indigo-500/30' : 'text-indigo-700 bg-indigo-50 border-indigo-200'
-        }`}>
-          Preparing Debate Arena
-        </span>
-        <h4 className={`text-sm sm:text-base font-serif italic pt-1 max-w-lg mx-auto font-medium ${
-          darkMode ? 'text-slate-300' : 'text-slate-700'
-        }`}>
-          "{topic}"
+      <div className={`relative flex items-center justify-center w-16 h-16 rounded-2xl border ${
+        darkMode ? 'bg-white/5 border-white/10 text-cyan-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600'
+      }`}>
+        <RefreshCw className="h-7 w-7 animate-spin" />
+      </div>
+
+      <div className="space-y-1.5 z-10 max-w-lg mx-auto">
+        <h4 className="text-base font-bold font-sans tracking-wide">
+          {mode === 'factcheck' ? 'Auditing Factual Sources' : 'Evaluating Agentic Arena'}
         </h4>
+        <p className={`text-xs font-sans italic ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+          "{topic}"
+        </p>
       </div>
 
-      {/* The Clash Row */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 relative z-10 py-2">
-        {/* Agent A Card (Affirmative) */}
-        <div className={`w-full max-w-[240px] rounded-2xl p-4 sm:p-5 border text-center transition-all ${
-          darkMode ? 'bg-indigo-950/20 border-indigo-500/30 text-white' : 'bg-indigo-50/70 border-indigo-200 text-slate-900 shadow-sm'
-        }`}>
-          <div className="w-11 h-11 rounded-full bg-indigo-500/15 border border-indigo-400/40 flex items-center justify-center mx-auto mb-2 text-indigo-600 dark:text-indigo-400">
-            <Shield className="h-5 w-5" />
-          </div>
-          <h5 className="font-bold text-sm">AGENT A</h5>
-          <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold tracking-widest uppercase mt-0.5">Affirmative</p>
-          <div className={`rounded-xl p-2.5 mt-3 text-[11px] font-mono leading-relaxed border ${
-            darkMode ? 'bg-slate-800/60 border-white/10 text-slate-300' : 'bg-white border-indigo-100 text-slate-600 shadow-xs'
-          }`}>
-            Formulating logical stance constraints...
-          </div>
-        </div>
-
-        {/* Themed Luxury VS Badge */}
-        <div className="relative flex items-center justify-center my-1 sm:my-0">
-          <div className={`w-12 h-12 rounded-2xl p-0.5 shadow-md relative z-20 flex items-center justify-center border ${
-            darkMode ? 'bg-slate-800 border-amber-400/40' : 'bg-white border-indigo-200 shadow-md'
-          }`}>
-            <span className={`text-sm font-black font-sans italic tracking-wider ${
-              darkMode ? 'text-amber-300' : 'text-indigo-900'
-            }`}>
-              VS
-            </span>
-          </div>
-        </div>
-
-        {/* Agent B Card (Negative) */}
-        <div className={`w-full max-w-[240px] rounded-2xl p-4 sm:p-5 border text-center transition-all ${
-          darkMode ? 'bg-amber-950/20 border-amber-500/30 text-white' : 'bg-amber-50/70 border-amber-200 text-slate-900 shadow-sm'
-        }`}>
-          <div className="w-11 h-11 rounded-full bg-amber-500/15 border border-amber-400/40 flex items-center justify-center mx-auto mb-2 text-amber-600 dark:text-amber-400">
-            <Zap className="h-5 w-5" />
-          </div>
-          <h5 className="font-bold text-sm">AGENT B</h5>
-          <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold tracking-widest uppercase mt-0.5">Negative</p>
-          <div className={`rounded-xl p-2.5 mt-3 text-[11px] font-mono leading-relaxed border ${
-            darkMode ? 'bg-slate-800/60 border-white/10 text-slate-300' : 'bg-white border-amber-100 text-slate-600 shadow-xs'
-          }`}>
-            Structuring adversarial counter-arguments...
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Ticker / Footer */}
-      <div className="w-full max-w-lg mx-auto space-y-2.5 z-10">
-        <div className={`px-5 py-2 rounded-xl text-center text-xs font-mono flex items-center justify-center space-x-2 border ${
-          darkMode ? 'bg-slate-800/80 border-white/10 text-indigo-300' : 'bg-slate-50 border-slate-200 text-indigo-700 shadow-xs'
-        }`}>
-          <RefreshCw className="h-3 w-3 animate-spin text-indigo-500" />
-          <span>{steps[currentStep]}{dots}</span>
-        </div>
-        
-        {/* Animated charging bar */}
-        <div className={`h-1.5 rounded-full overflow-hidden relative border ${
-          darkMode ? 'bg-slate-800 border-white/10' : 'bg-slate-100 border-slate-200'
-        }`}>
-          <div className="h-full bg-gradient-to-r from-indigo-500 to-amber-500 rounded-full animate-shimmer w-full"></div>
-        </div>
+      <div className={`px-5 py-2 rounded-xl text-xs font-mono font-medium z-10 flex items-center justify-center space-x-2 border ${
+        darkMode ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+      }`}>
+        <span className={`h-2 w-2 rounded-full animate-pulse ${darkMode ? 'bg-cyan-400' : 'bg-indigo-600'}`}></span>
+        <span>{steps[currentStep]}{dots}</span>
       </div>
     </div>
   );
 };
 
 function App() {
-  const [activeView, setActiveView] = useState('landing'); // 'landing', 'debate', 'history', 'login', 'register'
+  const [activeView, setActiveView] = useState('landing'); // 'landing', 'studio', 'debate', 'history', 'login', 'register'
   const [topicInput, setTopicInput] = useState('');
   const [activeDebateId, setActiveDebateId] = useState(null);
   const [debateTopic, setDebateTopic] = useState('');
@@ -244,10 +199,9 @@ function App() {
   // Detail selection state for the sidebar/modal fact-check display
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [activeRoundTab, setActiveRoundTab] = useState('all'); // 'all', '1', '2', '3', '4', '5', 'verdict'
-  const [claimFilter, setClaimFilter] = useState('all'); // 'all', 'Confirmed', 'Disputed', 'Unverifiable'
-  const [mobileAgentView, setMobileAgentView] = useState('both'); // 'both', 'Agent A', 'Agent B'
+  const [claimFilter, setClaimFilter] = useState('all');
   
-  // Clash of Clans Cloud-Wipe Transition state
+  // Transition state
   const [isCloudWiping, setIsCloudWiping] = useState(false);
   const [cloudWipeStatus, setCloudWipeStatus] = useState('Summoning AI Debaters...');
   
@@ -258,32 +212,103 @@ function App() {
   // Auth state
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('debate_arena_token'));
   const [currentUser, setCurrentUser] = useState(null);
-  // Separated Auth States to prevent cross-contamination
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [loginShowPassword, setLoginShowPassword] = useState(false);
 
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerError, setRegisterError] = useState('');
-  const [registerShowPassword, setRegisterShowPassword] = useState(false);
 
   const [authLoading, setAuthLoading] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null); // 'debate' or 'factcheck'
+  const [pendingAction, setPendingAction] = useState(null);
 
-  // Score bar animation state
-  const [scoreBarsVisible, setScoreBarsVisible] = useState(false);
+  // Stance & Mode Dropdown states
+  const [showStanceDropdown, setShowStanceDropdown] = useState(false);
+  const [showModeDropdown, setShowModeDropdown] = useState(false);
+  const stanceDropdownRef = useRef(null);
+  const modeDropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (stanceDropdownRef.current && !stanceDropdownRef.current.contains(e.target)) {
+        setShowStanceDropdown(false);
+      }
+      if (modeDropdownRef.current && !modeDropdownRef.current.contains(e.target)) {
+        setShowModeDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 🎙️ Live Dual-Voice AI Speech Narration Hook
   const debateAudio = useDebateAudio();
+
+  // Sidebar and UI state
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarSearch, setSidebarSearch] = useState('');
+  const [showPromoCard, setShowPromoCard] = useState(true);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const recognitionRef = useRef(null);
+
+  // Dark Mode
+  const [darkMode, setDarkMode] = useState(getInitialDarkMode);
+  const toggleDarkMode = () => {
+    setDarkMode(prev => {
+      const next = !prev;
+      try { localStorage.setItem('arguforge-dark-mode', String(next)); } catch(_) {}
+      return next;
+    });
+  };
+
+  // Sync HTML and Body classes with darkMode state
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark-mode');
+    }
+  }, [darkMode]);
+
+  // Voice speech-to-text toggle
+  const toggleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+    if (isRecordingVoice) {
+      if (recognitionRef.current) recognitionRef.current.stop();
+      setIsRecordingVoice(false);
+    } else {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.onstart = () => setIsRecordingVoice(true);
+        recognition.onresult = (event) => {
+          const transcript = Array.from(event.results).map(result => result[0].transcript).join('');
+          setTopicInput(transcript);
+        };
+        recognition.onerror = () => setIsRecordingVoice(false);
+        recognition.onend = () => setIsRecordingVoice(false);
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (e) {
+        setIsRecordingVoice(false);
+      }
+    }
+  };
 
   // SSE event source ref
   const eventSourceRef = useRef(null);
   const streamCompletedRef = useRef(false);
   const reconnectAttemptsRef = useRef(0);
   const turnsEndRef = useRef(null);
-  const bentoGridRef = useRef(null);
 
   // Auto-scroll when new turns arrive
   useEffect(() => {
@@ -292,8 +317,9 @@ function App() {
     }
   }, [turns, status]);
 
-  // Verify token once on mount
+  // Load history list & verify token once on mount
   useEffect(() => {
+    loadHistory();
     const token = localStorage.getItem('debate_arena_token');
     if (token) {
       fetch(`${API_BASE}/api/auth/me`, {
@@ -311,15 +337,6 @@ function App() {
         });
     }
   }, []);
-
-  // Animate score bars when scores appear
-  useEffect(() => {
-    if (scores && scores.length > 0) {
-      setTimeout(() => setScoreBarsVisible(true), 200);
-    } else {
-      setScoreBarsVisible(false);
-    }
-  }, [scores]);
 
   const handleLogout = () => {
     localStorage.removeItem('debate_arena_token');
@@ -349,21 +366,17 @@ function App() {
       setCurrentUser(data.user);
       setLoginEmail('');
       setLoginPassword('');
+      loadHistory();
       
-      // Execute pending action
       if (pendingAction) {
         const action = pendingAction;
         setPendingAction(null);
-        if (action === 'debate' || action === 'factcheck') {
-          setActiveView('landing');
-          setTimeout(() => {
-            handleStartDebate(null, action);
-          }, 100);
-        } else {
-          setActiveView('landing');
-        }
+        setActiveView('studio');
+        setTimeout(() => {
+          handleStartDebate(null, action);
+        }, 100);
       } else {
-        setActiveView('landing');
+        setActiveView('studio');
       }
     } catch (err) {
       setLoginError('Network error. Make sure backend is running.');
@@ -392,21 +405,17 @@ function App() {
       setCurrentUser(data.user);
       setRegisterEmail('');
       setRegisterPassword('');
+      loadHistory();
       
-      // Execute pending action
       if (pendingAction) {
         const action = pendingAction;
         setPendingAction(null);
-        if (action === 'debate' || action === 'factcheck') {
-          setActiveView('landing');
-          setTimeout(() => {
-            handleStartDebate(null, action);
-          }, 100);
-        } else {
-          setActiveView('landing');
-        }
+        setActiveView('studio');
+        setTimeout(() => {
+          handleStartDebate(null, action);
+        }, 100);
       } else {
-        setActiveView('landing');
+        setActiveView('studio');
       }
     } catch (err) {
       setRegisterError('Network error. Make sure backend is running.');
@@ -414,95 +423,6 @@ function App() {
       setAuthLoading(false);
     }
   };
-
-  const handleOAuthLogin = (provider) => {
-    const redirectUri = window.location.origin;
-    
-    if (provider === 'Google') {
-      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-      if (!googleClientId) {
-        setLoginError('Google Sign-In is not configured. Please add VITE_GOOGLE_CLIENT_ID.');
-        setRegisterError('Google Sign-In is not configured. Please add VITE_GOOGLE_CLIENT_ID.');
-        return;
-      }
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent('email profile')}&state=google&access_type=offline&prompt=consent`;
-    } else if (provider === 'GitHub') {
-      const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID || '';
-      if (!githubClientId) {
-        setLoginError('GitHub Sign-In is not configured. Please add VITE_GITHUB_CLIENT_ID.');
-        setRegisterError('GitHub Sign-In is not configured. Please add VITE_GITHUB_CLIENT_ID.');
-        return;
-      }
-      window.location.href = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent('user:email')}&state=github`;
-    }
-  };
-
-  const handleOAuthCallback = async (provider, codeOrToken) => {
-    setAuthLoading(true);
-    try {
-      const endpoint = provider === 'Google' ? '/api/auth/google/callback' : '/api/auth/github/callback';
-      const body = provider === 'Google' 
-        ? { code: codeOrToken, redirect_uri: window.location.origin } 
-        : { code: codeOrToken };
-      
-      const res = await fetch(`${API_BASE}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        const errorMsg = data.detail || `${provider} authentication failed`;
-        if (activeView === 'register') setRegisterError(errorMsg);
-        else setLoginError(errorMsg);
-        return;
-      }
-      
-      localStorage.setItem('debate_arena_token', data.token);
-      setAuthToken(data.token);
-      setCurrentUser(data.user);
-      
-      if (pendingAction) {
-        const action = pendingAction;
-        setPendingAction(null);
-        if (action === 'debate' || action === 'factcheck') {
-          setActiveView('landing');
-          setTimeout(() => {
-            handleStartDebate(null, action);
-          }, 100);
-        } else {
-          setActiveView('landing');
-        }
-      } else {
-        setActiveView('landing');
-      }
-    } catch (err) {
-      const errorMsg = 'OAuth callback connection error.';
-      if (activeView === 'register') setRegisterError(errorMsg);
-      else setLoginError(errorMsg);
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  // Detect OAuth redirect callbacks on mount
-  useEffect(() => {
-    const handleCallbackDetection = async () => {
-      const search = window.location.search;
-      if (search && search.includes('code=')) {
-        const params = new URLSearchParams(search);
-        const code = params.get('code');
-        const state = params.get('state');
-        if (code) {
-          window.history.replaceState(null, null, window.location.pathname);
-          const provider = state === 'google' ? 'Google' : 'GitHub';
-          await handleOAuthCallback(provider, code);
-        }
-      }
-    };
-    
-    handleCallbackDetection();
-  }, []);
 
   const requireAuth = (action) => {
     if (!authToken) {
@@ -513,7 +433,6 @@ function App() {
     return true;
   };
 
-  // Load history list
   const loadHistory = async () => {
     setIsLoadingHistory(true);
     try {
@@ -540,7 +459,7 @@ function App() {
     
     if (!requireAuth(mode)) return;
     
-    const topic = topicInput.trim() || "Should electric vehicles be mandatory by 2035?";
+    const topic = topicInput.trim() || "ai in ecom";
     setError(null);
     setTurns([]);
     setScores([]);
@@ -548,13 +467,11 @@ function App() {
     setSelectedClaim(null);
     setActiveRoundTab('1');
     setClaimFilter('all');
-    setMobileAgentView('both');
     setDebateTopic(topic);
     setDebateMode(mode);
 
-    // 🌟 Trigger Concept 1: Glass Warp & Neural Gyroscope Transition!
     setIsCloudWiping(true);
-    setCloudWipeStatus(mode === 'factcheck' ? 'Auditing Factual Sources...' : 'Synthesizing Dual-Agent Stances...');
+    setCloudWipeStatus(mode === 'factcheck' ? 'Auditing Factual Sources...' : 'Synthesizing Assistant Stances...');
     const startTime = Date.now();
     
     try {
@@ -585,7 +502,6 @@ function App() {
     }
   };
 
-  // Connect to the SSE stream with auto-reconnection and completion tracking
   const connectToStream = (debateId, startTime = null) => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -599,8 +515,7 @@ function App() {
       try {
         const data = JSON.parse(e.data);
         setStances(data);
-        setCloudWipeStatus('Neural Arena Synchronized!');
-        // Smooth luxury hold threshold
+        setCloudWipeStatus('Assistant Matrix Synchronized!');
         const elapsed = startTime ? Date.now() - startTime : 480;
         const remaining = Math.max(0, 480 - elapsed);
         setTimeout(() => {
@@ -630,7 +545,6 @@ function App() {
         setIsCloudWiping(false);
         setTurns((prev) => {
           if (prev.some((t) => t.id === data.id)) return prev;
-          // Auto-narrate new turn if enabled
           if (debateAudio.autoNarrate && data.content) {
             debateAudio.speakText(data.content, data.agent);
           }
@@ -654,7 +568,7 @@ function App() {
           const winner = getWinner(data.scores);
           const verdictSpeech = winner === 'Tie' 
             ? "The double-blind judgment has concluded in a tie." 
-            : `The official verdict is in. The winner of this debate is ${winner}.`;
+            : `The official verdict is in. The winner is ${winner}.`;
           debateAudio.speakText(verdictSpeech, 'Judge');
         }
       } catch (err) {
@@ -665,6 +579,7 @@ function App() {
       reconnectAttemptsRef.current = 0;
       source.close();
       setIsCloudWiping(false);
+      loadHistory();
     });
     
     source.addEventListener('error', (e) => {
@@ -678,13 +593,10 @@ function App() {
           streamCompletedRef.current = true;
           source.close();
         }
-      } catch (err) {
-        // SSE network error
-      }
+      } catch (err) {}
     });
     
     source.onerror = async (err) => {
-      // If stream finished normally via verdict event or error event, close is expected
       if (streamCompletedRef.current) {
         source.close();
         return;
@@ -693,7 +605,6 @@ function App() {
       console.warn("SSE connection interrupted. Verifying debate status...", err);
       source.close();
 
-      // Check if the debate actually completed in the backend
       try {
         const checkRes = await fetch(`${API_BASE}/api/debates/${debateId}`);
         if (checkRes.ok) {
@@ -705,6 +616,7 @@ function App() {
             setScores(detail.scores || []);
             setStatus({ status: 'idle' });
             streamCompletedRef.current = true;
+            loadHistory();
             return;
           } else if (detail.status === 'failed') {
             setError(detail.error || "Analysis was interrupted. Click Retry to run again.");
@@ -713,14 +625,10 @@ function App() {
             return;
           }
         }
-      } catch (checkErr) {
-        console.warn("Could not check debate status:", checkErr);
-      }
+      } catch (checkErr) {}
 
-      // Auto-reconnect if still in progress (up to 3 attempts)
       if (reconnectAttemptsRef.current < 3) {
         reconnectAttemptsRef.current += 1;
-        console.log(`Auto-reconnecting to stream (attempt ${reconnectAttemptsRef.current}/3)...`);
         setTimeout(() => {
           if (!streamCompletedRef.current) {
             connectToStream(debateId);
@@ -733,7 +641,6 @@ function App() {
     };
   };
 
-  // View past debate from history
   const handleViewPastDebate = async (debateId) => {
     setError(null);
     setTurns([]);
@@ -741,10 +648,11 @@ function App() {
     setSelectedClaim(null);
     setStatus({ status: 'loading', agent: 'Orchestrator' });
     setActiveView('debate');
+    setActiveDebateId(debateId);
     
     try {
       const res = await fetch(`${API_BASE}/api/debates/${debateId}`);
-      if (!res.ok) throw new Error("Failed to load debate history details");
+      if (!res.ok) throw new Error("Failed to load debate details");
       const data = await res.json();
       
       setDebateTopic(data.topic);
@@ -765,29 +673,23 @@ function App() {
     }
   };
 
-  // Clean up EventSource on unmount
-  useEffect(() => {
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-    };
-  }, []);
-
-  // Format date helper
-  const formatDate = (isoStr) => {
-    if (!isoStr) return "";
-    const date = new Date(isoStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const cleanThinkingAndFootnotes = (rawText) => {
+    if (!rawText) return "";
+    let cleaned = rawText;
+    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    cleaned = cleaned.replace(/<think>[\s\S]*$/gi, '');
+    cleaned = cleaned.replace(/^(?:Thinking Process|Thought Process|Reasoning):[\s\S]*?\n\n/gi, '');
+    cleaned = cleaned.replace(/\*+(?:Word Count|Constraint|Cutting|Deconstruct)[^*]*\*+[\s\S]*?(?=\n\n|$)/gi, '');
+    cleaned = cleaned.replace(/^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)*/gi, '');
+    cleaned = cleaned.replace(/\n+(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)*$/gi, '');
+    cleaned = cleaned.replace(/^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):[ \t]*\n*/gi, '');
+    cleaned = cleaned.replace(/^(?:[-*•]\s+[A-Za-z\s,.\(\)\d]+(?:Retrieved from\s*)?<https?:\/\/[^\s>]+>\s*\n*)+/gi, '');
+    cleaned = cleaned.replace(/<\s*\[\s*\d+\s*\]\s*>/g, '');
+    cleaned = cleaned.replace(/[【\u3010][^】\u3011]*[】\u3011]/g, '');
+    cleaned = cleaned.replace(/\s*\[\d+\](?!\()/g, '');
+    return cleaned.trim();
   };
 
-  // Helper to extract clean domain name from URL
   const getDomainFromUrl = (url) => {
     try {
       const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
@@ -797,39 +699,9 @@ function App() {
     }
   };
 
-  // Sanitize internal thinking scratchpads, <think> tags, and raw bracket tags
-  const cleanThinkingAndFootnotes = (rawText) => {
-    if (!rawText) return "";
-    let cleaned = rawText;
-    // Strip <think>...</think> blocks
-    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
-    // Strip unclosed <think> blocks
-    cleaned = cleaned.replace(/<think>[\s\S]*$/gi, '');
-    // Strip "Thinking Process: ..." up to the first real paragraph
-    cleaned = cleaned.replace(/^(?:Thinking Process|Thought Process|Reasoning):[\s\S]*?\n\n/gi, '');
-    // Strip meta scratchpad lines like *Word Count:* ...
-    cleaned = cleaned.replace(/\*+(?:Word Count|Constraint|Cutting|Deconstruct)[^*]*\*+[\s\S]*?(?=\n\n|$)/gi, '');
-    // Strip "Reference(s):" or "References:" bibliographic headers and preceding lists
-    cleaned = cleaned.replace(/^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)*/gi, '');
-    cleaned = cleaned.replace(/\n+(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)*$/gi, '');
-    cleaned = cleaned.replace(/^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):[ \t]*\n*/gi, '');
-    // Strip bulleted bibliographic citations at start (e.g. "- Author (Year)... <http...>")
-    cleaned = cleaned.replace(/^(?:[-*•]\s+[A-Za-z\s,.\(\)\d]+(?:Retrieved from\s*)?<https?:\/\/[^\s>]+>\s*\n*)+/gi, '');
-    // Strip raw HTML-like bracketed footnote tags like <[1]>, <[2]>, <[3]>
-    cleaned = cleaned.replace(/<\s*\[\s*\d+\s*\]\s*>/g, '');
-    // Strip Asian citation brackets like 【4:0†source】
-    cleaned = cleaned.replace(/[【\u3010][^】\u3011]*[】\u3011]/g, '');
-    // Clean unclickable footnotes like [1], [2] unless they are markdown links [1](http...)
-    cleaned = cleaned.replace(/\s*\[\d+\](?!\()/g, '');
-    return cleaned.trim();
-  };
-
-  // Parse markdown links [text](url), parenthetical URLs (https://...), and bare URLs into clean clickable domain badges
   const parseMarkdownLinks = (text) => {
     if (!text) return "";
     const sanitized = cleanThinkingAndFootnotes(text);
-    
-    // Normalize raw parenthetical URLs like plan(https://reuters.com) -> plan [reuters.com](https://reuters.com)
     const normalized = sanitized.replace(/(?<=[^\s\[])\((https?:\/\/[^\s)]+)\)/g, ' [$1]($1)')
                                 .replace(/\((https?:\/\/[^\s)]+)\)/g, ' [$1]($1)');
 
@@ -853,10 +725,10 @@ function App() {
           href={rawUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className={`inline-flex items-center space-x-1 px-2 py-0.5 mx-1 rounded-md text-[11px] font-semibold transition-all align-baseline cursor-pointer border ${
-            darkMode
-              ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/30 hover:underline'
-              : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 hover:underline shadow-xs'
+          className={`inline-flex items-center space-x-1 px-1.5 py-0.5 mx-1 rounded text-[11px] font-medium border transition-colors ${
+            darkMode 
+              ? 'bg-white/10 text-cyan-300 hover:bg-white/20 border-white/15' 
+              : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
           }`}
           title={`Open verified source: ${rawUrl}`}
         >
@@ -874,243 +746,52 @@ function App() {
     return parts.length > 0 ? parts : [normalized];
   };
 
-  // Helper to parse claims and apply dynamic underlines + inline reference icons
   const renderContentWithClaims = (content, claims) => {
     if (!content) return null;
-
     const cleanedContent = cleanThinkingAndFootnotes(content);
     if (!cleanedContent) return null;
-    
-    // 1. Find all inline citations e.g. [Source: https...] or [Name](https...)
-    const citationRegex = /\[Source:\s*(https?:\/\/[^\s\]]+)\]|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-    let citations = [];
-    let match;
-    while ((match = citationRegex.exec(cleanedContent)) !== null) {
-      const rawText = match[0];
-      const url = match[1] || match[3];
-      const name = match[2] || "Source";
-      citations.push({
-        start: match.index,
-        end: match.index + rawText.length,
-        url: url,
-        name: name,
-        raw: rawText
-      });
-    }
-    
-    // 2. Find all claims mapped to the text
-    const stripLinks = (t) => t.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\[Source:\s*[^\s\]]+\]/g, '').trim();
-    let claimMatches = [];
-    if (claims && claims.length > 0) {
-      claims.forEach((claim) => {
-        // Skip Unverifiable claims so we remove unknown sources from underlines/badges
-        if (claim.verdict === 'Unverifiable') return;
 
-        const claimClean = stripLinks(claim.claim_text);
-        if (!claimClean) return;
-        
-        let index = cleanedContent.toLowerCase().indexOf(claimClean.toLowerCase());
-        if (index !== -1) {
-          claimMatches.push({
-            start: index,
-            end: index + claimClean.length,
-            claim: claim
-          });
-        } else {
-          // Try fuzzy word-based match
-          const words = claimClean.split(/\s+/).slice(0, 4).join('\\s+');
-          try {
-            const regex = new RegExp(words.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-            const m = cleanedContent.match(regex);
-            if (m) {
-              let endPos = cleanedContent.indexOf('.', m.index);
-              if (endPos === -1 || endPos - m.index > claimClean.length * 3) {
-                endPos = m.index + claimClean.length + 30;
-              } else {
-                endPos += 1;
-              }
-              claimMatches.push({
-                start: m.index,
-                end: Math.min(endPos, cleanedContent.length),
-                claim: claim
-              });
-            }
-          } catch (e) {}
-        }
-      });
-    }
-    
-    // 3. Combine both types of segments and sort by start index
-    const allSegments = [
-      ...citations.map(c => ({ ...c, type: 'citation' })),
-      ...claimMatches.map(c => ({ ...c, type: 'claim' }))
-    ];
-    allSegments.sort((a, b) => a.start - b.start);
-    
-    // De-duplicate and remove overlapping segments
-    let filteredSegments = [];
-    let currentEnd = 0;
-    for (let seg of allSegments) {
-      if (seg.start >= currentEnd) {
-        filteredSegments.push(seg);
-        currentEnd = seg.end;
-      }
-    }
-    
-    if (filteredSegments.length === 0) {
-      return <div className={`leading-relaxed font-sans whitespace-pre-wrap ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>{parseMarkdownLinks(cleanedContent)}</div>;
-    }
-    
-    // 4. Map unique URLs to reference numbers
-    let urlToRefNum = {};
-    let refCounter = 1;
-    filteredSegments.forEach(seg => {
-      if (seg.type === 'citation') {
-        if (!urlToRefNum[seg.url]) {
-          urlToRefNum[seg.url] = refCounter++;
-        }
-      }
-    });
-    
-    let parts = [];
-    let idx = 0;
-    
-    filteredSegments.forEach((seg, segIdx) => {
-      if (seg.start > idx) {
-        parts.push(
-          <React.Fragment key={`text-${idx}`}>
-            {parseMarkdownLinks(cleanedContent.substring(idx, seg.start))}
-          </React.Fragment>
-        );
-      }
-      
-      if (seg.type === 'citation') {
-        const refNum = urlToRefNum[seg.url];
-        // Find matching claim's verification results
-        const matchingClaim = claims?.find(c => 
-          (c.cited_url && c.cited_url.includes(seg.url)) || 
-          (c.source_url && c.source_url.includes(seg.url)) ||
-          seg.url.includes(c.cited_url || "NONE") ||
-          seg.url.includes(c.source_url || "NONE")
-        );
-        
-        const refObject = matchingClaim ? {
-          ...matchingClaim,
-          ref_number: refNum
-        } : {
-          id: `ref-${refNum}`,
-          claim_text: `Source link citation: ${seg.name}`,
-          verdict: 'Confirmed',
-          source_url: seg.url,
-          reasoning: `This source (${seg.url}) was cited by the analyst as primary evidence.`,
-          cited_url: seg.url,
-          ref_number: refNum
-        };
-        
-        parts.push(
-          <sup key={`citation-${segIdx}`} className="mx-0.5 select-none">
-            <button
-              type="button"
-              onClick={() => setSelectedClaim(refObject)}
-              className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded transition-all duration-200 cursor-pointer border ${
-                darkMode
-                  ? 'bg-indigo-500/20 hover:bg-indigo-500 hover:text-white text-indigo-300 border-indigo-500/30'
-                  : 'bg-indigo-100 hover:bg-indigo-600 hover:text-white text-indigo-700 border-indigo-200 shadow-xs'
-              }`}
-              title={`View citation details: ${seg.url}`}
-            >
-              [{refNum}]
-            </button>
-          </sup>
-        );
-      } else if (seg.type === 'claim') {
-        const claimText = cleanedContent.substring(seg.start, seg.end);
-        const verdict = seg.claim.verdict;
-        
-        let borderStyle = darkMode 
-          ? 'border-slate-500 text-slate-200 hover:bg-slate-800/40' 
-          : 'border-slate-400 text-slate-900 hover:bg-slate-100';
-        if (verdict === 'Confirmed') {
-          borderStyle = darkMode 
-            ? 'border-emerald-500/80 text-slate-200 hover:bg-emerald-950/20' 
-            : 'border-emerald-500/80 text-slate-900 hover:bg-emerald-50';
-        }
-        if (verdict === 'Disputed') {
-          borderStyle = darkMode 
-            ? 'border-amber-500/80 text-slate-200 hover:bg-amber-950/20' 
-            : 'border-amber-500/80 text-slate-900 hover:bg-amber-50';
-        }
-        
-        parts.push(
-          <span 
-            key={`claim-${segIdx}`}
-            onClick={() => setSelectedClaim(seg.claim)}
-            className={`cursor-pointer inline transition-all border-b-2 decoration-dotted pb-0.5 ${borderStyle}`}
-            title="Click to view source integrity check"
-          >
-            {parseMarkdownLinks(claimText)}
-            <span className={`inline-flex items-center justify-center rounded-full ml-1 px-1 py-0.2 text-[9px] font-extrabold select-none ${
-              verdict === 'Confirmed' 
-                ? (darkMode ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-100 text-emerald-800 border border-emerald-300')
-                : verdict === 'Disputed' 
-                ? (darkMode ? 'bg-amber-950/60 text-amber-400 border border-amber-500/30' : 'bg-amber-100 text-amber-800 border border-amber-300')
-                : (darkMode ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-slate-100 text-slate-700 border border-slate-300')
-            }`}>
-              {verdict === 'Confirmed' ? '✓' : verdict === 'Disputed' ? '⚠️' : '?'}
-            </span>
-          </span>
-        );
-      }
-      
-      idx = seg.end;
-    });
-    
-    if (idx < cleanedContent.length) {
-      parts.push(
-        <React.Fragment key="text-end">
-          {parseMarkdownLinks(cleanedContent.substring(idx))}
-        </React.Fragment>
-      );
-    }
+    const lines = cleanedContent.split('\n');
     return (
-      <div className="flex flex-col space-y-4">
-        <div className={`leading-relaxed font-sans whitespace-pre-wrap ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>{parts}</div>
-        
-        {/* Render Cited Sources Index */}
-        {Object.keys(urlToRefNum).length > 0 && (
-          <div className={`pt-3 border-t text-xs font-sans ${darkMode ? 'border-white/10 text-slate-400' : 'border-slate-200 text-slate-600'}`}>
-            <div className={`font-bold mb-1.5 flex items-center ${darkMode ? 'text-indigo-400' : 'text-indigo-700'}`}>
-              <BookOpen className="h-3.5 w-3.5 mr-1" /> Cited Sources
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-1.5">
-              {Object.entries(urlToRefNum).map(([url, num]) => (
-                <div key={url} className="flex items-start space-x-1.5 transition-colors">
-                  <span className={`font-bold text-[9px] px-1 py-0.5 rounded leading-none border ${
-                    darkMode 
-                      ? 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30' 
-                      : 'text-indigo-700 bg-indigo-50 border-indigo-200'
-                  }`}>[{num}]</span>
-                  <a 
-                    href={url} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className={`hover:underline truncate text-[11px] leading-tight inline-flex items-center transition-colors ${
-                      darkMode ? 'text-slate-300 hover:text-indigo-400' : 'text-slate-700 hover:text-indigo-700'
-                    }`}
-                  >
-                    {url.replace(/https?:\/\/(www\.)?/, '')}
-                    <ExternalLink className="h-2.5 w-2.5 ml-1 flex-shrink-0" />
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      <div className={`space-y-3 text-[14px] leading-relaxed font-sans ${
+        darkMode ? 'text-slate-200' : 'text-slate-800'
+      }`}>
+        {lines.map((line, idx) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={idx} className="h-1.5" />;
+          
+          if (trimmed.startsWith('# ') || trimmed.startsWith('## ')) {
+            return (
+              <h3 key={idx} className={`text-xl sm:text-2xl font-bold font-sans mt-3 mb-1.5 tracking-tight ${
+                darkMode ? 'text-white' : 'text-slate-900'
+              }`}>
+                {trimmed.replace(/^#+\s*/, '')}
+              </h3>
+            );
+          }
+          if (trimmed.startsWith('### ')) {
+            return (
+              <h4 key={idx} className={`text-base font-semibold font-sans mt-2.5 mb-1 ${
+                darkMode ? 'text-white' : 'text-slate-900'
+              }`}>
+                {trimmed.replace(/^###\s*/, '')}
+              </h4>
+            );
+          }
+          if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+            return (
+              <div key={idx} className="flex items-start space-x-2 pl-1">
+                <span className={`mt-1.5 text-xs ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>•</span>
+                <div className="flex-1">{parseMarkdownLinks(trimmed.replace(/^[-*]\s*/, ''))}</div>
+              </div>
+            );
+          }
+          return <p key={idx}>{parseMarkdownLinks(trimmed)}</p>;
+        })}
       </div>
     );
   };
 
-  // Calculate winner for card preview
   const getWinner = (debateScores) => {
     if (!debateScores || debateScores.length === 0) return null;
     const scoreA = debateScores.find(s => s.agent === 'Agent A')?.total || 0;
@@ -1120,21 +801,65 @@ function App() {
     return 'Tie';
   };
 
-  // ─── DARK MODE ─────────────────────────────────────────────
-  const [darkMode, setDarkMode] = useState(getInitialDarkMode);
-  const toggleDarkMode = () => {
-    setDarkMode(prev => {
-      const next = !prev;
-      try { localStorage.setItem('arguforge-dark-mode', String(next)); } catch(_) {}
-      return next;
-    });
-  };
+  const filteredHistory = useMemo(() => {
+    if (!sidebarSearch.trim()) return historyList;
+    const q = sidebarSearch.toLowerCase();
+    return historyList.filter(d => (d.topic || '').toLowerCase().includes(q));
+  }, [historyList, sidebarSearch]);
 
-  // ─── RENDER ────────────────────────────────────────────────
+  const quickStarterCards = [
+    {
+      id: 'ai-ecom',
+      icon: <TrendingUp className="h-4 w-4" />,
+      title: 'AI in E-Commerce & Retail',
+      desc: 'Workforce displacement vs augmentation',
+      topic: 'Will generative AI and autonomous agents net benefit or displace human retail workforces?'
+    },
+    {
+      id: 'nuclear-energy',
+      icon: <Zap className="h-4 w-4" />,
+      title: 'Nuclear Power & Clean Grid',
+      desc: 'Base load energy security vs renewables',
+      topic: 'Is nuclear power indispensable for achieving a zero-carbon global energy grid?'
+    },
+    {
+      id: 'ev-mandate',
+      icon: <Shield className="h-4 w-4" />,
+      title: 'EV Mandate by 2035',
+      desc: 'Grid infrastructure & lithium supply chain',
+      topic: 'Should electric vehicles be mandatory for all new consumer car sales by 2035?'
+    },
+    {
+      id: 'ubi',
+      icon: <Award className="h-4 w-4" />,
+      title: 'Universal Basic Income (UBI)',
+      desc: 'Automation safety net vs fiscal inflation',
+      topic: 'Is Universal Basic Income (UBI) an economically viable necessity in an automated economy?'
+    },
+    {
+      id: 'social-media',
+      icon: <Globe className="h-4 w-4" />,
+      title: 'Social Media Algorithms',
+      desc: 'Free expression vs public safety audit',
+      topic: 'Do algorithmic recommendation feeds cause more societal harm than benefit?'
+    },
+    {
+      id: 'space-colonization',
+      icon: <Sparkles className="h-4 w-4" />,
+      title: 'Deep Space Colonization',
+      desc: 'Multi-planetary future vs Earth resilience',
+      topic: 'Should governments prioritize funding deep space colonization over domestic Earth climate resilience?'
+    }
+  ];
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-[#060813] dark-mode' : 'bg-gradient-to-b from-[#3876ba] via-[#5a96d8] to-[#8cbfe8]'} text-slate-100 flex flex-col antialiased relative`}>
-      {/* Adaptive Background Effects */}
+    <div className={`w-screen ${
+      activeView === 'landing' ? 'min-h-screen' : 'h-screen overflow-hidden'
+    } flex flex-col ${
+      darkMode ? 'bg-[#060813] text-slate-100 dark-mode' : 'bg-gradient-to-b from-[#3876ba] via-[#5a96d8] to-[#8cbfe8] text-slate-900'
+    } antialiased relative font-sans select-none overflow-x-hidden`}>
+      
+      {/* Background Shaders (Always active across all views) */}
       {!darkMode ? (
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <CloudShader
@@ -1158,7 +883,7 @@ function App() {
       )}
       <div className="dot-grid"></div>
 
-      {/* ⚔️ Epic Versus Battle Transition Overlay */}
+      {/* Versus Battle Transition Overlay */}
       <BattleTransition
         isActive={isCloudWiping}
         topic={debateTopic}
@@ -1167,1580 +892,1379 @@ function App() {
         darkMode={darkMode}
       />
 
-      {/* Top Header - Floating design matching the screenshot */}
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pt-3 sm:pt-4 relative z-40">
-        <header className="glass rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between border border-white/10 shadow-xl">
-          <div 
-            className="flex items-center space-x-2 sm:space-x-3 cursor-pointer group"
-            onClick={() => {
-              if (status.status === 'idle') {
-                setActiveView('landing');
-              }
-            }}
-          >
-            <div className="text-white font-extrabold flex items-center justify-center transition-transform group-hover:scale-105">
-              <img src={logo} className="h-7 w-7 sm:h-9 sm:w-9 object-contain" alt="Logo" />
-            </div>
-            <div>
-              <h1 className="text-xs sm:text-lg font-bold tracking-tight font-sans text-brand-textLight">ArguForge AI</h1>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <button 
-              onClick={() => {
-                if (status.status === 'idle' || confirm("Leave active session?")) {
-                  if (eventSourceRef.current) eventSourceRef.current.close();
-                  setStatus({ status: 'idle' });
-                  loadHistory();
-                  setActiveView('history');
-                }
-              }}
-              className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors font-sans py-1"
-            >
-              Archive
-            </button>
-            <button 
-              onClick={() => {
-                document.getElementById('site-footer')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="text-xs sm:text-sm text-slate-400 hover:text-white transition-colors font-sans cursor-pointer py-1"
-            >
-              About
-            </button>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="theme-toggle"
-              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {darkMode ? <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-            </button>
-
-            {/* Auth Button */}
-            {currentUser ? (
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <div className="flex items-center space-x-1.5 sm:space-x-2 glass px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-white/10">
-                  <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center">
-                    <span className="text-[9px] sm:text-[10px] font-bold text-brand-accent">{currentUser.email?.[0]?.toUpperCase()}</span>
-                  </div>
-                  <span className="text-xs text-brand-textMuted font-sans hidden md:inline">{currentUser.email}</span>
-                </div>
-                <button 
-                  onClick={handleLogout}
-                  className="text-[11px] sm:text-xs text-slate-400 hover:text-white transition-colors font-sans py-1"
-                >
-                  Log Out
-                </button>
-              </div>
-            ) : (
-              <button 
-                onClick={() => setActiveView('login')}
-                className="bg-white hover:bg-slate-200 text-black px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all shadow-md font-sans cursor-pointer"
+      {/* ═══════════════════════════════════════════════════════════════
+          VIEW 1: HOMEPAGE (LANDING VIEW - 100% PRESERVED THEME & DESIGN)
+          ═══════════════════════════════════════════════════════════════ */}
+      {activeView === 'landing' && (
+        <div className="flex-1 flex flex-col justify-between relative z-10 w-full">
+          {/* Top Floating Glass Header */}
+          <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 pt-3 sm:pt-4 relative z-40">
+            <header className="glass rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between border border-white/10 shadow-xl">
+              <div 
+                className="flex items-center space-x-2 sm:space-x-3 cursor-pointer group"
+                onClick={() => setActiveView('landing')}
               >
-                Sign In
-              </button>
-            )}
-          </div>
-        </header>
-      </div>
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 flex flex-col justify-center relative z-10">
-        
-        {/* ── LOGIN / REGISTER VIEW ── */}
-        {/* ── LOGIN VIEW ── */}
-        {activeView === 'login' && (
-          <div className="max-w-md mx-auto w-full py-16 animate-slide-up">
-            {/* Background glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div className="glass rounded-2xl p-8 shadow-2xl glow-accent relative">
-              {/* Logo */}
-              <div className="flex flex-col items-center mb-8">
-                <div className="mb-4 animate-float">
-                  <img src={logo} className="h-16 w-16 object-contain" alt="Logo" />
+                <div className="text-white font-extrabold flex items-center justify-center transition-transform group-hover:scale-105">
+                  <img src={logo} className="h-7 w-7 sm:h-9 sm:w-9 object-contain" alt="Logo" />
                 </div>
-                <h2 className="text-2xl font-bold font-serif text-brand-textLight">
-                  Welcome back
-                </h2>
-                <p className="text-sm text-brand-textMuted font-sans mt-2 text-center">
-                  Sign in to start fact-checked debates and deep-dive analyses.
-                </p>
+                <div>
+                  <h1 className="text-xs sm:text-lg font-bold tracking-tight font-sans text-brand-textLight">ArguForge AI</h1>
+                </div>
               </div>
+              
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <button 
+                  onClick={() => setActiveView('studio')}
+                  className="text-xs sm:text-sm font-bold text-indigo-600 dark:text-cyan-400 hover:underline transition-colors font-sans py-1 flex items-center space-x-1 cursor-pointer"
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  <span>AI Arena</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    loadHistory();
+                    setActiveView('history');
+                  }}
+                  className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 hover:text-white transition-colors font-sans py-1 cursor-pointer"
+                >
+                  Archive
+                </button>
+                <button 
+                  onClick={() => {
+                    document.getElementById('site-footer')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 hover:text-white transition-colors font-sans cursor-pointer py-1"
+                >
+                  About
+                </button>
 
-              {/* Auth Form */}
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs text-brand-textMuted font-sans font-semibold mb-1.5 uppercase tracking-wider">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                    <input 
-                      type="email"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-xs text-brand-textMuted font-sans font-semibold mb-1.5 uppercase tracking-wider">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                    <input 
-                      type={loginShowPassword ? "text" : "password"}
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-10 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
-                      required
-                    />
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleDarkMode}
+                  className="theme-toggle"
+                  title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {darkMode ? <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                </button>
+
+                {/* Auth Button */}
+                {currentUser ? (
+                  <div className="flex items-center space-x-2 sm:space-x-4">
+                    <div className="flex items-center space-x-1.5 sm:space-x-2 glass px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-white/10">
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center">
+                        <span className="text-[9px] sm:text-[10px] font-bold text-brand-accent">{currentUser.email?.[0]?.toUpperCase()}</span>
+                      </div>
+                      <span className="text-xs text-brand-textMuted font-sans hidden md:inline">{currentUser.email}</span>
+                    </div>
                     <button 
-                      type="button" 
-                      onClick={() => setLoginShowPassword(!loginShowPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                      onClick={handleLogout}
+                      className="text-[11px] sm:text-xs text-slate-400 hover:text-white transition-colors font-sans py-1 cursor-pointer"
                     >
-                      {loginShowPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      Log Out
                     </button>
                   </div>
-                </div>
-
-                {loginError && (
-                  <div className="bg-rose-950/40 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-300 font-sans flex items-center space-x-2">
-                    <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>{loginError}</span>
-                  </div>
-                )}
-
-                <button 
-                  type="submit"
-                  disabled={authLoading}
-                  className="w-full bg-brand-accent hover:bg-brand-accent/90 text-brand-dark py-3.5 rounded-xl font-bold text-sm transition-all duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 animate-shine glow-accent"
-                >
-                  {authLoading ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <LogIn className="h-4 w-4" />
-                      <span>Sign In</span>
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Divider */}
-              <div className="relative my-5">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-[#1b1724] px-2.5 text-slate-500 font-sans tracking-wide">Or continue with</span>
-                </div>
-              </div>
-
-              {/* OAuth Buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleOAuthLogin('Google')}
-                  className="flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200"
-                >
-                  <svg className="h-4 w-4 text-rose-500 fill-current" viewBox="0 0 24 24">
-                    <path d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.78 0 3.3.67 4.47 1.76l2.454-2.453C17.68 1.957 15.152 1 12.24 1 6.136 1 1 6.136 1 12.24s5.136 11.24 11.24 11.24c6.382 0 10.618-4.482 10.618-10.8 0-.727-.08-1.282-.173-1.682H12.24z"/>
-                  </svg>
-                  <span>Google</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOAuthLogin('GitHub')}
-                  className="flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200"
-                >
-                  <svg className="h-4 w-4 text-slate-200 fill-current" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.167 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
-                  </svg>
-                  <span>GitHub</span>
-                </button>
-              </div>
-
-              {/* Toggle login/register */}
-              <div className="mt-6 text-center">
-                <p className="text-xs text-brand-textMuted font-sans">
-                  Don't have an account?{' '}
+                ) : (
                   <button 
-                    onClick={() => {
-                      setLoginError('');
-                      setActiveView('register');
-                    }}
-                    className="text-brand-accent hover:text-brand-accent/80 font-semibold transition-colors"
+                    onClick={() => setActiveView('login')}
+                    className="bg-white hover:bg-slate-200 text-black px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all shadow-md font-sans cursor-pointer"
                   >
-                    Sign up
+                    Sign In
                   </button>
-                </p>
-              </div>
-
-              {/* Back to home */}
-              <div className="mt-4 text-center">
-                <button 
-                  onClick={() => { setActiveView('landing'); setPendingAction(null); }}
-                  className="text-xs text-brand-textMuted hover:text-slate-300 font-sans transition-colors"
-                >
-                  ← Continue browsing as guest
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── REGISTER VIEW ── */}
-        {activeView === 'register' && (
-          <div className="max-w-md mx-auto w-full py-16 animate-slide-up">
-            {/* Background glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div className="glass rounded-2xl p-8 shadow-2xl glow-accent relative">
-              {/* Logo */}
-              <div className="flex flex-col items-center mb-8">
-                <div className="mb-4 animate-float">
-                  <img src={logo} className="h-16 w-16 object-contain" alt="Logo" />
-                </div>
-                <h2 className="text-2xl font-bold font-serif text-brand-textLight">
-                  Create your account
-                </h2>
-                <p className="text-sm text-brand-textMuted font-sans mt-2 text-center">
-                  Join ArguForge AI to access AI-powered fact-checking.
-                </p>
-              </div>
-
-              {/* Auth Form */}
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs text-brand-textMuted font-sans font-semibold mb-1.5 uppercase tracking-wider">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                    <input 
-                      type="email"
-                      value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-xs text-brand-textMuted font-sans font-semibold mb-1.5 uppercase tracking-wider">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                    <input 
-                      type={registerShowPassword ? "text" : "password"}
-                      value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
-                      placeholder="At least 6 characters"
-                      className="w-full bg-brand-dark/80 border border-brand-border rounded-xl pl-10 pr-10 py-3 text-slate-100 placeholder-slate-500 focus-glow transition-all font-sans text-sm"
-                      required
-                      minLength={6}
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setRegisterShowPassword(!registerShowPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                    >
-                      {registerShowPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {registerError && (
-                  <div className="bg-rose-950/40 border border-rose-500/30 rounded-lg p-3 text-xs text-rose-300 font-sans flex items-center space-x-2">
-                    <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>{registerError}</span>
-                  </div>
                 )}
-
-                <button 
-                  type="submit"
-                  disabled={authLoading}
-                  className="w-full bg-brand-accent hover:bg-brand-accent/90 text-brand-dark py-3.5 rounded-xl font-bold text-sm transition-all duration-200 disabled:opacity-50 flex items-center justify-center space-x-2 animate-shine glow-accent"
-                >
-                  {authLoading ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <UserPlus className="h-4 w-4" />
-                      <span>Create Account</span>
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Divider */}
-              <div className="relative my-5">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-[#1b1724] px-2.5 text-slate-500 font-sans tracking-wide">Or continue with</span>
-                </div>
               </div>
-
-              {/* OAuth Buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleOAuthLogin('Google')}
-                  className="flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200"
-                >
-                  <svg className="h-4 w-4 text-rose-500 fill-current" viewBox="0 0 24 24">
-                    <path d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.78 0 3.3.67 4.47 1.76l2.454-2.453C17.68 1.957 15.152 1 12.24 1 6.136 1 1 6.136 1 12.24s5.136 11.24 11.24 11.24c6.382 0 10.618-4.482 10.618-10.8 0-.727-.08-1.282-.173-1.682H12.24z"/>
-                  </svg>
-                  <span>Google</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOAuthLogin('GitHub')}
-                  className="flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition-all duration-200"
-                >
-                  <svg className="h-4 w-4 text-slate-200 fill-current" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.167 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
-                  </svg>
-                  <span>GitHub</span>
-                </button>
-              </div>
-
-              {/* Toggle login/register */}
-              <div className="mt-6 text-center">
-                <p className="text-xs text-brand-textMuted font-sans">
-                  Already have an account?{' '}
-                  <button 
-                    onClick={() => {
-                      setRegisterError('');
-                      setActiveView('login');
-                    }}
-                    className="text-brand-accent hover:text-brand-accent/80 font-semibold transition-colors"
-                  >
-                    Sign in
-                  </button>
-                </p>
-              </div>
-
-              {/* Back to home */}
-              <div className="mt-4 text-center">
-                <button 
-                  onClick={() => { setActiveView('landing'); setPendingAction(null); }}
-                  className="text-xs text-brand-textMuted hover:text-slate-300 font-sans transition-colors"
-                >
-                  ← Continue browsing as guest
-                </button>
-              </div>
-            </div>
+            </header>
           </div>
-        )}
 
-        {/* ── LANDING VIEW ── */}
-        {activeView === 'landing' && (
-          <div ref={bentoGridRef} className="max-w-4xl mx-auto w-full py-6 sm:py-10 flex flex-col items-center justify-center text-center animate-slide-up bento-section">
-            <GlobalSpotlight gridRef={bentoGridRef} spotlightRadius={300} glowColor="168, 85, 247" />
-
-            {/* Pill Badge from image */}
-            <div className={`inline-flex items-center justify-center backdrop-blur-md px-4 py-1.5 rounded-full mb-5 text-xs font-sans tracking-wide animate-scale-in ${darkMode ? 'border border-white/10 bg-white/5 text-slate-300' : 'border border-blue-200 bg-white/60 text-slate-700'}`}>
-              <span className={`px-2.5 py-0.5 rounded-full font-bold mr-2 text-[9px] ${darkMode ? 'bg-white text-black' : 'bg-indigo-600 text-white'}`}>NEW</span>
-              <span>Just shipped v2.0</span>
+          {/* Main Hero Section with "Start Debate" in place of old textbox */}
+          <main className="flex-1 max-w-4xl mx-auto w-full py-12 sm:py-20 px-4 flex flex-col items-center justify-center text-center animate-slide-up">
+            {/* Pill Badge */}
+            <div className={`inline-flex items-center justify-center backdrop-blur-md px-4 py-1.5 rounded-full mb-5 text-xs font-sans tracking-wide animate-scale-in ${
+              darkMode ? 'border border-white/10 bg-white/5 text-slate-300' : 'border border-blue-200 bg-white/60 text-slate-700'
+            }`}>
+              <span className={`px-2.5 py-0.5 rounded-full font-bold mr-2 text-[9px] ${darkMode ? 'bg-cyan-400 text-black' : 'bg-indigo-600 text-white'}`}>NEW</span>
+              <span>Agentic Arena Architecture</span>
             </div>
 
-            {/* Hero Heading - matching font and text style */}
-            <h2 className={`text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight font-sans mb-3 sm:mb-4 leading-tight max-w-3xl mx-auto px-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            {/* Hero Heading */}
+            <h2 className={`text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight font-sans mb-3 sm:mb-4 leading-tight max-w-3xl mx-auto px-1 ${
+              darkMode ? 'text-white' : 'text-slate-900'
+            }`}>
               Beneath the Noise, the Truth Awaits.
             </h2>
 
-            <p className={`text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-xl font-sans font-light leading-relaxed px-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-              Submit any topic. Settle claims with verified sources. Choose a full adversarial AI debate or a quick factual deep-dive analysis.
+            <p className={`text-sm sm:text-base md:text-lg mb-8 sm:mb-10 max-w-xl font-sans font-light leading-relaxed px-2 ${
+              darkMode ? 'text-slate-300' : 'text-slate-700'
+            }`}>
+              Submit any topic. Settle claims with verified sources. Temperature-tuned dual AI agents clashing with multi-tier source verification and bias-free scoring.
             </p>
-            
-            {/* Search Bar - Highlighted Glassmorphic design with Spotlight support */}
-            <form onSubmit={(e) => handleStartDebate(e)} className="w-full max-w-2xl flex flex-col items-center relative group">
+
+            {/* Start a Debate CTA Buttons (Replaces previous textbox) */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md mx-auto">
               <ParticleCard
-                enableStars={false}
+                enableStars={true}
                 enableTilt={true}
-                enableMagnetism={false}
-                clickEffect={false}
-                glowColor="168, 85, 247"
-                className="w-full magic-bento-card rounded-2xl"
+                enableMagnetism={true}
+                clickEffect={true}
+                glowColor="6, 182, 212"
+                className="magic-bento-card w-full rounded-2xl"
               >
-                <div className={`flex items-center w-full backdrop-blur-xl px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 ${darkMode ? 'bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.02)] focus-within:border-white/40 focus-within:shadow-[0_0_30px_rgba(255,255,255,0.08)]' : 'bg-white/70 hover:bg-white/80 border border-blue-200 shadow-lg shadow-black/5 focus-within:border-indigo-400 focus-within:shadow-[0_0_20px_rgba(79,70,229,0.12)]'}`}>
-                  <Search className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 mr-2.5 sm:mr-3 flex-shrink-0" />
-                  <input 
-                    type="text" 
-                    value={topicInput}
-                    onChange={(e) => setTopicInput(e.target.value)}
-                    placeholder="Should electric vehicles be mandatory by 2035?"
-                    className={`w-full bg-transparent py-2.5 sm:py-3 focus:outline-none font-sans text-sm sm:text-base ${darkMode ? 'text-slate-100 placeholder-slate-500' : 'text-slate-800 placeholder-slate-400'}`}
-                  />
-                </div>
-              </ParticleCard>
-
-              {/* Stance Preference Selector - styled as glassmorphic slider */}
-              <ParticleCard
-                enableStars={false}
-                enableTilt={false}
-                enableMagnetism={false}
-                clickEffect={false}
-                glowColor="168, 85, 247"
-                className="mt-4 sm:mt-6 w-full max-w-lg magic-bento-card rounded-2xl"
-              >
-                <div className={`flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-3 backdrop-blur-md px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-2xl ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white/65 border border-blue-200 shadow-md shadow-black/5'}`}>
-                  <span className={`text-[11px] sm:text-xs font-sans font-bold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Analysis Focus:</span>
-                  <div className={`flex p-1 rounded-xl w-full sm:w-auto justify-center ${darkMode ? 'bg-black/40 border border-white/10' : 'bg-slate-200/80 border border-blue-200'}`}>
-                    {[
-                      { value: 'both', label: 'Both Sides' },
-                      { value: 'for', label: 'Supporting' },
-                      { value: 'against', label: 'Opposing' }
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setStancePreference(opt.value)}
-                        className={`text-[10px] sm:text-[11px] px-3 sm:px-4 py-1.5 rounded-lg font-bold uppercase tracking-wide transition-all flex-1 sm:flex-initial text-center ${
-                          stancePreference === opt.value
-                            ? (darkMode ? 'bg-white text-black shadow-lg' : 'bg-indigo-600 text-white shadow-lg')
-                            : (darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900')
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </ParticleCard>
-
-              {/* Action Buttons - clearly differentiated features with React Bits magic animations */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 mt-6 sm:mt-8 w-full max-w-xl">
-                <ParticleCard
-                  enableStars={true}
-                  enableTilt={true}
-                  enableMagnetism={true}
-                  clickEffect={true}
-                  glowColor="255, 255, 255"
-                  className="magic-bento-card w-full sm:w-auto rounded-xl flex-1"
+                <button
+                  onClick={() => setActiveView('studio')}
+                  className={`w-full py-4 px-8 rounded-2xl font-bold font-sans text-base sm:text-lg flex items-center justify-center space-x-3 transition-all duration-300 shadow-2xl cursor-pointer ${
+                    darkMode
+                      ? 'bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white glow-cyan-strong'
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/25'
+                  }`}
                 >
-                  <button 
-                    type="submit"
-                    onClick={() => setDebateMode('debate')}
-                    className="bg-white hover:bg-slate-200 text-black font-bold px-6 sm:px-8 py-3 sm:py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200 text-xs sm:text-sm"
-                  >
-                    <Play className="h-4 w-4 fill-black text-black" />
-                    <span>Start AI Debate</span>
-                  </button>
-                </ParticleCard>
+                  <Play className="h-5 w-5 fill-current" />
+                  <span>Start Debate</span>
+                  <ChevronRight className="h-5 w-5 ml-1" />
+                </button>
+              </ParticleCard>
+            </div>
 
-                <ParticleCard
-                  enableStars={true}
-                  enableTilt={true}
-                  enableMagnetism={true}
-                  clickEffect={true}
-                  glowColor="168, 85, 247"
-                  className="magic-bento-card w-full sm:w-auto rounded-xl flex-1"
-                >
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setDebateMode('factcheck');
-                      handleStartDebate(null, 'factcheck');
-                    }}
-                    className={`font-bold px-6 sm:px-8 py-3 sm:py-3.5 w-full font-sans flex items-center justify-center space-x-2 transition duration-200 text-xs sm:text-sm ${darkMode ? 'bg-transparent text-white border border-white/15 hover:bg-white/5' : 'bg-white/60 text-slate-800 border border-blue-200 hover:bg-white/80'}`}
-                  >
-                    <Shield className="h-4 w-4 text-white" />
-                    <span>Run Fact-Check</span>
-                  </button>
-                </ParticleCard>
-              </div>
-            </form>
-            
             {/* Quick prefill examples */}
-            <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 max-w-2xl px-2">
-              <span className="text-[11px] sm:text-xs text-slate-500 mr-1 flex items-center font-sans"><Sparkles className="h-3 w-3 mr-1 text-slate-400" />Try:</span>
-              {["Should electric vehicles be mandatory by 2035?", "Is artificial intelligence a net benefit to public education?", "Should lab-grown meat be certified for commercial scale distribution?"].map((ex) => (
+            <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-2 max-w-2xl px-2">
+              <span className="text-xs text-slate-500 mr-1 flex items-center font-sans">
+                <Sparkles className="h-3.5 w-3.5 mr-1 text-cyan-400" />Explore:
+              </span>
+              {["ai in ecom", "Should electric vehicles be mandatory by 2035?", "Is AI a net benefit to public education?"].map((ex) => (
                 <button 
                   key={ex}
-                  onClick={() => setTopicInput(ex)}
-                  className={`text-[11px] sm:text-xs px-3 py-1.5 rounded-full transition-all duration-300 font-sans truncate max-w-[280px] sm:max-w-none ${darkMode ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20' : 'bg-white/60 border border-blue-200 text-slate-600 hover:text-slate-900 hover:border-blue-300'}`}
+                  onClick={() => {
+                    setTopicInput(ex);
+                    setActiveView('studio');
+                  }}
+                  className={`text-xs px-3.5 py-1.5 rounded-full transition-all duration-300 font-sans cursor-pointer ${
+                    darkMode 
+                      ? 'bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/40' 
+                      : 'bg-white/60 border border-blue-200 text-slate-700 hover:text-indigo-700 hover:border-indigo-300'
+                  }`}
                 >
-                  {ex.length > 38 ? ex.substring(0, 38) + '...' : ex}
+                  {ex}
                 </button>
               ))}
             </div>
+          </main>
 
-            {!currentUser && (
-              <div className={`mt-5 rounded-xl px-4 py-2.5 max-w-md backdrop-blur-md ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white/60 border border-blue-200'}`}>
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-sans text-center">
-                  <Lock className="h-3 w-3 inline mr-1 opacity-70" />
-                  <button onClick={() => setActiveView('login')} className="font-semibold underline hover:opacity-80">Sign in</button> to save debates &amp; fact-checks to your archive.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+          {/* Aceternity-style Mega Footer (Preserved on Homepage) */}
+          <footer id="site-footer" className="relative z-10 border-t border-brand-border/30 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-xl pt-10 sm:pt-14 pb-8 px-4 sm:px-12 mt-12 sm:mt-16 font-sans">
+            <div className="max-w-7xl mx-auto">
+              
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 pb-6 sm:pb-10 border-b border-brand-border/20 dark:border-white/10">
+                <div className="space-y-2 max-w-xl">
+                  <div className="flex items-center space-x-2.5">
+                    <img src={logo} className="h-7 w-7 object-contain" alt="ArguForge AI Logo" />
+                    <h3 className="text-lg sm:text-xl font-bold font-sans tracking-tight text-slate-900 dark:text-white">ArguForge AI</h3>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Source-integrity-first adversarial debate &amp; factual analysis platform. Temperature-tuned dual AI agents clashing with multi-tier source verification and bias-free scoring.
+                  </p>
+                  <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                    Engineered by <span className="font-bold underline decoration-indigo-400/50">Ketan Karan Arora</span> &bull; <a href="https://github.com/Ketan2707" target="_blank" rel="noopener noreferrer" className="hover:underline">Building in public @Ketan2707</a>
+                  </p>
+                </div>
 
-        {/* ── ACTIVE DEBATE / COMMAND CENTER ── */}
-        {activeView === 'debate' && (
-          <div className="flex flex-col space-y-4 sm:space-y-6 animate-fade-in w-full max-w-7xl mx-auto">
-            
-            {/* 1. Header Control Bar */}
-            <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-lg border ${darkMode ? 'bg-slate-900/95 border-white/10 text-white' : 'bg-white/95 border-blue-200 text-slate-900 shadow-md'}`}>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
-                <button 
-                  onClick={() => {
-                    if (status.status === 'idle' || confirm("Cancel active analysis and return home?")) {
-                      if (eventSourceRef.current) eventSourceRef.current.close();
-                      setStatus({ status: 'idle' });
-                      setActiveView('landing');
-                    }
-                  }}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${darkMode ? 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-slate-900'}`}
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  <span>{status.status === 'idle' ? "Home" : "Cancel"}</span>
-                </button>
-
-                <div className={`h-4 w-[1px] hidden sm:block ${darkMode ? 'bg-white/10' : 'bg-slate-300'}`}></div>
-
-                <div className="flex items-center space-x-1.5 sm:space-x-2">
-                  <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    debateMode === 'factcheck'
-                      ? (darkMode ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border border-emerald-200')
-                      : (darkMode ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-700 border border-indigo-200')
-                  }`}>
-                    {debateMode === 'factcheck' ? '🛡️ Fact-Check' : '⚔️ Arena'}
-                  </span>
-                  
-                  {status.status !== 'idle' ? (
-                    <span className={`flex items-center space-x-1 text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border ${darkMode ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-amber-700 bg-amber-50 border-amber-200'}`}>
-                      <RefreshCw className="h-2.5 w-2.5 sm:h-3 sm:w-3 animate-spin" />
-                      <span className="truncate max-w-[110px] sm:max-w-none">{status.status === 'writing' ? `${status.agent} speaking...` : 'Evaluating...'}</span>
-                    </span>
-                  ) : (
-                    <span className={`flex items-center space-x-1 text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border ${darkMode ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-emerald-700 bg-emerald-50 border-emerald-200'}`}>
-                      <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                      <span>Completed</span>
-                    </span>
-                  )}
+                <div className="flex items-center self-start md:self-center">
+                  <FloatingDock
+                    items={[
+                      {
+                        title: "GitHub / Ketan2707",
+                        icon: <GithubIcon className="h-full w-full" />,
+                        href: "https://github.com/Ketan2707",
+                      },
+                      {
+                        title: "LinkedIn / Ketan Karan Arora",
+                        icon: <LinkedinIcon className="h-full w-full" />,
+                        href: "https://www.linkedin.com/in/ketan-karan-arora-5a729b28b/",
+                      },
+                      {
+                        title: "Instagram / @ketannarora",
+                        icon: <InstagramIcon className="h-full w-full" />,
+                        href: "https://www.instagram.com/ketannarora/",
+                      },
+                      {
+                        title: "Email Developer",
+                        icon: <Mail className="h-full w-full" />,
+                        href: "mailto:ketanarora7890@gmail.com",
+                      },
+                    ]}
+                  />
                 </div>
               </div>
 
-              {/* Stance Indicator */}
-              <div className={`text-[11px] sm:text-xs font-sans self-end sm:self-center ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                Focus: <strong className={`capitalize ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>{stancePreference}</strong>
+              {/* 5-Column Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 py-8 sm:py-10 text-xs">
+                <div className="space-y-3">
+                  <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Debate Arena</h4>
+                  <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Adversarial AI Engine</li>
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Temperature Tuning</li>
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Cross-Examination</li>
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Live SSE Streaming</li>
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Real-Time Rebuttals</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Fact-Check Tiers</h4>
+                  <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                    <li className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-default">Tier 1: AP &amp; Reuters Wire</li>
+                    <li className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-default">Tier 1: PIB Public Records</li>
+                    <li className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-default">Tier 2: BBC, NYT &amp; Guardian</li>
+                    <li className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-default">Tier 3: CFR &amp; Brookings</li>
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Domain Whitelist Index</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Bias-Free Judge</h4>
+                  <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Double-Blind Scoring</li>
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Position Label Swapping</li>
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Logic &amp; Fallacy Audit</li>
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Evidence Weight Analysis</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Platform</h4>
+                  <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                    <li>
+                      <button onClick={() => { loadHistory(); setActiveView('history'); }} className="hover:text-indigo-600 dark:hover:text-white transition-colors text-left cursor-pointer">
+                        Debate Archive
+                      </button>
+                    </li>
+                    <li>
+                      <button onClick={() => setActiveView('login')} className="hover:text-indigo-600 dark:hover:text-white transition-colors text-left cursor-pointer">
+                        OAuth Sign In
+                      </button>
+                    </li>
+                    <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Day &amp; Night Sky Themes</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Developer</h4>
+                  <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                    <li>
+                      <a href="https://github.com/Ketan2707" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
+                        <span>GitHub / Ketan2707</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="https://www.linkedin.com/in/ketan-karan-arora-5a729b28b/" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
+                        <span>LinkedIn / Ketan Karan Arora</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="mailto:ketanarora7890@gmail.com" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
+                        <span>Email Developer</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+
+              {/* Bottom Bar */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-brand-border/20 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400">
+                <p>
+                  &copy; {new Date().getFullYear()} ArguForge AI. All rights reserved. &bull; Engineered by <span className="font-semibold text-slate-700 dark:text-slate-300">Ketan Karan Arora</span>
+                </p>
+                <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>All Verification Systems Operational</span>
+                </div>
+              </div>
+
+            </div>
+          </footer>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          VIEW 2: AI AREA (STUDIO & ARENA WITH HOMEPAGE GLASS THEME)
+          ═══════════════════════════════════════════════════════════════ */}
+      {(activeView === 'studio' || activeView === 'debate') && (
+        <div className="flex-1 h-full w-full flex flex-row overflow-hidden relative z-20">
+          
+          {/* Mobile Backdrop Overlay when sidebar is open */}
+          {sidebarOpen && (
+            <div 
+              onClick={() => setSidebarOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs z-25 sm:hidden"
+            />
+          )}
+
+          {/* Left Minimalist Glass Sidebar */}
+          <aside className={`h-full flex-shrink-0 z-30 transition-all duration-200 flex flex-col justify-between ${
+            sidebarOpen ? 'w-64 sm:w-68' : 'w-0 -translate-x-full overflow-hidden'
+          } ${
+            darkMode 
+              ? 'bg-[#080d1a]/85 border-r border-white/10 text-slate-200 backdrop-blur-2xl' 
+              : 'bg-white/70 border-r border-blue-200/70 text-slate-800 backdrop-blur-2xl'
+          }`}>
+            
+            {/* Top Sidebar Action Items */}
+            <div className="p-3 space-y-1 flex-shrink-0">
+              <div className="flex items-center justify-between px-1 pb-2 sm:hidden">
+                <div className="flex items-center space-x-2">
+                  <img src={logo} className="h-6 w-6 object-contain" alt="Logo" />
+                  <span className="font-bold text-xs">ArguForge AI</span>
+                </div>
+                <button onClick={() => setSidebarOpen(false)} className="p-1 rounded-lg text-slate-400">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (eventSourceRef.current) eventSourceRef.current.close();
+                  setStatus({ status: 'idle' });
+                  setActiveDebateId(null);
+                  setTurns([]);
+                  setScores([]);
+                  setTopicInput('');
+                  setActiveView('studio');
+                }}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-sm transition-all cursor-pointer font-medium border ${
+                  darkMode 
+                    ? 'border-white/10 hover:bg-white/10 text-slate-200' 
+                    : 'border-blue-200/80 bg-white/60 hover:bg-white/90 text-slate-800 shadow-xs'
+                }`}
+              >
+                <PlusCircle className={`h-4 w-4 ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`} />
+                <span>New Chat</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  loadHistory();
+                  setActiveView('history');
+                }}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-sm transition-all cursor-pointer font-medium ${
+                  darkMode ? 'hover:bg-white/5 text-slate-300' : 'hover:bg-white/60 text-slate-700'
+                }`}
+              >
+                <LayoutList className="h-4 w-4 opacity-70" />
+                <span>Leaderboard</span>
+              </button>
+
+              <div className="relative pt-1">
+                <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                  placeholder="Search"
+                  className={`w-full text-xs rounded-xl pl-8 pr-3 py-1.5 outline-none transition-all border ${
+                    darkMode 
+                      ? 'bg-white/5 border-white/10 text-slate-200 placeholder-slate-500 focus:bg-white/10' 
+                      : 'bg-white/70 border-blue-200/70 text-slate-800 placeholder-slate-400 focus:bg-white'
+                  }`}
+                />
               </div>
             </div>
 
-            {/* 2. Topic Display Card */}
-            <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden border ${darkMode ? 'bg-slate-900/95 border-white/10 text-white shadow-2xl' : 'bg-white/95 border-blue-200 text-slate-900 shadow-lg'}`}>
-              <div className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center space-x-2 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
-                <Target className="h-3.5 w-3.5" />
-                <span>Central Motion / Query</span>
+            {/* History Sessions List (Takes up all middle space) */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2 thin-scrollbar">
+              <div className={`text-[11px] font-semibold uppercase tracking-wider px-2 pt-2 ${
+                darkMode ? 'text-slate-400' : 'text-slate-500'
+              }`}>
+                Today
               </div>
-              <h2 className={`text-lg sm:text-2xl md:text-3xl font-extrabold font-sans leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                {debateTopic}
-              </h2>
 
-              {/* Stances Matrix */}
-              {debateMode === 'debate' && stances.stance_a && (
-                <div className={`grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4 mt-3 sm:mt-5 pt-3 sm:pt-5 border-t ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
-                  <div className={`rounded-xl p-3 sm:p-4 border ${darkMode ? 'bg-indigo-950/20 border-indigo-500/30' : 'bg-indigo-50/70 border-indigo-200'}`}>
-                    <div className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider mb-1 flex items-center space-x-1.5 ${darkMode ? 'text-indigo-400' : 'text-indigo-700'}`}>
-                      <Zap className="h-3.5 w-3.5" />
-                      <span>Agent A (Affirmative)</span>
-                    </div>
-                    <p className={`text-xs leading-relaxed font-sans ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{stances.stance_a}</p>
+              {/* Current Active Session */}
+              {activeDebateId && (
+                <div 
+                  onClick={() => setActiveView('debate')}
+                  className={`flex items-center space-x-2 px-2.5 py-2 rounded-xl text-xs font-semibold cursor-pointer border transition-all ${
+                    darkMode 
+                      ? 'bg-cyan-500/20 border-cyan-400/60 text-cyan-300' 
+                      : 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-xs'
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="truncate flex-1 font-sans">{debateTopic || "ai in ecom"}</span>
+                </div>
+              )}
+
+              {/* History list */}
+              <div className="space-y-1">
+                {filteredHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleViewPastDebate(item.id)}
+                    className={`flex items-center space-x-2 px-2.5 py-1.5 rounded-xl text-xs cursor-pointer transition-all ${
+                      darkMode 
+                        ? 'text-slate-300 hover:text-white hover:bg-white/5' 
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-white/60'
+                    }`}
+                  >
+                    <span className="text-slate-400 text-sm">⤭</span>
+                    <span className="truncate flex-1">{item.topic}</span>
                   </div>
-                  <div className={`rounded-xl p-3 sm:p-4 border ${darkMode ? 'bg-amber-950/20 border-amber-500/30' : 'bg-amber-50/70 border-amber-200'}`}>
-                    <div className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider mb-1 flex items-center space-x-1.5 ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
-                      <Shield className="h-3.5 w-3.5" />
-                      <span>Agent B (Negative)</span>
-                    </div>
-                    <p className={`text-xs leading-relaxed font-sans ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{stances.stance_b}</p>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Section: Promo Card & Log In (Pinned to bottom of viewport) */}
+            <div className={`mt-auto flex-shrink-0 p-3 border-t space-y-3 ${
+              darkMode ? 'border-white/10' : 'border-blue-200/70'
+            }`}>
+              {showPromoCard && (
+                <div className={`rounded-2xl p-3.5 space-y-2.5 text-xs border backdrop-blur-xl ${
+                  darkMode ? 'bg-white/5 border-white/10' : 'bg-white/70 border-blue-200/80 shadow-sm'
+                }`}>
+                  <div className={`h-14 rounded-xl flex items-center justify-center overflow-hidden border ${
+                    darkMode ? 'bg-black/40 border-white/10' : 'bg-indigo-50 border-indigo-100'
+                  }`}>
+                    <img src={logo} className="h-9 w-9 object-contain" alt="Promo" />
+                  </div>
+                  <div>
+                    <h5 className={`font-bold text-xs font-sans ${darkMode ? 'text-white' : 'text-slate-900'}`}>Get More Done With Agents</h5>
+                    <p className={`text-[11px] mt-0.5 leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                      Start evaluating agentic AI on Arena today. <a href="https://github.com/Ketan2707" target="_blank" rel="noopener noreferrer" className="text-cyan-400 dark:text-cyan-300 underline font-medium">Learn more</a>
+                    </p>
+                  </div>
+                  <div className="space-y-1.5 pt-1">
+                    <button
+                      onClick={() => setActiveView('studio')}
+                      className={`w-full py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer shadow-sm ${
+                        darkMode ? 'bg-white text-black hover:bg-slate-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                    >
+                      Try it now
+                    </button>
+                    <button
+                      onClick={() => setShowPromoCard(false)}
+                      className={`w-full py-1 text-[11px] transition-colors cursor-pointer text-center block ${
+                        darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      ⤭ Hide this
+                    </button>
                   </div>
                 </div>
               )}
+
+              {/* Log In Button */}
+              {currentUser ? (
+                <button
+                  onClick={handleLogout}
+                  className={`w-full py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-center space-x-2 border ${
+                    darkMode ? 'bg-white/10 hover:bg-white/15 border-white/10 text-white' : 'bg-white/80 hover:bg-white border-blue-200 text-slate-800'
+                  }`}
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span className="truncate">{currentUser.email}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setActiveView('login')}
+                  className={`w-full py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md ${
+                    darkMode ? 'bg-white hover:bg-slate-200 text-black' : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  }`}
+                >
+                  Log In
+                </button>
+              )}
+
+              {/* Footer text */}
+              <div className={`flex items-center justify-between text-[10px] px-1 pt-1 font-sans ${
+                darkMode ? 'text-slate-400' : 'text-slate-500'
+              }`}>
+                <a href="#footer" onClick={(e) => { e.preventDefault(); setActiveView('landing'); }} className="hover:underline">Home</a>
+                <span className="hover:underline cursor-pointer">Terms of Use</span>
+                <span className="hover:underline cursor-pointer">Privacy Policy</span>
+                <span className="hover:underline cursor-pointer">Cookies</span>
+              </div>
             </div>
+          </aside>
 
-            {/* 🎙️ Live AI Dual-Voice Narration Player */}
-            <div className="relative z-30">
-              <DebateSpeechPlayer audioState={debateAudio} darkMode={darkMode} />
-            </div>
+          {/* Main Workspace Viewport */}
+          <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+            
+            {/* Minimalist Glass Top Control Bar */}
+            <header className={`px-4 py-2.5 flex items-center justify-between flex-shrink-0 z-20 border-b backdrop-blur-xl ${
+              darkMode ? 'bg-black/30 border-white/10' : 'bg-white/50 border-blue-200/70'
+            }`}>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+                    darkMode ? 'bg-white/5 border-white/10 text-slate-300 hover:text-white' : 'bg-white/80 border-blue-200 text-slate-700'
+                  }`}
+                  title="Toggle sidebar"
+                >
+                  <PanelLeft className="h-4 w-4" />
+                </button>
 
-            {/* 3. Stage Round Navigator (Concept 1: Interactive Stage) */}
-            {debateMode === 'debate' && (
-              <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-blue-200/80 dark:border-white/10 shadow-sm">
-                <div className="flex items-center space-x-1 sm:space-x-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-                  {[1, 2, 3, 4, 5].map((rnd) => {
-                    const hasTurns = turns.some(t => t.round_number === rnd);
-                    const isStreamingThis = status.round_number === rnd && status.status !== 'idle';
-                    const roundTitle = rnd === 1 ? 'R1: Opening' : rnd === 5 ? 'R5: Closing' : `R${rnd}: Rebuttal ${rnd - 1}`;
-                    
-                    return (
-                      <button
-                        key={rnd}
-                        onClick={() => setActiveRoundTab(String(rnd))}
-                        className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1 sm:space-x-1.5 min-h-[34px] sm:min-h-[36px] ${
-                          activeRoundTab === String(rnd)
-                            ? 'bg-indigo-600 text-white shadow-md'
-                            : (darkMode 
-                                ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10' 
-                                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs')
-                        }`}
-                      >
-                        {isStreamingThis && <RefreshCw className="h-2.5 w-2.5 sm:h-3 sm:w-3 animate-spin text-amber-400" />}
-                        <span>{roundTitle}</span>
-                      </button>
-                    );
-                  })}
-
-                  {scores && scores.length > 0 && (
-                    <button
-                      onClick={() => setActiveRoundTab('verdict')}
-                      className={`px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1 sm:space-x-1.5 min-h-[34px] sm:min-h-[36px] ${
-                        activeRoundTab === 'verdict'
-                          ? 'bg-amber-600 text-white shadow-md'
-                          : (darkMode ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 shadow-xs')
-                      }`}
-                    >
-                      <Award className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                      <span>Scorecard</span>
-                    </button>
-                  )}
+                <div 
+                  onClick={() => setActiveView('landing')} 
+                  className="flex items-center space-x-2 cursor-pointer group"
+                >
+                  <img src={logo} className="h-6 w-6 object-contain group-hover:scale-105 transition-transform" alt="Logo" />
+                  <span className={`text-xs font-bold font-sans hidden md:inline ${
+                    darkMode ? 'text-white' : 'text-slate-900'
+                  }`}>ArguForge AI</span>
                 </div>
+              </div>
 
-                {/* All Rounds Full Log Toggle */}
-                <div className="flex items-center justify-end">
+              {/* Right utility buttons */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setActiveView('landing')}
+                  className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all cursor-pointer font-sans ${
+                    darkMode ? 'bg-white/5 border-white/10 text-slate-300 hover:text-white' : 'bg-white/80 border-blue-200 text-slate-700 hover:text-slate-900'
+                  }`}
+                  title="Return to ArguForge Homepage"
+                >
+                  Homepage
+                </button>
+
+                <button
+                  onClick={() => debateAudio.toggleAutoNarrate()}
+                  className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+                    debateAudio.autoNarrate 
+                      ? (darkMode ? 'text-cyan-300 bg-cyan-500/20 border-cyan-400' : 'text-indigo-700 bg-indigo-100 border-indigo-300')
+                      : (darkMode ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-white/80 border-blue-200 text-slate-600')
+                  }`}
+                  title="Dual-Voice Audio Narration"
+                >
+                  {debateAudio.autoNarrate ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                </button>
+
+                <button
+                  onClick={toggleVoiceInput}
+                  className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+                    isRecordingVoice 
+                      ? 'text-rose-400 bg-rose-500/20 border-rose-400 animate-pulse' 
+                      : (darkMode ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-white/80 border-blue-200 text-slate-600')
+                  }`}
+                  title="Voice Input"
+                >
+                  <Mic className="h-4 w-4" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (eventSourceRef.current) eventSourceRef.current.close();
+                    setStatus({ status: 'idle' });
+                    setTurns([]);
+                    setScores([]);
+                    setTopicInput('');
+                    setActiveView('studio');
+                  }}
+                  className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+                    darkMode ? 'bg-white/5 border-white/10 text-slate-400 hover:text-rose-400' : 'bg-white/80 border-blue-200 text-slate-600 hover:text-rose-600'
+                  }`}
+                  title="Clear chat"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+
+                <button
+                  onClick={toggleDarkMode}
+                  className="theme-toggle ml-1"
+                  title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {darkMode ? <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                </button>
+
+                {!currentUser && (
                   <button
-                    onClick={() => setActiveRoundTab(activeRoundTab === 'all' ? '1' : 'all')}
-                    className={`text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-xl border transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto text-center ${
-                      activeRoundTab === 'all'
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : (darkMode ? 'text-slate-400 border-white/10 hover:text-white hover:bg-white/5' : 'text-slate-600 border-slate-200 hover:bg-slate-100')
+                    onClick={() => setActiveView('login')}
+                    className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ml-1 shadow-sm ${
+                      darkMode ? 'bg-cyan-400 hover:bg-cyan-300 text-black' : 'bg-indigo-600 hover:bg-indigo-700 text-white'
                     }`}
                   >
-                    📜 {activeRoundTab === 'all' ? "Stage View" : "Full Transcript"}
+                    Sign In
                   </button>
-                </div>
+                )}
               </div>
-            )}
+            </header>
 
-            {/* 4. Main Stage Arena (Concept 1: 2 Speech Columns + Right Fact Radar) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Main Center Area */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 no-scrollbar flex flex-col justify-between">
               
-              {/* Left & Center 2 Columns: Speech Stage Decks */}
-              <div className="lg:col-span-2 space-y-4">
-                
-                {turns.length === 0 && status.status !== 'idle' && !error ? (
-                  <BattleArenaLoader mode={debateMode} topic={debateTopic} darkMode={darkMode} />
-                ) : (
-                  <>
-                    {/* ── FACTCHECK MODE DECK ── */}
-                    {debateMode === 'factcheck' && (
-                      <div className="space-y-4 sm:space-y-5">
-                        {turns.filter(t => t.agent === 'FOR').map(turn => (
-                          <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-emerald-500/30 text-slate-200' : 'bg-white/95 border-emerald-200 text-slate-900 shadow-md'}`}>
-                            <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-                              <div className="flex items-center space-x-2">
-                                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Supporting Evidence (FOR)</span>
-                              </div>
-                              <button
-                                onClick={() => debateAudio.speakText(turn.content, 'FOR', true)}
-                                className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                                  darkMode ? 'bg-white/10 hover:bg-white/20 text-emerald-300 border-white/10' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
-                                }`}
-                                title="Listen to Supporting Evidence"
-                              >
-                                <Volume2 className="h-3 w-3" />
-                                <span>Listen</span>
-                              </button>
-                            </div>
-                            <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                              {renderContentWithClaims(turn.content, turn.claims)}
-                            </div>
-                          </div>
-                        ))}
+              {/* ─────────────────────────────────────────────────────────────
+                  INITIAL SCREEN (Screenshot 1: "What would you like to do?")
+                  ───────────────────────────────────────────────────────────── */}
+              {activeView === 'studio' && (
+                <div className="flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto w-full py-6 sm:py-10 space-y-8 animate-fade-in">
+                  
+                  {/* Elegant Serif Heading */}
+                  <h1 className={`text-3xl sm:text-5xl font-serif font-normal tracking-tight text-center ${
+                    darkMode ? 'text-white' : 'text-slate-900'
+                  }`}>
+                    What would you like to do?
+                  </h1>
 
-                        {turns.filter(t => t.agent === 'AGAINST').map(turn => (
-                          <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-rose-500/30 text-slate-200' : 'bg-white/95 border-rose-200 text-slate-900 shadow-md'}`}>
-                            <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
-                              <div className="flex items-center space-x-2">
-                                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
-                                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Counter Arguments (AGAINST)</span>
-                              </div>
-                              <button
-                                onClick={() => debateAudio.speakText(turn.content, 'AGAINST', true)}
-                                className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                                  darkMode ? 'bg-white/10 hover:bg-white/20 text-rose-300 border-white/10' : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
-                                }`}
-                                title="Listen to Counter Arguments"
-                              >
-                                <Volume2 className="h-3 w-3" />
-                                <span>Listen</span>
-                              </button>
-                            </div>
-                            <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                              {renderContentWithClaims(turn.content, turn.claims)}
-                            </div>
-                          </div>
-                        ))}
+                  {/* Center Chat / Prompt Input Box (Glassmorphic) */}
+                  <div className="w-full max-w-2xl">
+                    <form 
+                      onSubmit={(e) => handleStartDebate(e)}
+                      className={`rounded-2xl p-4 transition-all shadow-2xl space-y-3.5 border backdrop-blur-2xl ${
+                        darkMode 
+                          ? 'bg-[#080d19]/85 border-white/15 focus-within:border-cyan-400/60' 
+                          : 'bg-white/85 border-blue-200/90 focus-within:border-indigo-500'
+                      }`}
+                    >
+                      <textarea
+                        rows={2}
+                        value={topicInput}
+                        onChange={(e) => setTopicInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleStartDebate(e);
+                          }
+                        }}
+                        placeholder="Ask anything..."
+                        className={`w-full bg-transparent resize-none outline-none font-sans text-sm leading-relaxed ${
+                          darkMode ? 'text-white placeholder-slate-400' : 'text-slate-900 placeholder-slate-500 font-medium'
+                        }`}
+                      />
 
-                        {turns.filter(t => t.agent === 'VERDICT').map(turn => (
-                          <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-md space-y-3 border ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-200' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
-                            <div className="flex items-center justify-between text-indigo-600 dark:text-indigo-400">
-                              <div className="flex items-center space-x-2">
-                                <Award className="h-4 w-4 sm:h-5 sm:w-5" />
-                                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Balanced Factual Synthesis</span>
-                              </div>
-                              <button
-                                onClick={() => debateAudio.speakText(turn.content, 'Judge', true)}
-                                className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                                  darkMode ? 'bg-white/10 hover:bg-white/20 text-indigo-300 border-white/10' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
-                                }`}
-                                title="Listen to Factual Synthesis"
-                              >
-                                <Volume2 className="h-3 w-3" />
-                                <span>Listen</span>
-                              </button>
-                            </div>
-                            <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                              {renderContentWithClaims(turn.content, turn.claims)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* ── DEBATE MODE STAGE (Concept 1: Single Round or All Rounds) ── */}
-                    {debateMode === 'debate' && activeRoundTab !== 'verdict' && (
-                      <div className="space-y-4">
-
-                        {/* Mobile Segmented Agent Selector (Visible on mobile < md) */}
-                        <div className="flex md:hidden items-center justify-center p-1 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-blue-200/80 dark:border-white/10 shadow-xs mb-2">
-                          {[
-                            { id: 'both', label: '⚔️ Both Decks' },
-                            { id: 'Agent A', label: '⚡ Agent A' },
-                            { id: 'Agent B', label: '🛡️ Agent B' }
-                          ].map(opt => (
+                      {/* Bottom Action Bar: Professional Dropdown Selectors */}
+                      <div className={`flex flex-wrap items-center justify-between gap-2 pt-2.5 text-xs border-t relative z-30 ${
+                        darkMode ? 'border-white/10 text-slate-300' : 'border-blue-100 text-slate-600'
+                      }`}>
+                        <div className="flex items-center space-x-2">
+                          
+                          {/* 1. Mode Selector Dropdown */}
+                          <div className="relative" ref={modeDropdownRef}>
                             <button
-                              key={opt.id}
                               type="button"
-                              onClick={() => setMobileAgentView(opt.id)}
-                              className={`flex-1 py-1.5 px-1.5 rounded-lg text-xs font-bold transition-all text-center ${
-                                mobileAgentView === opt.id
-                                  ? 'bg-indigo-600 text-white shadow-xs'
-                                  : (darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900')
+                              onClick={() => {
+                                setShowModeDropdown(!showModeDropdown);
+                                setShowStanceDropdown(false);
+                              }}
+                              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer text-xs font-semibold border ${
+                                debateMode === 'debate'
+                                  ? (darkMode ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50' : 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-xs')
+                                  : (darkMode ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50' : 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-xs')
+                              }`}
+                              title="Select Engine Mode"
+                            >
+                              <span className="p-0.5">
+                                {debateMode === 'debate' ? <Swords className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                              </span>
+                              <span>{debateMode === 'debate' ? 'Debate Arena' : 'Fact-Check Audit'}</span>
+                              <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${showModeDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {/* Mode Dropdown Menu */}
+                            {showModeDropdown && (
+                              <div className={`absolute left-0 bottom-full mb-2 w-72 rounded-2xl p-2 border shadow-2xl z-50 backdrop-blur-2xl animate-scale-in ${
+                                darkMode 
+                                  ? 'bg-[#080d19]/95 border-white/20 text-white shadow-black/80' 
+                                  : 'bg-white/95 border-blue-200 text-slate-900 shadow-xl'
+                              }`}>
+                                <div className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 ${
+                                  darkMode ? 'text-slate-400' : 'text-slate-500'
+                                }`}>
+                                  Select Engine Mode
+                                </div>
+                                <div className="space-y-1 mt-1">
+                                  {MODE_OPTIONS.map((opt) => {
+                                    const isSelected = debateMode === opt.id;
+                                    return (
+                                      <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setDebateMode(opt.id);
+                                          setShowModeDropdown(false);
+                                        }}
+                                        className={`w-full flex items-start space-x-2.5 p-2 rounded-xl text-left transition-all cursor-pointer ${
+                                          isSelected
+                                            ? (opt.id === 'debate' 
+                                                ? (darkMode ? 'bg-cyan-500/20 border border-cyan-400/50' : 'bg-indigo-50 border border-indigo-200 shadow-xs')
+                                                : (darkMode ? 'bg-emerald-500/20 border border-emerald-400/50' : 'bg-emerald-50 border border-emerald-200 shadow-xs'))
+                                            : (darkMode ? 'hover:bg-white/5 border border-transparent' : 'hover:bg-slate-50 border border-transparent')
+                                        }`}
+                                      >
+                                        <div className={`p-1.5 rounded-lg mt-0.5 ${
+                                          isSelected 
+                                            ? (opt.id === 'debate' 
+                                                ? (darkMode ? 'bg-cyan-500 text-black' : 'bg-indigo-600 text-white')
+                                                : (darkMode ? 'bg-emerald-500 text-black' : 'bg-emerald-600 text-white'))
+                                            : (darkMode ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-700')
+                                        }`}>
+                                          {opt.icon}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center justify-between">
+                                            <span className={`text-xs font-bold font-sans ${
+                                              isSelected 
+                                                ? (opt.id === 'debate' ? (darkMode ? 'text-cyan-300' : 'text-indigo-700') : (darkMode ? 'text-emerald-300' : 'text-emerald-700'))
+                                                : (darkMode ? 'text-white' : 'text-slate-900')
+                                            }`}>
+                                              {opt.name}
+                                            </span>
+                                            {isSelected && <Check className={`h-3.5 w-3.5 ${opt.id === 'debate' ? (darkMode ? 'text-cyan-400' : 'text-indigo-600') : (darkMode ? 'text-emerald-400' : 'text-emerald-600')}`} />}
+                                          </div>
+                                          <p className={`text-[11px] leading-tight mt-0.5 ${
+                                            darkMode ? 'text-slate-400' : 'text-slate-500'
+                                          }`}>
+                                            {opt.desc}
+                                          </p>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 2. Stance Focus Dropdown */}
+                          <div className="relative" ref={stanceDropdownRef}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowStanceDropdown(!showStanceDropdown);
+                                setShowModeDropdown(false);
+                              }}
+                              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer text-xs font-semibold border ${
+                                darkMode 
+                                  ? 'bg-white/5 border-white/15 hover:bg-white/10 text-slate-200 shadow-sm' 
+                                  : 'bg-white border-blue-200 text-slate-800 hover:bg-slate-50 shadow-xs'
+                              }`}
+                              title="Choose Stance Focus"
+                            >
+                              <span className="p-0.5">
+                                {stancePreference === 'both' ? <Scale className="h-3.5 w-3.5 text-cyan-400 dark:text-cyan-300" /> :
+                                 stancePreference === 'for' ? <ThumbsUp className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" /> :
+                                 <ThumbsDown className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />}
+                              </span>
+                              <span>
+                                {stancePreference === 'both' ? 'Both Sides' : stancePreference === 'for' ? 'Affirmative (Pro)' : 'Negative (Con)'}
+                              </span>
+                              <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${showStanceDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {/* Stance Dropdown Menu */}
+                            {showStanceDropdown && (
+                              <div className={`absolute left-0 bottom-full mb-2 w-72 rounded-2xl p-2 border shadow-2xl z-50 backdrop-blur-2xl animate-scale-in ${
+                                darkMode 
+                                  ? 'bg-[#080d19]/95 border-white/20 text-white shadow-black/80' 
+                                  : 'bg-white/95 border-blue-200 text-slate-900 shadow-xl'
+                              }`}>
+                                <div className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 ${
+                                  darkMode ? 'text-slate-400' : 'text-slate-500'
+                                }`}>
+                                  Select Debate Stance
+                                </div>
+                                <div className="space-y-1 mt-1">
+                                  {STANCE_OPTIONS.map((opt) => {
+                                    const isSelected = stancePreference === opt.id;
+                                    return (
+                                      <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setStancePreference(opt.id);
+                                          setShowStanceDropdown(false);
+                                        }}
+                                        className={`w-full flex items-start space-x-2.5 p-2 rounded-xl text-left transition-all cursor-pointer ${
+                                          isSelected
+                                            ? (darkMode ? 'bg-cyan-500/20 border border-cyan-400/50' : 'bg-indigo-50 border border-indigo-200 shadow-xs')
+                                            : (darkMode ? 'hover:bg-white/5 border border-transparent' : 'hover:bg-slate-50 border border-transparent')
+                                        }`}
+                                      >
+                                        <div className={`p-1.5 rounded-lg mt-0.5 ${
+                                          isSelected 
+                                            ? (darkMode ? 'bg-cyan-500 text-black' : 'bg-indigo-600 text-white')
+                                            : (darkMode ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-700')
+                                        }`}>
+                                          {opt.icon}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center justify-between">
+                                            <span className={`text-xs font-bold font-sans ${
+                                              isSelected 
+                                                ? (darkMode ? 'text-cyan-300' : 'text-indigo-700')
+                                                : (darkMode ? 'text-white' : 'text-slate-900')
+                                            }`}>
+                                              {opt.name}
+                                            </span>
+                                            {isSelected && <Check className={`h-3.5 w-3.5 ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`} />}
+                                          </div>
+                                          <p className={`text-[11px] leading-tight mt-0.5 ${
+                                            darkMode ? 'text-slate-400' : 'text-slate-500'
+                                          }`}>
+                                            {opt.desc}
+                                          </p>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 3. Voice Dictation */}
+                          <button
+                            type="button"
+                            onClick={toggleVoiceInput}
+                            className={`p-2 rounded-xl transition-all cursor-pointer border ${
+                              isRecordingVoice 
+                                ? 'text-rose-400 bg-rose-500/20 border-rose-400 animate-pulse' 
+                                : (darkMode ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-white border-blue-200 text-slate-600 hover:text-slate-900 shadow-xs')
+                            }`}
+                            title={isRecordingVoice ? "Recording... Click to stop" : "Voice Dictation"}
+                          >
+                            <Mic className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+
+                        {/* 4. Submit Button */}
+                        <button
+                          type="submit"
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-all cursor-pointer shadow-md ${
+                            darkMode 
+                              ? 'bg-cyan-400 hover:bg-cyan-300 text-black' 
+                              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                          }`}
+                          title="Transmit prompt"
+                        >
+                          <Send className="h-4 w-4 ml-0.5" />
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* "Get started" 2x3 Grid of Quick Starter Cards */}
+                  <div className="w-full max-w-2xl space-y-2.5">
+                    <span className={`text-xs font-bold uppercase tracking-wider block ${
+                      darkMode ? 'text-slate-300' : 'text-slate-700'
+                    }`}>Get started</span>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {quickStarterCards.map((card) => (
+                        <div
+                          key={card.id}
+                          onClick={() => {
+                            setTopicInput(card.topic);
+                            handleStartDebate(null, 'debate');
+                          }}
+                          className={`p-3.5 rounded-2xl border backdrop-blur-xl transition-all cursor-pointer flex items-start space-x-3 group ${
+                            darkMode 
+                              ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-cyan-500/40 shadow-sm' 
+                              : 'bg-white/75 border-blue-200/80 hover:bg-white hover:border-indigo-300 shadow-sm'
+                          }`}
+                        >
+                          <div className={`p-2 rounded-xl mt-0.5 ${
+                            darkMode ? 'bg-cyan-500/15 text-cyan-300' : 'bg-indigo-50 text-indigo-700'
+                          }`}>
+                            {card.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`text-xs font-bold font-sans truncate ${
+                              darkMode ? 'text-white group-hover:text-cyan-300' : 'text-slate-900 group-hover:text-indigo-700'
+                            }`}>
+                              {card.title}
+                            </h4>
+                            <p className={`text-[11px] font-sans truncate mt-0.5 ${
+                              darkMode ? 'text-slate-400' : 'text-slate-600'
+                            }`}>
+                              {card.desc}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* ─────────────────────────────────────────────────────────────
+                  ACTIVE ARENA DECK (Screenshot 2: Assistant A vs Assistant B)
+                  ───────────────────────────────────────────────────────────── */}
+              {activeView === 'debate' && (
+                <div className="flex-1 flex flex-col space-y-4 max-w-6xl mx-auto w-full animate-fade-in pb-2">
+                  
+                  {/* Top Right User Query Bubble */}
+                  <div className="flex justify-end pt-1">
+                    <div className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-sans max-w-md shadow-md border ${
+                      darkMode 
+                        ? 'bg-slate-800/90 border-white/15 text-white' 
+                        : 'bg-white/90 border-blue-200 text-slate-900 font-medium'
+                    }`}>
+                      {debateTopic}
+                    </div>
+                  </div>
+
+                  {/* Dual Voice Speech Narration Player */}
+                  <div className="relative z-20">
+                    <DebateSpeechPlayer audioState={debateAudio} darkMode={darkMode} />
+                  </div>
+
+                  {/* Stage Round Selector Pills */}
+                  {debateMode === 'debate' && (
+                    <div className="flex items-center justify-between pb-1 text-xs font-sans">
+                      <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
+                        {[1, 2, 3, 4, 5].map((rnd) => {
+                          const isStreamingThis = status.round_number === rnd && status.status !== 'idle';
+                          const roundTitle = rnd === 1 ? 'Round 1: Opening' : rnd === 5 ? 'Round 5: Closing' : `Round ${rnd}: Rebuttal`;
+                          return (
+                            <button
+                              key={rnd}
+                              onClick={() => setActiveRoundTab(String(rnd))}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 border ${
+                                activeRoundTab === String(rnd)
+                                  ? (darkMode ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-indigo-600 text-white border-indigo-600 shadow-sm')
+                                  : (darkMode ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white/70 border-blue-200 text-slate-700 hover:bg-white')
                               }`}
                             >
-                              {opt.label}
+                              {isStreamingThis && <RefreshCw className="h-2.5 w-2.5 animate-spin text-amber-400" />}
+                              <span>{roundTitle}</span>
                             </button>
-                          ))}
-                        </div>
+                          );
+                        })}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-                          
-                          {/* Agent A Column */}
-                          <div className={`space-y-3 flex-col ${mobileAgentView === 'Agent B' ? 'hidden md:flex' : 'flex'}`}>
-                            <div className={`flex items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border ${darkMode ? 'bg-indigo-950/40 border-indigo-500/30' : 'bg-indigo-50/90 border-indigo-200 shadow-sm'}`}>
-                              <div className="flex items-center space-x-2">
-                                <div className="h-2.5 w-2.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></div>
-                                <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-indigo-300' : 'text-indigo-900'}`}>Agent A (Affirmative)</span>
-                              </div>
-                              <span className={`text-[10px] font-mono font-bold ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>Temp: 0.6</span>
-                            </div>
-
-                            {turns
-                              .filter(t => t.agent === 'Agent A')
-                              .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
-                              .map((turn) => (
-                                <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-md space-y-3 border max-h-[440px] sm:max-h-[520px] overflow-y-auto ${darkMode ? 'bg-slate-900/95 border-indigo-500/30 text-slate-100' : 'bg-white/95 border-indigo-200 text-slate-900 shadow-md'}`}>
-                                  <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-indigo-400' : 'border-slate-200 text-indigo-600'}`}>
-                                    <span>
-                                      Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : `Rebuttal ${turn.round_number - 1}`}
-                                    </span>
-                                    <button
-                                      onClick={() => debateAudio.speakText(turn.content, 'Agent A', true)}
-                                      className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                                        darkMode ? 'bg-white/10 hover:bg-white/20 text-indigo-300 border-white/10' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
-                                      }`}
-                                      title="Listen to Agent A"
-                                    >
-                                      <Volume2 className="h-3 w-3" />
-                                      <span>Listen</span>
-                                    </button>
-                                  </div>
-                                  <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                    {renderContentWithClaims(turn.content, turn.claims)}
-                                  </div>
-                                </div>
-                              ))}
-
-                            {/* Loading state for Agent A */}
-                            {status.agent === 'Agent A' && (activeRoundTab === 'all' || String(status.round_number) === activeRoundTab) && (
-                              <div className={`border border-dashed rounded-xl sm:rounded-2xl p-5 sm:p-6 text-center space-y-2.5 ${darkMode ? 'bg-slate-900/80 border-indigo-500/40' : 'bg-white/90 border-indigo-300 shadow-sm'}`}>
-                                <RefreshCw className={`h-5 w-5 sm:h-6 sm:w-6 animate-spin mx-auto ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
-                                <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
-                                  Agent A is formulating {status.round_number === 1 ? 'Opening Statement' : status.round_number === 5 ? 'Closing Statement' : `Rebuttal ${status.round_number - 1}`}...
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Empty placeholder if not reached yet in single round view */}
-                            {activeRoundTab !== 'all' && !turns.some(t => t.agent === 'Agent A' && String(t.round_number) === activeRoundTab) && status.agent !== 'Agent A' && (
-                              <div className={`rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center space-y-2 border border-dashed ${darkMode ? 'bg-slate-900/40 border-white/10 text-slate-500' : 'bg-white/50 border-slate-200 text-slate-400'}`}>
-                                <Zap className="h-5 w-5 sm:h-6 sm:w-6 mx-auto opacity-30" />
-                                <p className="text-xs font-medium">Speech will appear once round starts</p>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Agent B Column */}
-                          <div className={`space-y-3 flex-col ${mobileAgentView === 'Agent A' ? 'hidden md:flex' : 'flex'}`}>
-                            <div className={`flex items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border ${darkMode ? 'bg-amber-950/40 border-amber-500/30' : 'bg-amber-50/90 border-amber-200 shadow-sm'}`}>
-                              <div className="flex items-center space-x-2">
-                                <div className="h-2.5 w-2.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse"></div>
-                                <span className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-amber-300' : 'text-amber-900'}`}>Agent B (Negative)</span>
-                              </div>
-                              <span className={`text-[10px] font-mono font-bold ${darkMode ? 'text-amber-400' : 'text-amber-600'}`}>Temp: 0.8</span>
-                            </div>
-
-                            {turns
-                              .filter(t => t.agent === 'Agent B')
-                              .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab)
-                              .map((turn) => (
-                                <div key={turn.id} className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-md space-y-3 border max-h-[440px] sm:max-h-[520px] overflow-y-auto ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-md'}`}>
-                                  <div className={`flex items-center justify-between pb-2 border-b text-xs font-bold ${darkMode ? 'border-white/10 text-amber-400' : 'border-slate-200 text-amber-600'}`}>
-                                    <span>
-                                      Round {turn.round_number}: {turn.round_number === 1 ? 'Opening Statement' : turn.round_number === 5 ? 'Closing Statement' : `Rebuttal ${turn.round_number - 1}`}
-                                    </span>
-                                    <button
-                                      onClick={() => debateAudio.speakText(turn.content, 'Agent B', true)}
-                                      className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                                        darkMode ? 'bg-white/10 hover:bg-white/20 text-amber-300 border-white/10' : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200'
-                                      }`}
-                                      title="Listen to Agent B"
-                                    >
-                                      <Volume2 className="h-3 w-3" />
-                                      <span>Listen</span>
-                                    </button>
-                                  </div>
-                                  <div className={`font-sans leading-relaxed text-xs sm:text-sm ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                    {renderContentWithClaims(turn.content, turn.claims)}
-                                  </div>
-                                </div>
-                              ))}
-
-                            {/* Loading state for Agent B */}
-                            {status.agent === 'Agent B' && (activeRoundTab === 'all' || String(status.round_number) === activeRoundTab) && (
-                              <div className={`border border-dashed rounded-xl sm:rounded-2xl p-5 sm:p-6 text-center space-y-2.5 ${darkMode ? 'bg-slate-900/80 border-amber-500/40' : 'bg-white/90 border-amber-300 shadow-sm'}`}>
-                                <RefreshCw className={`h-5 w-5 sm:h-6 sm:w-6 animate-spin mx-auto ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
-                                <p className={`text-xs font-bold ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
-                                  Agent B is formulating {status.round_number === 1 ? 'Opening Statement' : status.round_number === 5 ? 'Closing Statement' : `Rebuttal ${status.round_number - 1}`}...
-                                </p>
-                              </div>
-                            )}
-
-                            {/* Empty placeholder if not reached yet in single round view */}
-                            {activeRoundTab !== 'all' && !turns.some(t => t.agent === 'Agent B' && String(t.round_number) === activeRoundTab) && status.agent !== 'Agent B' && (
-                              <div className={`rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center space-y-2 border border-dashed ${darkMode ? 'bg-slate-900/40 border-white/10 text-slate-500' : 'bg-white/50 border-slate-200 text-slate-400'}`}>
-                                <Shield className="h-5 w-5 sm:h-6 sm:w-6 mx-auto opacity-30" />
-                                <p className="text-xs font-medium">Speech will appear once round starts</p>
-                              </div>
-                            )}
-                          </div>
-
-                        </div>
-
-                        {/* Stage Bottom Navigation Controls */}
-                        {activeRoundTab !== 'all' && ['1', '2', '3', '4', '5'].includes(activeRoundTab) && (
-                          <div className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl border ${darkMode ? 'bg-slate-900/80 border-white/10' : 'bg-white/90 border-blue-200 shadow-xs'}`}>
-                            <button
-                              disabled={activeRoundTab === '1'}
-                              onClick={() => setActiveRoundTab(String(parseInt(activeRoundTab) - 1))}
-                              className="px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold border disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:bg-indigo-500/10"
-                            >
-                              &larr; <span className="hidden sm:inline">Previous Round</span><span className="sm:hidden">Prev</span>
-                            </button>
-
-                            <span className="text-[11px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 text-center px-1 truncate">
-                              Round {activeRoundTab} of 5<span className="hidden sm:inline">: {activeRoundTab === '1' ? 'Opening Statement' : activeRoundTab === '5' ? 'Closing Statement' : `Rebuttal ${parseInt(activeRoundTab) - 1}`}</span>
-                            </span>
-
-                            <button
-                              disabled={activeRoundTab === '5'}
-                              onClick={() => setActiveRoundTab(String(parseInt(activeRoundTab) + 1))}
-                              className="px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold border disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all hover:bg-indigo-500/10"
-                            >
-                              <span className="hidden sm:inline">Next Round</span><span className="sm:hidden">Next</span> &rarr;
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Scorecard Panel */}
-                {debateMode === 'debate' && scores && scores.length > 0 && (activeRoundTab === 'all' || activeRoundTab === 'verdict') && (
-                  <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-6 backdrop-blur-xl border ${darkMode ? 'bg-slate-900/95 border-amber-500/30 text-slate-100' : 'bg-white/95 border-amber-200 text-slate-900 shadow-xl'}`}>
-                    <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
-                      <Award className="h-5 w-5" />
-                      <span>Official Double-Blind Judgment Scorecard</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {scores.map((score) => {
-                        const isA = score.agent === 'Agent A';
-                        const winner = getWinner(scores);
-                        const isWinner = score.agent === winner;
-                        return (
-                          <div key={score.agent} className={`p-5 rounded-xl border relative space-y-4 ${
-                            isA 
-                              ? (darkMode ? 'border-indigo-500/30 bg-indigo-950/20' : 'border-indigo-200 bg-indigo-50/60') 
-                              : (darkMode ? 'border-amber-500/30 bg-amber-950/20' : 'border-amber-200 bg-amber-50/60')
-                          }`}>
-                            {isWinner && winner !== 'Tie' && (
-                              <div className="absolute top-4 right-4">
-                                <Crown className={`h-5 w-5 ${isA ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`} />
-                              </div>
-                            )}
-
-                            <div className="flex justify-between items-center">
-                              <span className={`font-bold text-lg flex items-center space-x-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                                <span>{score.agent}</span>
-                                {isWinner && winner !== 'Tie' && (
-                                  <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">WINNER</span>
-                                )}
-                              </span>
-                              <span className={`text-2xl font-extrabold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{score.total} <span className="text-xs text-slate-500">/ 10</span></span>
-                            </div>
-
-                            <div className="space-y-2.5 text-xs">
-                              {[
-                                { label: 'Logic Validity', key: 'logic' },
-                                { label: 'Evidence Quality', key: 'evidence' },
-                                { label: 'Rebuttal Strength', key: 'rebuttal' }
-                              ].map(({ label, key }) => (
-                                <div key={key}>
-                                  <div className="flex justify-between mb-1 font-semibold text-slate-600 dark:text-slate-400">
-                                    <span>{label}</span>
-                                    <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{score[key]}/10</span>
-                                  </div>
-                                  <div className={`h-2 w-full rounded-full overflow-hidden ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                                    <div 
-                                      className={`h-full rounded-full ${isA ? 'bg-indigo-600' : 'bg-amber-600'}`}
-                                      style={{ width: `${score[key] * 10}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-
-                            <div className={`p-3 border rounded-lg text-xs leading-relaxed font-sans ${darkMode ? 'bg-slate-800/70 border-white/10 text-slate-300' : 'bg-white border-slate-200 text-slate-700 shadow-sm'}`}>
-                              <div className="flex items-center justify-between mb-1">
-                                <strong className={`block ${darkMode ? 'text-white' : 'text-slate-900'}`}>Judge Reasoning:</strong>
-                                <button
-                                  onClick={() => debateAudio.speakText(score.judge_reasoning, 'Judge', true)}
-                                  className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
-                                    darkMode ? 'bg-white/10 hover:bg-white/20 text-amber-300 border-white/10' : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200'
-                                  }`}
-                                  title="Listen to Judge Reasoning"
-                                >
-                                  <Volume2 className="h-3 w-3" />
-                                  <span>Listen</span>
-                                </button>
-                              </div>
-                              {score.judge_reasoning}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-              </div>
-
-              {/* Right 1 Column: Live Fact-Checker Command Matrix */}
-              <div className="lg:col-span-1 space-y-4">
-                <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-xl lg:sticky lg:top-20 space-y-4 border ${darkMode ? 'bg-slate-900/95 border-white/10 text-slate-100 shadow-2xl' : 'bg-white/95 border-blue-200 text-slate-900 shadow-lg'}`}>
-                  
-                  {/* Radar Header */}
-                  <div className={`flex items-center justify-between pb-3 border-b ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
-                    <div className="flex items-center space-x-2">
-                      <Shield className={`h-4 w-4 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
-                      <h4 className={`text-xs font-bold uppercase tracking-wider ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                        {activeRoundTab !== 'all' && ['1','2','3','4','5'].includes(activeRoundTab)
-                          ? `Round ${activeRoundTab} Radar`
-                          : "Fact-Checker Radar"
-                        }
-                      </h4>
-                    </div>
-                    {selectedClaim && (
-                      <button 
-                        onClick={() => setSelectedClaim(null)} 
-                        className={`text-[11px] font-bold hover:underline cursor-pointer ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}
-                      >
-                        &larr; View List
-                      </button>
-                    )}
-                  </div>
-
-                  {/* If A Specific Claim Is Inspected */}
-                  {selectedClaim ? (
-                    <div className="space-y-4 animate-scale-in">
-                      <div className="flex items-center justify-between">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                          selectedClaim.verdict === 'Confirmed' 
-                            ? (darkMode ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-200')
-                            : selectedClaim.verdict === 'Disputed' 
-                            ? (darkMode ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-200')
-                            : (darkMode ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-200')
-                        }`}>
-                          {selectedClaim.verdict === 'Confirmed' ? '✓ Confirmed' : selectedClaim.verdict === 'Disputed' ? '⚠️ Disputed' : '? Unverifiable'}
-                        </span>
-
-                        {selectedClaim.source_tier && (
-                          <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${darkMode ? 'text-indigo-300 bg-indigo-500/10 border-indigo-500/20' : 'text-indigo-700 bg-indigo-50 border-indigo-200'}`}>
-                            Tier {selectedClaim.source_tier} Source
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-[10px] uppercase font-bold text-slate-500">Statement Tested:</span>
-                        <p className={`text-xs font-medium p-3 border rounded-xl leading-relaxed ${darkMode ? 'text-white bg-white/5 border-white/10' : 'text-slate-900 bg-slate-50 border-slate-200'}`}>
-                          "{selectedClaim.claim_text}"
-                        </p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-[10px] uppercase font-bold text-slate-500">Audit Verification:</span>
-                        <p className={`text-xs leading-relaxed ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                          {selectedClaim.reasoning}
-                        </p>
-                      </div>
-
-                      {selectedClaim.source_url && (
-                        <div className={`pt-2 border-t space-y-1.5 ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
-                          <span className="text-[10px] uppercase font-bold text-slate-500 block">Verified Citation Link:</span>
-                          <a 
-                            href={selectedClaim.source_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className={`inline-flex items-center space-x-1.5 text-xs font-bold hover:underline break-all ${darkMode ? 'text-indigo-400' : 'text-indigo-600'}`}
-                          >
-                            <span>{getDomainFromUrl(selectedClaim.source_url)}</span>
-                            <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    /* Live List of Claims (Scoped to current round or all) */
-                    <div className="space-y-3">
-                      {/* Filter Pills */}
-                      <div className="flex items-center space-x-1.5 pb-2">
-                        {['all', 'Confirmed', 'Disputed'].map((f) => (
+                        {scores && scores.length > 0 && (
                           <button
-                            key={f}
-                            onClick={() => setClaimFilter(f)}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                              claimFilter === f
-                                ? 'bg-indigo-600 text-white'
-                                : (darkMode ? 'bg-white/5 text-slate-400 hover:bg-white/10' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200')
+                            onClick={() => setActiveRoundTab('verdict')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center space-x-1.5 border ${
+                              activeRoundTab === 'verdict'
+                                ? 'bg-amber-500 text-black border-amber-400 font-bold'
+                                : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
                             }`}
                           >
-                            {f}
+                            <Award className="h-3.5 w-3.5" />
+                            <span>Scorecard</span>
                           </button>
-                        ))}
+                        )}
                       </div>
 
-                      {/* Claims List */}
-                      {(() => {
-                        const targetTurns = activeRoundTab === 'all' || activeRoundTab === 'verdict'
-                          ? turns
-                          : turns.filter(t => String(t.round_number) === activeRoundTab);
-                        
-                        const displayClaims = targetTurns
-                          .flatMap(t => t.claims || [])
-                          .filter(c => claimFilter === 'all' || c.verdict === claimFilter);
+                      <button
+                        onClick={() => setActiveRoundTab(activeRoundTab === 'all' ? '1' : 'all')}
+                        className={`text-xs px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                          darkMode ? 'bg-white/5 border-white/10 text-slate-300 hover:text-white' : 'bg-white/80 border-blue-200 text-slate-700'
+                        }`}
+                      >
+                        {activeRoundTab === 'all' ? "Stage View" : "Full Transcript"}
+                      </button>
+                    </div>
+                  )}
 
-                        if (displayClaims.length === 0) {
+                  {/* Dual Deck Assistant Columns (Screenshot 2 Style) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 flex-1 min-h-[380px]">
+                    
+                    {/* Assistant A (Affirmative) Deck */}
+                    <div className={`rounded-2xl p-5 border flex flex-col justify-between space-y-4 shadow-2xl relative overflow-hidden backdrop-blur-2xl ${
+                      darkMode ? 'bg-[#080d19]/85 border-white/15 text-slate-100' : 'bg-white/85 border-blue-200 text-slate-900'
+                    }`}>
+                      <div className="space-y-3">
+                        {/* Header */}
+                        <div className={`flex items-center justify-between pb-2.5 border-b text-xs ${
+                          darkMode ? 'border-white/10' : 'border-blue-100'
+                        }`}>
+                          <span className={`font-bold font-sans text-sm ${darkMode ? 'text-cyan-400' : 'text-indigo-700'}`}>
+                            Assistant A
+                          </span>
+                          <div className="flex items-center space-x-1.5 text-slate-400">
+                            <button 
+                              onClick={() => {
+                                const text = turns.filter(t => t.agent === 'Agent A' || t.agent === 'FOR').map(t => t.content).join('\n\n');
+                                navigator.clipboard.writeText(text);
+                                alert("Copied Assistant A speech!");
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors" 
+                              title="Copy"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                            <button className="p-1.5 rounded-lg hover:bg-white/10 transition-colors" title="Expand">
+                              <Maximize2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Speech Content */}
+                        {turns.filter(t => t.agent === 'Agent A' || t.agent === 'FOR').length === 0 ? (
+                          <div className="py-12 text-center text-slate-400 text-xs italic">
+                            Assistant A formulating opening thesis...
+                          </div>
+                        ) : (
+                          turns
+                            .filter(t => t.agent === 'Agent A' || t.agent === 'FOR')
+                            .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab || debateMode === 'factcheck')
+                            .map((turn) => (
+                              <div key={turn.id} className="space-y-2">
+                                <div className={`text-[11px] font-bold uppercase tracking-wider ${
+                                  darkMode ? 'text-slate-400' : 'text-slate-500'
+                                }`}>
+                                  {debateMode === 'factcheck' ? 'Supporting Evidence Brief' : `Round ${turn.round_number}`}
+                                </div>
+                                <div>{renderContentWithClaims(turn.content, turn.claims)}</div>
+                              </div>
+                            ))
+                        )}
+                      </div>
+
+                      {/* Floating scroll down indicator */}
+                      <div className="flex justify-center pt-2">
+                        <button 
+                          onClick={() => turnsEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                          className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
+                            darkMode ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-white border-blue-200 text-slate-600 hover:text-slate-900 shadow-xs'
+                          }`}
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Assistant B (Negative) Deck */}
+                    <div className={`rounded-2xl p-5 border flex flex-col justify-between space-y-4 shadow-2xl relative overflow-hidden backdrop-blur-2xl ${
+                      darkMode ? 'bg-[#080d19]/85 border-white/15 text-slate-100' : 'bg-white/85 border-blue-200 text-slate-900'
+                    }`}>
+                      <div className="space-y-3">
+                        {/* Header */}
+                        <div className={`flex items-center justify-between pb-2.5 border-b text-xs ${
+                          darkMode ? 'border-white/10' : 'border-blue-100'
+                        }`}>
+                          <div className="flex items-center space-x-1.5">
+                            <span className={`w-2.5 h-2.5 rounded-full ${darkMode ? 'bg-amber-400' : 'bg-amber-500'}`}></span>
+                            <span className={`font-bold font-sans text-sm ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
+                              Assistant B
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1.5 text-slate-400">
+                            <button 
+                              onClick={() => {
+                                const text = turns.filter(t => t.agent === 'Agent B' || t.agent === 'AGAINST').map(t => t.content).join('\n\n');
+                                navigator.clipboard.writeText(text);
+                                alert("Copied Assistant B speech!");
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors" 
+                              title="Copy"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                            <button className="p-1.5 rounded-lg hover:bg-white/10 transition-colors" title="Expand">
+                              <Maximize2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Speech Content */}
+                        {turns.filter(t => t.agent === 'Agent B' || t.agent === 'AGAINST').length === 0 ? (
+                          <div className="py-12 text-center text-slate-400 text-xs italic">
+                            Assistant B formulating adversarial response...
+                          </div>
+                        ) : (
+                          turns
+                            .filter(t => t.agent === 'Agent B' || t.agent === 'AGAINST')
+                            .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab || debateMode === 'factcheck')
+                            .map((turn) => (
+                              <div key={turn.id} className="space-y-2">
+                                <div className={`text-[11px] font-bold uppercase tracking-wider ${
+                                  darkMode ? 'text-slate-400' : 'text-slate-500'
+                                }`}>
+                                  {debateMode === 'factcheck' ? 'Counter Evidence Brief' : `Round ${turn.round_number}`}
+                                </div>
+                                <div>{renderContentWithClaims(turn.content, turn.claims)}</div>
+                              </div>
+                            ))
+                        )}
+                      </div>
+
+                      {/* Floating scroll down indicator */}
+                      <div className="flex justify-center pt-2">
+                        <button 
+                          onClick={() => turnsEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                          className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
+                            darkMode ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-white border-blue-200 text-slate-600 hover:text-slate-900 shadow-xs'
+                          }`}
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Double-Blind Judgment Scorecard (When active) */}
+                  {scores && scores.length > 0 && (activeRoundTab === 'all' || activeRoundTab === 'verdict') && (
+                    <div className={`rounded-2xl p-5 border space-y-4 backdrop-blur-2xl ${
+                      darkMode ? 'bg-[#0b1222]/90 border-amber-500/40' : 'bg-white/90 border-amber-300 shadow-xl'
+                    }`}>
+                      <div className="flex items-center space-x-2 text-amber-500 font-sans text-xs font-bold uppercase">
+                        <Award className="h-4 w-4" />
+                        <span>Double-Blind Arbiter Verdict</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {scores.map((score) => {
+                          const winner = getWinner(scores);
+                          const isWinner = score.agent === winner;
                           return (
-                            <div className="py-8 text-center text-xs text-slate-500 space-y-2">
-                              <Search className="h-6 w-6 mx-auto opacity-40 animate-pulse" />
-                              <p>
-                                {activeRoundTab !== 'all' 
-                                  ? `No claims verified for Round ${activeRoundTab} yet` 
-                                  : "Claims will appear as statements stream in..."
-                                }
-                              </p>
+                            <div key={score.agent} className={`p-4 rounded-xl border space-y-2.5 ${
+                              darkMode ? 'bg-black/40 border-white/10' : 'bg-white border-blue-100 shadow-xs'
+                            }`}>
+                              <div className="flex justify-between items-center">
+                                <span className={`font-bold text-sm flex items-center space-x-1.5 ${
+                                  darkMode ? 'text-white' : 'text-slate-900'
+                                }`}>
+                                  <span>{score.agent}</span>
+                                  {isWinner && <span className="text-[10px] bg-emerald-500 text-black px-2 py-0.5 rounded font-bold">WINNER</span>}
+                                </span>
+                                <span className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{score.total} <span className="text-xs opacity-60">/ 10</span></span>
+                              </div>
+                              <p className={`text-xs font-sans leading-relaxed ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{score.judge_reasoning}</p>
                             </div>
                           );
-                        }
-
-                        return (
-                          <div className="max-h-[380px] overflow-y-auto space-y-2 pr-1">
-                            {displayClaims.map((c, i) => (
-                              <div
-                                key={`claim-card-${i}`}
-                                onClick={() => setSelectedClaim(c)}
-                                className={`p-2.5 rounded-xl border transition-all cursor-pointer space-y-1.5 ${
-                                  darkMode 
-                                    ? 'border-white/10 bg-white/5 hover:bg-white/10 text-slate-200' 
-                                    : 'border-slate-200 bg-white hover:bg-indigo-50/60 text-slate-800 shadow-sm'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between text-[10px]">
-                                  <span className={`px-1.5 py-0.5 rounded font-bold ${
-                                    c.verdict === 'Confirmed' 
-                                      ? (darkMode ? 'text-emerald-400 bg-emerald-500/15' : 'text-emerald-700 bg-emerald-100') 
-                                      : (darkMode ? 'text-amber-400 bg-amber-500/15' : 'text-amber-700 bg-amber-100')
-                                  }`}>
-                                    {c.verdict === 'Confirmed' ? '✓ Confirmed' : '⚠️ Disputed'}
-                                  </span>
-                                  {c.source_tier && <span className="text-slate-500 font-mono">Tier {c.source_tier}</span>}
-                                </div>
-                                <p className={`text-xs line-clamp-2 font-sans font-medium ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                  "{c.claim_text}"
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      })()}
+                        })}
+                      </div>
                     </div>
                   )}
 
+                  <div ref={turnsEndRef}></div>
+
+                  {/* Persistent Bottom Follow-up Input Bar (Screenshot 2 Style with Glass Theme) */}
+                  <div className="w-full max-w-3xl mx-auto pt-2">
+                    <form 
+                      onSubmit={(e) => handleStartDebate(e)}
+                      className={`rounded-2xl p-3.5 transition-all shadow-2xl space-y-2 border backdrop-blur-2xl ${
+                        darkMode ? 'bg-[#080d19]/85 border-white/15' : 'bg-white/85 border-blue-200/90'
+                      }`}
+                    >
+                      <textarea
+                        rows={1}
+                        value={topicInput}
+                        onChange={(e) => setTopicInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleStartDebate(e);
+                          }
+                        }}
+                        placeholder="Ask followup counter-argument or submit new claim..."
+                        className={`w-full bg-transparent resize-none outline-none font-sans text-xs sm:text-sm leading-relaxed ${
+                          darkMode ? 'text-white placeholder-slate-400' : 'text-slate-900 placeholder-slate-500 font-medium'
+                        }`}
+                      />
+
+                      <div className={`flex items-center justify-between pt-1.5 text-xs border-t ${
+                        darkMode ? 'border-white/10' : 'border-blue-100'
+                      }`}>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => setDebateMode(debateMode === 'debate' ? 'factcheck' : 'debate')}
+                            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-xl transition-all cursor-pointer text-[11px] font-semibold border ${
+                              debateMode === 'debate'
+                                ? (darkMode ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50' : 'bg-indigo-50 text-indigo-700 border-indigo-200')
+                                : (darkMode ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50' : 'bg-emerald-50 text-emerald-700 border-emerald-200')
+                            }`}
+                            title="Switch mode"
+                          >
+                            <Zap className="h-3 w-3" />
+                            <span>{debateMode === 'debate' ? '⚔️ Debate' : '🛡️ Fact-Check'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={toggleVoiceInput}
+                            className={`p-1.5 rounded-xl transition-all cursor-pointer border ${
+                              isRecordingVoice 
+                                ? 'text-rose-400 bg-rose-500/20 border-rose-400 animate-pulse' 
+                                : (darkMode ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-white border-blue-200 text-slate-600')
+                            }`}
+                            title="Voice Input"
+                          >
+                            <Mic className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        <button
+                          type="submit"
+                          className={`px-3 py-1 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer shadow-sm ${
+                            darkMode ? 'bg-cyan-400 hover:bg-cyan-300 text-black' : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                          }`}
+                        >
+                          <span>Transmit</span>
+                          <Send className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </form>
+
+                    <p className={`text-[10px] text-center mt-2 font-sans ${
+                      darkMode ? 'text-slate-400' : 'text-slate-600'
+                    }`}>
+                      Inputs are processed by third-party AI and responses may be inaccurate.
+                    </p>
+                  </div>
+
                 </div>
-              </div>
+              )}
 
             </div>
 
           </div>
-        )}
+        </div>
+      )}
 
-        {/* ── PAST DEBATES HISTORY ── */}
-        {activeView === 'history' && (
-          <div className="max-w-4xl mx-auto w-full py-8 space-y-6 animate-slide-up">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-3xl font-bold font-serif gradient-text">Archive</h3>
-                <p className="text-sm text-brand-textMuted font-sans mt-1">Review past debates, fact-checks, and scoring cards.</p>
-              </div>
-              <button 
-                onClick={() => setActiveView('landing')}
-                className="flex items-center space-x-2 glass hover:bg-brand-border/50 px-4 py-2 rounded-xl text-sm transition-all text-slate-300 hover:text-white hover-lift"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back Home</span>
-              </button>
+      {/* ═══════════════════════════════════════════════════════════════
+          VIEW 3: HISTORY / ARCHIVE VAULT
+          ═══════════════════════════════════════════════════════════════ */}
+      {activeView === 'history' && (
+        <div className="max-w-5xl mx-auto w-full py-10 px-4 space-y-6 animate-slide-up relative z-20">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className={`text-2xl font-bold font-serif ${darkMode ? 'text-white' : 'text-slate-900'}`}>Debate Archive Vault</h3>
+              <p className={`text-xs font-sans mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Review past debate telemetry, fact-checks, and judgment scorecards.</p>
             </div>
+            <button
+              onClick={() => setActiveView('landing')}
+              className={`px-4 py-2 rounded-xl border font-sans text-xs flex items-center space-x-1.5 cursor-pointer shadow-xs ${
+                darkMode ? 'bg-white/5 border-white/10 text-slate-300 hover:text-white' : 'bg-white border-blue-200 text-slate-700 hover:text-slate-900'
+              }`}
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back Home</span>
+            </button>
+          </div>
 
-            {isLoadingHistory ? (
-              <div className="py-24 text-center flex flex-col items-center justify-center space-y-4">
-                <div className="animate-pulse-glow p-4 rounded-2xl">
-                  <RefreshCw className="h-8 w-8 text-brand-accent animate-spin" />
-                </div>
-                <span className="text-sm text-brand-textMuted">Loading archive...</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mt-4">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="glass rounded-xl p-5 space-y-3">
-                      <div className="skeleton h-3 w-1/3 rounded"></div>
-                      <div className="skeleton h-5 w-full rounded"></div>
-                      <div className="skeleton h-3 w-2/3 rounded"></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : !currentUser ? (
-              <div className="glass rounded-2xl p-6 sm:p-16 text-center flex flex-col items-center justify-center space-y-4 glow-accent">
-                <div className="p-4 sm:p-5 rounded-2xl animate-float">
-                  <img src={logo} className="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-50" alt="Logo" />
-                </div>
-                <div>
-                  <h4 className="font-serif text-base sm:text-lg font-semibold text-slate-300">Sign in to view your archive</h4>
-                  <p className="text-xs text-brand-textMuted font-sans mt-1 max-w-xs mx-auto leading-relaxed">
-                    Completed debates and fact-checks are stored privately in your personal archive.
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setActiveView('login')}
-                  className="mt-2 bg-white hover:bg-slate-200 text-black px-5 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md"
-                >
-                  Sign In to Your Account
-                </button>
-              </div>
-            ) : historyList.length === 0 ? (
-              <div className="glass rounded-2xl p-6 sm:p-16 text-center flex flex-col items-center justify-center space-y-4 glow-accent">
-                <div className="p-4 sm:p-5 rounded-2xl animate-float">
-                  <img src={logo} className="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-50" alt="Logo" />
-                </div>
-                <div>
-                  <h4 className="font-serif text-base sm:text-lg font-semibold text-slate-300">No entries in archive</h4>
-                  <p className="text-xs text-brand-textMuted font-sans mt-1 max-w-xs mx-auto leading-relaxed">
-                    Create your first debate or fact-check. Completed analyses are saved here automatically.
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setActiveView('landing')}
-                  className="mt-2 bg-brand-accent hover:bg-brand-accent/90 text-brand-dark px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all animate-shine"
-                >
-                  Start Your First Debate
-                </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {historyList.length === 0 ? (
+              <div className={`col-span-2 rounded-2xl p-12 text-center text-sm border backdrop-blur-xl ${
+                darkMode ? 'bg-white/5 border-white/10 text-slate-400' : 'bg-white/80 border-blue-200 text-slate-600 shadow-sm'
+              }`}>
+                No past debates found in archive. Start your first debate from the arena!
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {historyList.map((debate, index) => {
-                  const winner = getWinner(debate.scores);
-                  const confCount = debate.claim_stats?.Confirmed || 0;
-                  const dispCount = debate.claim_stats?.Disputed || 0;
-                  const unverCount = debate.claim_stats?.Unverifiable || 0;
-                  const mode = debate.mode || 'debate';
-                  
-                  return (
-                    <div 
-                      key={debate.id}
-                      onClick={() => handleViewPastDebate(debate.id)}
-                      className="glass rounded-xl p-5 hover:border-brand-accent/40 cursor-pointer transition-all duration-300 flex flex-col justify-between space-y-4 group hover-lift animate-fade-in"
-                      style={{ animationDelay: `${index * 0.05}s`, opacity: 0 }}
-                    >
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center text-[10px] text-brand-textMuted font-sans font-semibold">
-                          <div className="flex items-center space-x-2">
-                            <span>{formatDate(debate.created_at)}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                              mode === 'factcheck' 
-                                ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-brand-accent/10 text-brand-accent border border-brand-accent/20'
-                            }`}>
-                              {mode === 'factcheck' ? 'Fact-Check' : 'Debate'}
-                            </span>
-                          </div>
-                          <span className={`px-2 py-0.5 rounded font-bold uppercase ${
-                            debate.status === 'completed' 
-                              ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/20' 
-                              : debate.status === 'failed'
-                              ? 'bg-rose-950/40 text-rose-400 border border-rose-500/20'
-                              : 'bg-indigo-950/40 text-indigo-400 border border-indigo-500/20 animate-pulse'
-                          }`}>
-                            {debate.status}
-                          </span>
-                        </div>
-                        <h4 className="font-serif font-bold text-lg text-slate-100 group-hover:text-brand-textLight transition-colors leading-snug">
-                          {debate.topic}
-                        </h4>
-                      </div>
-
-                      {debate.status === 'completed' && (
-                        <div className="pt-3 border-t border-brand-border/40 flex items-center justify-between text-xs">
-                          {mode === 'debate' && debate.scores?.length > 0 && (
-                            <span className="text-brand-textMuted font-sans flex items-center">
-                              Winner: <strong className="text-indigo-400 ml-1 font-serif font-bold flex items-center">
-                                {winner === 'Tie' ? 'Tie' : winner}
-                                {winner !== 'Tie' && <Crown className="h-3 w-3 text-brand-accentAmber ml-0.5" />}
-                              </strong>
-                            </span>
-                          )}
-                          {mode === 'factcheck' && (
-                            <span className="text-brand-textMuted font-sans">Factual Analysis</span>
-                          )}
-                          
-                          <div className="flex items-center space-x-2 text-[10px] font-sans font-bold">
-                            <span className="text-emerald-400 bg-emerald-950/30 px-1.5 py-0.5 rounded">✓ {confCount}</span>
-                            <span className="text-amber-400 bg-amber-950/30 px-1.5 py-0.5 rounded">⚠️ {dispCount}</span>
-                            <span className="text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded">? {unverCount}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              historyList.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleViewPastDebate(item.id)}
+                  className={`rounded-2xl p-4 cursor-pointer space-y-3 transition-all border backdrop-blur-xl ${
+                    darkMode 
+                      ? 'bg-white/5 border-white/10 hover:border-cyan-400/40 text-white' 
+                      : 'bg-white/85 border-blue-200 hover:border-indigo-300 text-slate-900 shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-[10px] font-sans font-bold">
+                    <span className={darkMode ? 'text-cyan-400 uppercase' : 'text-indigo-600 uppercase'}>{item.mode || 'debate'}</span>
+                    <span className="opacity-60">{new Date(item.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <h4 className="font-bold text-sm line-clamp-2 font-sans">
+                    {item.topic}
+                  </h4>
+                  <div className={`flex items-center justify-between pt-2 border-t text-xs font-sans ${
+                    darkMode ? 'border-white/10' : 'border-blue-100'
+                  }`}>
+                    <span className="opacity-75">Status: <strong className="text-emerald-500">{item.status}</strong></span>
+                    <span className={darkMode ? 'text-cyan-300 font-bold' : 'text-indigo-600 font-bold'}>&rarr; Open</span>
+                  </div>
+                </div>
+              ))
             )}
           </div>
-        )}
-      </main>
-
-      {/* ── ACETERNITY-STYLE MULTI-COLUMN MEGA FOOTER (Only shown on Landing View) ── */}
-      {activeView === 'landing' && (
-        <footer id="site-footer" className="relative z-10 border-t border-brand-border/30 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-xl pt-10 sm:pt-14 pb-8 px-4 sm:px-12 mt-12 sm:mt-16 font-sans">
-        <div className="max-w-7xl mx-auto">
-          
-          {/* Top Brand Section */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 pb-6 sm:pb-10 border-b border-brand-border/20 dark:border-white/10">
-            <div className="space-y-2 max-w-xl">
-              <div className="flex items-center space-x-2.5">
-                <img src={logo} className="h-7 w-7 object-contain" alt="ArguForge AI Logo" />
-                <h3 className="text-lg sm:text-xl font-bold font-sans tracking-tight text-slate-900 dark:text-white">ArguForge AI</h3>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Source-integrity-first adversarial debate &amp; factual analysis platform. Temperature-tuned dual AI agents clashing with multi-tier source verification and bias-free scoring.
-              </p>
-              <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
-                Engineered by <span className="font-bold underline decoration-indigo-400/50">Ketan Karan Arora</span> &bull; <a href="https://github.com/Ketan2707" target="_blank" rel="noopener noreferrer" className="hover:underline">Building in public @Ketan2707</a>
-              </p>
-            </div>
-
-            {/* Floating Dock on Top Right of Mega Footer */}
-            <div className="flex items-center self-start md:self-center">
-              <FloatingDock
-                items={[
-                  {
-                    title: "GitHub / Ketan2707",
-                    icon: <GithubIcon className="h-full w-full" />,
-                    href: "https://github.com/Ketan2707",
-                  },
-                  {
-                    title: "LinkedIn / Ketan Karan Arora",
-                    icon: <LinkedinIcon className="h-full w-full" />,
-                    href: "https://www.linkedin.com/in/ketan-karan-arora-5a729b28b/",
-                  },
-                  {
-                    title: "Instagram / @ketannarora",
-                    icon: <InstagramIcon className="h-full w-full" />,
-                    href: "https://www.instagram.com/ketannarora/",
-                  },
-                  {
-                    title: "Email Developer",
-                    icon: <Mail className="h-full w-full" />,
-                    href: "mailto:ketanarora7890@gmail.com",
-                  },
-                ]}
-              />
-            </div>
-          </div>
-
-          {/* 5-Column Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 py-8 sm:py-10 text-xs">
-            
-            {/* Col 1: Debate Arena */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Debate Arena</h4>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Adversarial AI Engine</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Temperature Tuning</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Cross-Examination</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Live SSE Streaming</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Real-Time Rebuttals</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Stance Focus Selector</li>
-              </ul>
-            </div>
-
-            {/* Col 2: Fact-Check Tiers */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Fact-Check Tiers</h4>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
-                <li className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-default">Tier 1: AP &amp; Reuters Wire</li>
-                <li className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-default">Tier 1: PIB Public Records</li>
-                <li className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-default">Tier 2: BBC, NYT &amp; Guardian</li>
-                <li className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-default">Tier 3: CFR &amp; Brookings</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Domain Whitelist Index</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Zero-Hallucination Rule</li>
-              </ul>
-            </div>
-
-            {/* Col 3: Bias-Free Judge */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Bias-Free Judge</h4>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Double-Blind Scoring</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Position Label Swapping</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Logic &amp; Fallacy Audit</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Evidence Weight Analysis</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Rebuttal Strength Index</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Verdict Synthesis Reports</li>
-              </ul>
-            </div>
-
-            {/* Col 4: Platform & Tech */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Platform</h4>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
-                <li>
-                  <button onClick={() => { loadHistory(); setActiveView('history'); }} className="hover:text-indigo-600 dark:hover:text-white transition-colors text-left cursor-pointer">
-                    Debate Archive
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => setActiveView('login')} className="hover:text-indigo-600 dark:hover:text-white transition-colors text-left cursor-pointer">
-                    OAuth Sign In
-                  </button>
-                </li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Day &amp; Night Sky Themes</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Claim Drawer Inspector</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">FastAPI Backend Engine</li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Groq &amp; Llama 3.3 LLMs</li>
-              </ul>
-            </div>
-
-            {/* Col 5: Creator & Connect */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">Developer</h4>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-400">
-                <li>
-                  <a href="https://github.com/Ketan2707" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
-                    <span>GitHub / Ketan2707</span>
-                  </a>
-                </li>
-                <li>
-                  <a href="https://www.linkedin.com/in/ketan-karan-arora-5a729b28b/" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
-                    <span>LinkedIn / Ketan Karan Arora</span>
-                  </a>
-                </li>
-                <li>
-                  <a href="https://www.instagram.com/ketannarora/" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
-                    <span>Instagram / @ketannarora</span>
-                  </a>
-                </li>
-                <li>
-                  <a href="mailto:ketanarora7890@gmail.com" className="hover:text-indigo-600 dark:hover:text-white transition-colors flex items-center space-x-1.5">
-                    <span>Email Developer</span>
-                  </a>
-                </li>
-                <li className="hover:text-indigo-600 dark:hover:text-white transition-colors cursor-default">Full-Stack AI Engineering</li>
-                <li>
-                  <a href="https://github.com/Ketan2707/Debate-Arena" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
-                    ★ Star on GitHub
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-brand-border/20 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400">
-            <p>
-              &copy; {new Date().getFullYear()} ArguForge AI. All rights reserved. &bull; Engineered by <span className="font-semibold text-slate-700 dark:text-slate-300">Ketan Karan Arora</span>
-            </p>
-            
-            <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>All Verification Systems Operational</span>
-            </div>
-          </div>
-
         </div>
-      </footer>
       )}
 
-      {/* Mobile Claim Details Drawer / Modal */}
-      {selectedClaim && (
-        <div 
-          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 lg:hidden"
-          onClick={() => setSelectedClaim(null)}
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="bg-[#120F17] border border-white/10 w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-brand-border/40 pb-4 mb-4 text-brand-textMuted">
-              <div className="flex items-center space-x-2">
-                <img src={logo} className="h-5 w-5 object-contain" alt="Logo" />
-                <h4 className="text-sm font-bold tracking-wider uppercase font-sans text-slate-200">
-                  {selectedClaim.ref_number ? `Reference [${selectedClaim.ref_number}]` : "Verification Log"}
-                </h4>
+      {/* ═══════════════════════════════════════════════════════════════
+          VIEW 4: AUTHENTICATION (LOGIN & REGISTER)
+          ═══════════════════════════════════════════════════════════════ */}
+      {(activeView === 'login' || activeView === 'register') && (
+        <div className="max-w-md mx-auto w-full py-16 px-4 animate-slide-up relative z-20">
+          <div className={`rounded-3xl p-8 shadow-2xl space-y-6 border backdrop-blur-2xl ${
+            darkMode ? 'bg-[#080d19]/90 border-white/15 text-white' : 'bg-white/90 border-blue-200 text-slate-900'
+          }`}>
+            <div className="text-center space-y-1.5">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 border ${
+                darkMode ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300' : 'bg-indigo-50 border-indigo-200 text-indigo-600'
+              }`}>
+                <Lock className="h-6 w-6" />
               </div>
-              <button 
-                onClick={() => setSelectedClaim(null)} 
-                className="text-xs text-slate-400 hover:text-white transition-colors bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/10"
+              <h3 className="text-xl font-bold font-serif">
+                {activeView === 'login' ? 'Welcome Back' : 'Create Account'}
+              </h3>
+              <p className={`text-xs font-sans ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                {activeView === 'login' ? 'Sign in to access your secure debate archive.' : 'Register to preserve session logs and custom tuning.'}
+              </p>
+            </div>
+
+            <form onSubmit={activeView === 'login' ? handleLoginSubmit : handleRegisterSubmit} className="space-y-4 font-sans text-xs">
+              <div>
+                <label className={`mb-1 block uppercase text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Email</label>
+                <input
+                  type="email"
+                  value={activeView === 'login' ? loginEmail : registerEmail}
+                  onChange={(e) => activeView === 'login' ? setLoginEmail(e.target.value) : setRegisterEmail(e.target.value)}
+                  placeholder="user@example.com"
+                  className={`w-full rounded-xl px-3.5 py-2.5 outline-none border transition-all ${
+                    darkMode 
+                      ? 'bg-white/5 border-white/10 text-white focus:border-cyan-400' 
+                      : 'bg-white border-slate-300 text-slate-900 focus:border-indigo-500'
+                  }`}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className={`mb-1 block uppercase text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Password</label>
+                <input
+                  type="password"
+                  value={activeView === 'login' ? loginPassword : registerPassword}
+                  onChange={(e) => activeView === 'login' ? setLoginPassword(e.target.value) : setRegisterPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className={`w-full rounded-xl px-3.5 py-2.5 outline-none border transition-all ${
+                    darkMode 
+                      ? 'bg-white/5 border-white/10 text-white focus:border-cyan-400' 
+                      : 'bg-white border-slate-300 text-slate-900 focus:border-indigo-500'
+                  }`}
+                  required
+                />
+              </div>
+
+              {(loginError || registerError) && (
+                <div className="p-2.5 rounded-xl bg-rose-950/50 border border-rose-500/30 text-rose-300 text-[11px]">
+                  {loginError || registerError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className={`w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md ${
+                  darkMode 
+                    ? 'bg-cyan-400 hover:bg-cyan-300 text-black' 
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                }`}
               >
-                Close
+                {authLoading ? 'AUTHENTICATING...' : (activeView === 'login' ? 'SIGN IN' : 'REGISTER')}
+              </button>
+            </form>
+
+            <div className={`text-center pt-2 text-xs font-sans space-y-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              <p>
+                {activeView === 'login' ? "Need an account? " : "Already have an account? "}
+                <button 
+                  onClick={() => setActiveView(activeView === 'login' ? 'register' : 'login')}
+                  className={`underline font-bold ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}
+                >
+                  {activeView === 'login' ? 'Register' : 'Sign in'}
+                </button>
+              </p>
+              <button onClick={() => setActiveView('landing')} className="opacity-70 hover:opacity-100 text-[11px]">
+                &larr; Return to Homepage
               </button>
             </div>
-            
-            {/* Body */}
-            <div className="flex flex-col space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                    selectedClaim.verdict === 'Confirmed' 
-                      ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30' 
-                      : selectedClaim.verdict === 'Disputed' 
-                      ? 'bg-amber-950/60 text-amber-400 border border-amber-500/30' 
-                      : 'bg-slate-800 text-slate-400 border border-slate-700'
-                  }`}>
-                    {selectedClaim.verdict === 'Confirmed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                    {selectedClaim.verdict === 'Disputed' && <AlertTriangle className="h-3 w-3 mr-1" />}
-                    {selectedClaim.verdict === 'Unverifiable' && <HelpCircle className="h-3 w-3 mr-1" />}
-                    <span>{selectedClaim.verdict}</span>
-                  </span>
-                  
-                  {selectedClaim.source_tier && (
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded">
-                      Tier {selectedClaim.source_tier}
-                    </span>
-                  )}
-                </div>
-                
-                <h5 className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans mb-1 mt-3">FACTUAL CLAIM:</h5>
-                <p className="text-sm font-sans font-medium text-slate-200 leading-relaxed bg-white/5 p-3 rounded-lg border border-white/10">
-                  "{selectedClaim.claim_text}"
-                </p>
-              </div>
-
-              <div className="border-t border-brand-border/40 pt-4 flex flex-col space-y-3">
-                <div>
-                  <span className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans block mb-1">Verification Reasoning:</span>
-                  <p className="text-xs text-slate-300 font-sans leading-relaxed">
-                    {selectedClaim.reasoning}
-                  </p>
-                </div>
-
-                {selectedClaim.source_url ? (
-                  <div>
-                    <span className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans block mb-1">Verified Source:</span>
-                    <a 
-                      href={selectedClaim.source_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1.5 text-brand-accent hover:text-brand-accent/80 text-xs font-medium border-b border-brand-accent/30 pb-0.5 break-all leading-relaxed"
-                    >
-                      <span>{(() => { try { return new URL(selectedClaim.source_url).hostname; } catch { return selectedClaim.source_url; } })()}</span>
-                      <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
-                    </a>
-                    
-                    <span className="block text-[10px] text-brand-textMuted font-sans mt-2">
-                      {selectedClaim.source_tier === 1 && "✓ Tier 1 (Wire service or official public record)"}
-                      {selectedClaim.source_tier === 2 && "✓ Tier 2 (Established national/international newspaper)"}
-                      {selectedClaim.source_tier === 3 && "✓ Tier 3 (Think tank, academic, or advocacy organization)"}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="glass p-3 rounded-lg text-[10px] text-brand-textMuted font-sans leading-relaxed">
-                    No source link verified. Under source-integrity rules, claims without a verifiable whitelisted domain citation must be labeled Unverifiable.
-                  </div>
-                )}
-
-                {selectedClaim.cited_url && (
-                  <div>
-                    <span className="text-xs text-brand-textMuted uppercase font-bold tracking-wider font-sans block mb-1">Agent's Cited Source:</span>
-                    <a 
-                      href={selectedClaim.cited_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center space-x-1.5 text-slate-400 hover:text-slate-200 text-xs font-medium break-all leading-relaxed"
-                    >
-                      <span>{(() => { try { return new URL(selectedClaim.cited_url).hostname; } catch { return selectedClaim.cited_url; } })()}</span>
-                      <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

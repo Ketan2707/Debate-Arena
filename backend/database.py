@@ -10,6 +10,7 @@ USE_SUPABASE = bool(settings.SUPABASE_URL and settings.SUPABASE_KEY)
 supabase_client = None
 
 if USE_SUPABASE:
+    # pyrefly: ignore [missing-import]
     from supabase import create_client, Client
     print("Database Layer: Initializing Supabase Client...")
     supabase_client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)

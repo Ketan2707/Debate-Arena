@@ -656,3 +656,199 @@
   box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
 }
 
+/* ════════════════════════════════════════════════════════════════
+   QUANTUM MATRIX / NEXUS AI CYBER STYLING
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── Quantum Core Hologram Rings ─── */
+@keyframes ringRotateClockwise {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes ringRotateCounter {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+@keyframes corePulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(6, 182, 212, 0.5), 0 0 70px rgba(6, 182, 212, 0.2), inset 0 0 20px rgba(6, 182, 212, 0.35);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(6, 182, 212, 0.8), 0 0 100px rgba(6, 182, 212, 0.4), inset 0 0 35px rgba(6, 182, 212, 0.6);
+    transform: scale(1.05);
+  }
+}
+
+.animate-ring-clockwise {
+  animation: ringRotateClockwise 18s linear infinite;
+}
+
+.animate-ring-counter {
+  animation: ringRotateCounter 14s linear infinite;
+}
+
+.animate-core-pulse {
+  animation: corePulseGlow 3s ease-in-out infinite;
+}
+
+/* ─── Cyan / Cyber Glow Utilities ─── */
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.4), 0 0 35px rgba(6, 182, 212, 0.15);
+}
+
+.glow-cyan-strong {
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.65), 0 0 60px rgba(6, 182, 212, 0.3);
+}
+
+.glow-cyan-border {
+  border-color: rgba(6, 182, 212, 0.6) !important;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+/* ─── Cyberpunk Corner Brackets ─── */
+.cyber-brackets {
+  position: relative;
+}
+
+.cyber-brackets::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid #06b6d4;
+  border-left: 2px solid #06b6d4;
+  border-top-left-radius: 4px;
+  pointer-events: none;
+}
+
+.cyber-brackets::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-bottom: 2px solid #06b6d4;
+  border-right: 2px solid #06b6d4;
+  border-bottom-right-radius: 4px;
+  pointer-events: none;
+}
+
+/* ─── Cyber Terminal Input Styling ─── */
+.cyber-terminal {
+  background: rgba(10, 16, 28, 0.88);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(6, 182, 212, 0.12);
+}
+
+.cyber-terminal:focus-within {
+  border-color: rgba(6, 182, 212, 0.8);
+  box-shadow: 0 0 35px rgba(6, 182, 212, 0.3), inset 0 0 20px rgba(6, 182, 212, 0.08);
+}
+
+:not(.dark-mode) .cyber-terminal {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 0 20px rgba(99, 102, 241, 0.1);
+}
+
+:not(.dark-mode) .cyber-terminal:focus-within {
+  border-color: rgba(99, 102, 241, 0.8);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.25);
+}
+
+/* ─── Cyber Protocol Card ─── */
+.cyber-card {
+  background: rgba(10, 18, 34, 0.75);
+  border: 1px solid rgba(6, 182, 212, 0.22);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.cyber-card:hover {
+  background: rgba(12, 26, 48, 0.92);
+  border-color: rgba(6, 182, 212, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), 0 0 25px rgba(6, 182, 212, 0.25);
+}
+
+:not(.dark-mode) .cyber-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(191, 219, 254, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+:not(.dark-mode) .cyber-card:hover {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(79, 70, 229, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1), 0 0 20px rgba(79, 70, 229, 0.15);
+}
+
+/* ─── Cyber Button Gradient ─── */
+.cyber-btn-primary {
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #6366f1 100%);
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+}
+
+.cyber-btn-primary:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.7);
+  transform: translateY(-1px);
+}
+
+/* ─── Persona Matrix Active Chip ─── */
+.persona-chip-active {
+  background: rgba(6, 182, 212, 0.18) !important;
+  border-color: rgba(6, 182, 212, 0.8) !important;
+  color: #22d3ee !important;
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.35) !important;
+}
+
+:not(.dark-mode) .persona-chip-active {
+  background: rgba(79, 70, 229, 0.12) !important;
+  border-color: rgba(79, 70, 229, 0.8) !important;
+  color: #4338ca !important;
+  box-shadow: 0 0 16px rgba(79, 70, 229, 0.2) !important;
+}
+
+/* ─── Telemetry Badges ─── */
+.telemetry-pill {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+
+/* ─── Thin Glass Scrollbar ─── */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(147, 197, 253, 0.4);
+  border-radius: 9999px;
+}
+.dark-mode .thin-scrollbar::-webkit-scrollbar-thumb,
+.dark .thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6);
+}
