@@ -143,10 +143,10 @@ def google_rss_search(query: str, max_results: int = 6) -> list[dict]:
 
 def ddg_search(query: str, max_results: int = 5) -> list[dict]:
     """
-    Searches using the duckduckgo-search package with strict timeout.
+    Searches using duckduckgo or fast HTML fallback.
     """
     try:
-        with DDGS(timeout=1.5) as ddgs:
+        with DDGS(timeout=2.0) as ddgs:
             ddg_results = list(ddgs.text(query, max_results=max_results))
             results = []
             for item in ddg_results:

@@ -7,7 +7,7 @@ import {
   Zap, Crown, TrendingUp, Target, Globe, Sun, Moon, Volume2, VolumeX, Radio, Mic, MicOff,
   PanelLeft, Plus, Paperclip, ChevronDown, Check, Trash2, Settings, Download, Cpu, Send, Layers, Terminal, Sliders, Share2, Home,
   PlusCircle, LayoutList, Copy, Maximize2, ArrowDown, Code2, Image as ImageIcon, Video, Square, X,
-  Scale, Swords, ShieldCheck, ThumbsUp, ThumbsDown
+  Scale, Swords, ShieldCheck, ThumbsUp, ThumbsDown, CheckCircle2, AlertCircle, FileText, ListOrdered
 } from 'lucide-react';
 import CloudShader from './CloudShader';
 import NightSky from './NightSky';
@@ -317,6 +317,7 @@ function App() {
   const [sidebarSearch, setSidebarSearch] = useState('');
   const [showPromoCard, setShowPromoCard] = useState(true);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [activeSpeakingTurnId, setActiveSpeakingTurnId] = useState(null);
   const recognitionRef = useRef(null);
 
   // Dark Mode
@@ -746,23 +747,6 @@ function App() {
     }
   };
 
-  const cleanThinkingAndFootnotes = (rawText) => {
-    if (!rawText) return "";
-    let cleaned = rawText;
-    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
-    cleaned = cleaned.replace(/<think>[\s\S]*$/gi, '');
-    cleaned = cleaned.replace(/^(?:Thinking Process|Thought Process|Reasoning):[\s\S]*?\n\n/gi, '');
-    cleaned = cleaned.replace(/\*+(?:Word Count|Constraint|Cutting|Deconstruct)[^*]*\*+[\s\S]*?(?=\n\n|$)/gi, '');
-    cleaned = cleaned.replace(/^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)*/gi, '');
-    cleaned = cleaned.replace(/\n+(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)*$/gi, '');
-    cleaned = cleaned.replace(/^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):[ \t]*\n*/gi, '');
-    cleaned = cleaned.replace(/^(?:[-*•]\s+[A-Za-z\s,.\(\)\d]+(?:Retrieved from\s*)?<https?:\/\/[^\s>]+>\s*\n*)+/gi, '');
-    cleaned = cleaned.replace(/<\s*\[\s*\d+\s*\]\s*>/g, '');
-    cleaned = cleaned.replace(/[【\u3010][^】\u3011]*[】\u3011]/g, '');
-    cleaned = cleaned.replace(/\s*\[\d+\](?!\()/g, '');
-    return cleaned.trim();
-  };
-
   const getDomainFromUrl = (url) => {
     try {
       const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
@@ -772,95 +756,327 @@ function App() {
     }
   };
 
-  const parseMarkdownLinks = (text) => {
-    if (!text) return "";
-    const sanitized = cleanThinkingAndFootnotes(text);
-    const normalized = sanitized.replace(/(?<=[^\s\[])\((https?:\/\/[^\s)]+)\)/g, ' [$1]($1)')
-                                .replace(/\((https?:\/\/[^\s)]+)\)/g, ' [$1]($1)');
+  const parseSpeechAndReferences = (rawText, claims = []) => {
+    if (!rawText) return { speechText: "", references: [] };
+    
+    // 1. Clean think blocks and internal reasoning
+    let text = rawText
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
+      .replace(/<think>[\s\S]*$/gi, '')
+      .replace(/^(?:Thinking Process|Thought Process|Reasoning):[\s\S]*?\n\n/gi, '')
+      .replace(/\*+(?:Word Count|Constraint|Cutting|Deconstruct)[^*]*\*+[\s\S]*?(?=\n\n|$)/gi, '');
 
+    // 2. Extract References section if present at the end
+    const refMatch = text.match(/(?:\n+|^)(?:References?|Sources?|Works Cited|Bibliography):\s*\n([\s\S]*)$/i);
+    let rawRefBlock = "";
+    let speechBody = text;
+    if (refMatch) {
+      rawRefBlock = refMatch[1].trim();
+      speechBody = text.substring(0, refMatch.index).trim();
+    }
+
+    // 3. Deduplicate repeated paragraphs in speechBody (resolves repeated closing statements)
+    const rawParas = speechBody.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+    const uniqueParas = [];
+    const seen = new Set();
+    for (const p of rawParas) {
+      const normKey = p.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 80);
+      if (normKey && !seen.has(normKey)) {
+        seen.add(normKey);
+        uniqueParas.push(p);
+      }
+    }
+    const cleanSpeech = uniqueParas.join('\n\n');
+
+    // 4. Parse parsed references
+    const references = [];
+    const seenUrls = new Set();
+
+    if (rawRefBlock) {
+      const lines = rawRefBlock.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        const numMatch = trimmed.match(/^\[?(\d+)\]?[.\s:-]+(.*?)(?:https?:\/\/(\S+)|$)/i);
+        const urlMatch = trimmed.match(/https?:\/\/[^\s\)>]+/i);
+        const url = urlMatch ? urlMatch[0] : "";
+        const title = trimmed
+          .replace(/^\[?\d+\]?[.\s:-]+/, '')
+          .replace(/https?:\/\/\S+/g, '')
+          .replace(/[-–—:]+$/, '')
+          .trim() || (url ? getDomainFromUrl(url) : "Reference Source");
+        
+        const num = numMatch ? numMatch[1] : String(references.length + 1);
+        if (url && !seenUrls.has(url)) {
+          seenUrls.add(url);
+          references.push({ id: num, title, url, domain: getDomainFromUrl(url) });
+        } else if (!url && title) {
+          references.push({ id: num, title, url: null, domain: null });
+        }
+      }
+    }
+
+    // Also enrich references with verified claims if not present
+    if (claims && claims.length > 0) {
+      claims.forEach((c) => {
+        const url = c.source_url || c.cited_url;
+        if (url && !seenUrls.has(url)) {
+          seenUrls.add(url);
+          references.push({
+            id: String(references.length + 1),
+            title: c.claim_text ? (c.claim_text.length > 55 ? c.claim_text.slice(0, 55) + '...' : c.claim_text) : getDomainFromUrl(url),
+            url: url,
+            domain: getDomainFromUrl(url),
+            tier: c.source_tier
+          });
+        }
+      });
+    }
+
+    return { speechText: cleanSpeech, references };
+  };
+
+  const renderInlineCitations = (paragraphText) => {
+    if (!paragraphText) return null;
+    
+    // Clean rogue markdown link clutter like [AI effect] [en.wikipedia.org] [en.wikipedia.org]
+    let sanitized = paragraphText
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, (match, label, url) => {
+        return label;
+      })
+      .replace(/\[(https?:\/\/[^\s\]]+)\]/g, '')
+      .replace(/\[([a-zA-Z0-9\.\-]+\.(?:org|com|net|gov|edu|io|ai|in|uk|eu))\]/gi, '');
+
+    // Split on numbered bracket citations like [1], [2], [1, 2], [1-3]
     const parts = [];
-    const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)|(https?:\/\/[^\s<>)"]+)/g;
+    const citeRegex = /\[(\d+(?:[,\s\-]+\d+)*)\]/g;
     let lastIndex = 0;
     let match;
-    
-    while ((match = linkRegex.exec(normalized)) !== null) {
+
+    while ((match = citeRegex.exec(sanitized)) !== null) {
       if (match.index > lastIndex) {
-        parts.push(normalized.substring(lastIndex, match.index));
+        parts.push(sanitized.substring(lastIndex, match.index));
       }
-      
-      const isMarkdown = Boolean(match[1]);
-      const rawUrl = isMarkdown ? match[2] : match[3];
-      const linkLabel = isMarkdown ? (match[1].startsWith('http') ? getDomainFromUrl(match[1]) : match[1]) : getDomainFromUrl(rawUrl);
-      
+      const citeNums = match[1];
       parts.push(
-        <a 
-          key={`link-${match.index}`} 
-          href={rawUrl} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className={`inline-flex items-center space-x-1 px-1.5 py-0.5 mx-1 rounded text-[11px] font-medium border transition-colors ${
-            darkMode 
-              ? 'bg-white/10 text-cyan-300 hover:bg-white/20 border-white/15' 
-              : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200'
+        <span
+          key={`cite-${match.index}`}
+          className={`inline-flex items-center justify-center px-1.5 py-0.2 mx-0.5 rounded font-mono text-[10px] font-bold border transition-all cursor-pointer select-none ${
+            darkMode
+              ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/40 hover:bg-cyan-500/30'
+              : 'bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-200'
           }`}
-          title={`Open verified source: ${rawUrl}`}
+          title={`Reference [${citeNums}]`}
         >
-          <span>{linkLabel}</span>
-          <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 ml-0.5" />
-        </a>
+          [{citeNums}]
+        </span>
       );
       lastIndex = match.index + match[0].length;
     }
-    
-    if (lastIndex < normalized.length) {
-      parts.push(normalized.substring(lastIndex));
+
+    if (lastIndex < sanitized.length) {
+      parts.push(sanitized.substring(lastIndex));
     }
-    
-    return parts.length > 0 ? parts : [normalized];
+
+    return parts.length > 0 ? parts : sanitized;
   };
 
-  const renderContentWithClaims = (content, claims) => {
+  const renderContentWithClaims = (content, claims, turnId, agentName) => {
     if (!content) return null;
-    const cleanedContent = cleanThinkingAndFootnotes(content);
-    if (!cleanedContent) return null;
+    const { speechText, references } = parseSpeechAndReferences(content, claims);
+    if (!speechText) return null;
 
-    const lines = cleanedContent.split('\n');
+    const lines = speechText.split('\n');
+
     return (
-      <div className={`space-y-3 text-[14px] leading-relaxed font-sans ${
-        darkMode ? 'text-slate-200' : 'text-slate-800'
-      }`}>
-        {lines.map((line, idx) => {
-          const trimmed = line.trim();
-          if (!trimmed) return <div key={idx} className="h-1.5" />;
-          
-          if (trimmed.startsWith('# ') || trimmed.startsWith('## ')) {
-            return (
-              <h3 key={idx} className={`text-xl sm:text-2xl font-bold font-sans mt-3 mb-1.5 tracking-tight ${
-                darkMode ? 'text-white' : 'text-slate-900'
-              }`}>
-                {trimmed.replace(/^#+\s*/, '')}
-              </h3>
-            );
-          }
-          if (trimmed.startsWith('### ')) {
-            return (
-              <h4 key={idx} className={`text-base font-semibold font-sans mt-2.5 mb-1 ${
-                darkMode ? 'text-white' : 'text-slate-900'
-              }`}>
-                {trimmed.replace(/^###\s*/, '')}
-              </h4>
-            );
-          }
-          if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-            return (
-              <div key={idx} className="flex items-start space-x-2 pl-1">
-                <span className={`mt-1.5 text-xs ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>•</span>
-                <div className="flex-1">{parseMarkdownLinks(trimmed.replace(/^[-*]\s*/, ''))}</div>
+      <div className="space-y-3">
+        {/* 1. Main Speech Paragraphs */}
+        <div className={`space-y-2.5 text-[13.5px] sm:text-[14px] leading-relaxed font-sans ${
+          darkMode ? 'text-slate-200' : 'text-slate-800'
+        }`}>
+          {lines.map((line, idx) => {
+            const trimmed = line.trim();
+            if (!trimmed) return <div key={idx} className="h-1" />;
+            
+            if (trimmed.startsWith('# ') || trimmed.startsWith('## ')) {
+              return (
+                <h3 key={idx} className={`text-lg sm:text-xl font-bold font-sans mt-2.5 mb-1 tracking-tight ${
+                  darkMode ? 'text-white' : 'text-slate-900'
+                }`}>
+                  {trimmed.replace(/^#+\s*/, '')}
+                </h3>
+              );
+            }
+            if (trimmed.startsWith('### ')) {
+              return (
+                <h4 key={idx} className={`text-sm sm:text-base font-semibold font-sans mt-2 mb-0.5 ${
+                  darkMode ? 'text-white' : 'text-slate-900'
+                }`}>
+                  {trimmed.replace(/^###\s*/, '')}
+                </h4>
+              );
+            }
+            if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+              return (
+                <div key={idx} className="flex items-start space-x-2 pl-1">
+                  <span className={`mt-1.5 text-xs ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`}>•</span>
+                  <div className="flex-1">{renderInlineCitations(trimmed.replace(/^[-*]\s*/, ''))}</div>
+                </div>
+              );
+            }
+            return <p key={idx}>{renderInlineCitations(trimmed)}</p>;
+          })}
+        </div>
+
+        {/* 2. Fact-Check Authenticator Section */}
+        {claims && claims.length > 0 && (
+          <div className={`mt-3.5 rounded-xl p-3 border transition-all ${
+            darkMode ? 'bg-black/40 border-emerald-500/30' : 'bg-emerald-50/50 border-emerald-200'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                  darkMode ? 'text-emerald-300' : 'text-emerald-900'
+                }`}>
+                  Fact-Check Authentication
+                </span>
               </div>
-            );
-          }
-          return <p key={idx}>{parseMarkdownLinks(trimmed)}</p>;
-        })}
+              <div className="flex items-center space-x-1.5 text-[10px] font-mono font-bold">
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  {claims.filter(c => c.verdict === 'Confirmed').length} Confirmed
+                </span>
+                {claims.some(c => c.verdict === 'Disputed') && (
+                  <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                    {claims.filter(c => c.verdict === 'Disputed').length} Disputed
+                  </span>
+                )}
+                {claims.some(c => c.verdict === 'Unverifiable') && (
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    {claims.filter(c => c.verdict === 'Unverifiable').length} Unverifiable
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5 mt-2">
+              {claims.map((claim, cIdx) => {
+                const isConfirmed = claim.verdict === 'Confirmed';
+                const isDisputed = claim.verdict === 'Disputed';
+                return (
+                  <div key={cIdx} className={`p-2 rounded-lg border text-xs space-y-1 ${
+                    darkMode ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-2xs'
+                  }`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start space-x-1.5">
+                        <span className="mt-0.5 flex-shrink-0">
+                          {isConfirmed ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                          ) : isDisputed ? (
+                            <AlertCircle className="h-3.5 w-3.5 text-rose-400" />
+                          ) : (
+                            <HelpCircle className="h-3.5 w-3.5 text-amber-400" />
+                          )}
+                        </span>
+                        <span className={`font-semibold text-xs leading-snug ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                          "{claim.claim_text}"
+                        </span>
+                      </div>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase font-mono flex-shrink-0 ${
+                        isConfirmed ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' :
+                        isDisputed ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' :
+                        'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                      }`}>
+                        {claim.verdict}
+                      </span>
+                    </div>
+
+                    {claim.reasoning && (
+                      <p className={`text-[11px] leading-relaxed pl-5 ${
+                        darkMode ? 'text-slate-300' : 'text-slate-600'
+                      }`}>
+                        {claim.reasoning}
+                      </p>
+                    )}
+
+                    {claim.source_url && (
+                      <div className="flex items-center space-x-2 pl-5 pt-0.5">
+                        <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold ${
+                          claim.source_tier === 1 ? 'bg-emerald-500/20 text-emerald-300' :
+                          claim.source_tier === 2 ? 'bg-blue-500/20 text-blue-300' :
+                          'bg-purple-500/20 text-purple-300'
+                        }`}>
+                          {claim.source_tier === 1 ? 'Tier 1 • Official Record' :
+                           claim.source_tier === 2 ? 'Tier 2 • Global Publication' :
+                           'Tier 3 • Academic / Registry'}
+                        </span>
+                        <a
+                          href={claim.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center space-x-1 text-[11px] hover:underline ${
+                            darkMode ? 'text-cyan-400' : 'text-indigo-600'
+                          }`}
+                        >
+                          <span>{getDomainFromUrl(claim.source_url)}</span>
+                          <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 3. References & Sources Bottom Section */}
+        {references.length > 0 && (
+          <div className={`mt-3 pt-2.5 border-t rounded-xl p-3 ${
+            darkMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <div className="flex items-center space-x-1.5 mb-2">
+              <FileText className={`h-3.5 w-3.5 ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`} />
+              <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                darkMode ? 'text-slate-300' : 'text-slate-700'
+              }`}>
+                Sources & References ({references.length})
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {references.map((ref) => (
+                <div key={ref.id} className={`flex items-center justify-between p-2 rounded-lg border text-xs ${
+                  darkMode ? 'bg-black/30 border-white/10' : 'bg-white border-slate-200 shadow-2xs'
+                }`}>
+                  <div className="flex items-center space-x-1.5 min-w-0 pr-2">
+                    <span className={`px-1.5 py-0.2 rounded font-mono text-[9px] font-bold ${
+                      darkMode ? 'bg-cyan-500/20 text-cyan-300' : 'bg-indigo-100 text-indigo-700'
+                    }`}>
+                      [{ref.id}]
+                    </span>
+                    <span className={`truncate text-[11px] ${darkMode ? 'text-slate-200' : 'text-slate-800'}`} title={ref.title}>
+                      {ref.title}
+                    </span>
+                  </div>
+                  {ref.url && (
+                    <a
+                      href={ref.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-mono flex-shrink-0 transition-colors ${
+                        darkMode ? 'bg-white/10 hover:bg-white/20 text-cyan-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                      }`}
+                      title={`Open source: ${ref.url}`}
+                    >
+                      <span>{ref.domain || 'link'}</span>
+                      <ExternalLink className="h-2.5 w-2.5 ml-0.5" />
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -2141,10 +2357,46 @@ function App() {
                         <div className={`flex items-center justify-between pb-2.5 border-b text-xs ${
                           darkMode ? 'border-white/10' : 'border-blue-100'
                         }`}>
-                          <span className={`font-bold font-sans text-sm ${darkMode ? 'text-cyan-400' : 'text-indigo-700'}`}>
-                            Assistant A
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className={`w-2.5 h-2.5 rounded-full ${darkMode ? 'bg-cyan-400' : 'bg-indigo-600'}`}></span>
+                            <span className={`font-bold font-sans text-sm ${darkMode ? 'text-cyan-400' : 'text-indigo-700'}`}>
+                              Assistant A
+                            </span>
+                          </div>
                           <div className="flex items-center space-x-1.5 text-slate-400">
+                            {/* Audio Listen Button for Assistant A */}
+                            <button 
+                              onClick={() => {
+                                const text = turns.filter(t => t.agent === 'Agent A' || t.agent === 'FOR')
+                                  .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab || debateMode === 'factcheck')
+                                  .map(t => t.content).join('\n\n');
+                                if (debateAudio.isSpeaking && activeSpeakingTurnId === 'Agent A') {
+                                  debateAudio.stopSpeech();
+                                  setActiveSpeakingTurnId(null);
+                                } else {
+                                  setActiveSpeakingTurnId('Agent A');
+                                  debateAudio.speakText(text, 'Agent A', true);
+                                }
+                              }}
+                              className={`px-2 py-1 rounded-lg transition-all flex items-center space-x-1 text-xs font-semibold border cursor-pointer ${
+                                activeSpeakingTurnId === 'Agent A' && debateAudio.isSpeaking
+                                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50 animate-pulse'
+                                  : (darkMode ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200')
+                              }`}
+                              title={activeSpeakingTurnId === 'Agent A' && debateAudio.isSpeaking ? "Stop Audio Narration" : "Listen to Assistant A Speech"}
+                            >
+                              {activeSpeakingTurnId === 'Agent A' && debateAudio.isSpeaking ? (
+                                <>
+                                  <VolumeX className="h-3.5 w-3.5 text-cyan-400" />
+                                  <span className="text-[11px] font-mono font-bold">Stop</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 className="h-3.5 w-3.5 text-cyan-400" />
+                                  <span className="text-[11px] font-mono font-bold">Listen</span>
+                                </>
+                              )}
+                            </button>
                             <button 
                               onClick={() => {
                                 const text = turns.filter(t => t.agent === 'Agent A' || t.agent === 'FOR').map(t => t.content).join('\n\n');
@@ -2164,8 +2416,11 @@ function App() {
 
                         {/* Speech Content */}
                         {turns.filter(t => t.agent === 'Agent A' || t.agent === 'FOR').length === 0 ? (
-                          <div className="py-12 text-center text-slate-400 text-xs italic">
-                            Assistant A formulating opening thesis...
+                          <div className="py-12 text-center text-slate-400 text-xs italic space-y-2.5">
+                            <div className="flex justify-center">
+                              <Sparkles className="h-5 w-5 text-cyan-400 animate-spin" />
+                            </div>
+                            <p className="font-sans font-medium">Assistant A formulating opening thesis & empirical arguments...</p>
                           </div>
                         ) : (
                           turns
@@ -2173,12 +2428,35 @@ function App() {
                             .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab || debateMode === 'factcheck')
                             .map((turn) => (
                               <div key={turn.id} className="space-y-2">
-                                <div className={`text-[11px] font-bold uppercase tracking-wider ${
-                                  darkMode ? 'text-slate-400' : 'text-slate-500'
-                                }`}>
-                                  {debateMode === 'factcheck' ? 'Supporting Evidence Brief' : `Round ${turn.round_number}`}
+                                <div className="flex items-center justify-between">
+                                  <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                                    darkMode ? 'text-slate-400' : 'text-slate-500'
+                                  }`}>
+                                    {debateMode === 'factcheck' ? 'Supporting Evidence Brief' : `Round ${turn.round_number}`}
+                                  </span>
+                                  {/* Turn-level Listen Button */}
+                                  <button
+                                    onClick={() => {
+                                      if (debateAudio.isSpeaking && activeSpeakingTurnId === turn.id) {
+                                        debateAudio.stopSpeech();
+                                        setActiveSpeakingTurnId(null);
+                                      } else {
+                                        setActiveSpeakingTurnId(turn.id);
+                                        debateAudio.speakText(turn.content, turn.agent, true);
+                                      }
+                                    }}
+                                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center space-x-1 transition-colors ${
+                                      activeSpeakingTurnId === turn.id && debateAudio.isSpeaking
+                                        ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400/40'
+                                        : (darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+                                    }`}
+                                    title="Listen to this round"
+                                  >
+                                    <Volume2 className="h-3 w-3" />
+                                    <span>{activeSpeakingTurnId === turn.id && debateAudio.isSpeaking ? "Playing" : "Audio"}</span>
+                                  </button>
                                 </div>
-                                <div>{renderContentWithClaims(turn.content, turn.claims)}</div>
+                                <div>{renderContentWithClaims(turn.content, turn.claims, turn.id, turn.agent)}</div>
                               </div>
                             ))
                         )}
@@ -2213,6 +2491,39 @@ function App() {
                             </span>
                           </div>
                           <div className="flex items-center space-x-1.5 text-slate-400">
+                            {/* Audio Listen Button for Assistant B */}
+                            <button 
+                              onClick={() => {
+                                const text = turns.filter(t => t.agent === 'Agent B' || t.agent === 'AGAINST')
+                                  .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab || debateMode === 'factcheck')
+                                  .map(t => t.content).join('\n\n');
+                                if (debateAudio.isSpeaking && activeSpeakingTurnId === 'Agent B') {
+                                  debateAudio.stopSpeech();
+                                  setActiveSpeakingTurnId(null);
+                                } else {
+                                  setActiveSpeakingTurnId('Agent B');
+                                  debateAudio.speakText(text, 'Agent B', true);
+                                }
+                              }}
+                              className={`px-2 py-1 rounded-lg transition-all flex items-center space-x-1 text-xs font-semibold border cursor-pointer ${
+                                activeSpeakingTurnId === 'Agent B' && debateAudio.isSpeaking
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-400/50 animate-pulse'
+                                  : (darkMode ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200')
+                              }`}
+                              title={activeSpeakingTurnId === 'Agent B' && debateAudio.isSpeaking ? "Stop Audio Narration" : "Listen to Assistant B Speech"}
+                            >
+                              {activeSpeakingTurnId === 'Agent B' && debateAudio.isSpeaking ? (
+                                <>
+                                  <VolumeX className="h-3.5 w-3.5 text-amber-400" />
+                                  <span className="text-[11px] font-mono font-bold">Stop</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 className="h-3.5 w-3.5 text-amber-400" />
+                                  <span className="text-[11px] font-mono font-bold">Listen</span>
+                                </>
+                              )}
+                            </button>
                             <button 
                               onClick={() => {
                                 const text = turns.filter(t => t.agent === 'Agent B' || t.agent === 'AGAINST').map(t => t.content).join('\n\n');
@@ -2231,9 +2542,18 @@ function App() {
                         </div>
 
                         {/* Speech Content */}
-                        {turns.filter(t => t.agent === 'Agent B' || t.agent === 'AGAINST').length === 0 ? (
-                          <div className="py-12 text-center text-slate-400 text-xs italic">
-                            Assistant B formulating adversarial response...
+                        {turns.filter(t => t.agent === 'Agent B' || t.agent === 'AGAINST').filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab || debateMode === 'factcheck').length === 0 ? (
+                          <div className="py-12 text-center text-slate-400 text-xs italic space-y-2.5">
+                            <div className="flex justify-center">
+                              <Sparkles className="h-5 w-5 text-amber-400 animate-spin" />
+                            </div>
+                            <p className="font-sans font-medium">
+                              {status.status === 'writing' && (status.agent === 'Agent B' || status.agent === 'AGAINST')
+                                ? `Assistant B formulating Round ${activeRoundTab === 'all' ? 'active' : activeRoundTab} adversarial counter-argument...`
+                                : status.status === 'fact_checking' && (status.agent === 'Agent B' || status.agent === 'AGAINST')
+                                ? `Assistant B cross-verifying citations & claims...`
+                                : `Assistant B formulating adversarial response...`}
+                            </p>
                           </div>
                         ) : (
                           turns
@@ -2241,12 +2561,35 @@ function App() {
                             .filter(t => activeRoundTab === 'all' || String(t.round_number) === activeRoundTab || debateMode === 'factcheck')
                             .map((turn) => (
                               <div key={turn.id} className="space-y-2">
-                                <div className={`text-[11px] font-bold uppercase tracking-wider ${
-                                  darkMode ? 'text-slate-400' : 'text-slate-500'
-                                }`}>
-                                  {debateMode === 'factcheck' ? 'Counter Evidence Brief' : `Round ${turn.round_number}`}
+                                <div className="flex items-center justify-between">
+                                  <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                                    darkMode ? 'text-slate-400' : 'text-slate-500'
+                                  }`}>
+                                    {debateMode === 'factcheck' ? 'Counter Evidence Brief' : `Round ${turn.round_number}`}
+                                  </span>
+                                  {/* Turn-level Listen Button */}
+                                  <button
+                                    onClick={() => {
+                                      if (debateAudio.isSpeaking && activeSpeakingTurnId === turn.id) {
+                                        debateAudio.stopSpeech();
+                                        setActiveSpeakingTurnId(null);
+                                      } else {
+                                        setActiveSpeakingTurnId(turn.id);
+                                        debateAudio.speakText(turn.content, turn.agent, true);
+                                      }
+                                    }}
+                                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center space-x-1 transition-colors ${
+                                      activeSpeakingTurnId === turn.id && debateAudio.isSpeaking
+                                        ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-400/40'
+                                        : (darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+                                    }`}
+                                    title="Listen to this round"
+                                  >
+                                    <Volume2 className="h-3 w-3" />
+                                    <span>{activeSpeakingTurnId === turn.id && debateAudio.isSpeaking ? "Playing" : "Audio"}</span>
+                                  </button>
                                 </div>
-                                <div>{renderContentWithClaims(turn.content, turn.claims)}</div>
+                                <div>{renderContentWithClaims(turn.content, turn.claims, turn.id, turn.agent)}</div>
                               </div>
                             ))
                         )}

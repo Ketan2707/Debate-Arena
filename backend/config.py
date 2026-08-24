@@ -45,6 +45,15 @@ class Settings(BaseSettings):
         "senate.gov",
         "house.gov",
         "europa.eu",
+        "who.int",
+        "un.org",
+        "worldbank.org",
+        "imf.org",
+        "nih.gov",
+        "cdc.gov",
+        "nasa.gov",
+        "sec.gov",
+        "federalreserve.gov",
     ]
 
     TIER_2_DOMAINS: list[str] = [
@@ -72,6 +81,15 @@ class Settings(BaseSettings):
         "cbsnews.com",
         "sky.com",
         "news.sky.com",
+        "forbes.com",
+        "techcrunch.com",
+        "wired.com",
+        "theverge.com",
+        "scientificamerican.com",
+        "newscientist.com",
+        "arstechnica.com",
+        "nature.com",
+        "science.org",
     ]
 
     TIER_3_DOMAINS: list[str] = [
@@ -83,6 +101,18 @@ class Settings(BaseSettings):
         "economist.com",
         "foreignaffairs.com",
         "wikipedia.org",
+        "statista.com",
+        "mit.edu",
+        "stanford.edu",
+        "harvard.edu",
+        "ox.ac.uk",
+        "cam.ac.uk",
+        "arxiv.org",
+        "sciencedirect.com",
+        "ieee.org",
+        "mckinsey.com",
+        "gartner.com",
+        "weforum.org",
     ]
 
     class Config:
