@@ -350,13 +350,12 @@ def start_debate(request: DebateCreateRequest, current_user: dict = Depends(get_
 @app.get("/api/debates")
 def get_debates(current_user: dict | None = Depends(get_optional_user)):
     """
-    Returns a list of debates in history for the current signed-in user.
-    If not signed in, returns an empty list.
+    Returns a list of debates in history.
+    If signed in, returns debates for the current user; otherwise returns recent debates.
     """
-    if not current_user:
-        return []
     try:
-        return database.list_debates(user_id=current_user["user_id"])
+        user_id = current_user.get("user_id") if current_user else None
+        return database.list_debates(user_id=user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

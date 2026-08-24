@@ -521,13 +521,15 @@ function App() {
   };
 
   // Start a new debate or factcheck
-  const handleStartDebate = async (e, modeOverride) => {
+  const handleStartDebate = async (e, modeOverride = null, topicOverride = null) => {
     if (e) e.preventDefault();
     const mode = modeOverride || debateMode;
     
     if (!requireAuth(mode)) return;
     
-    const topic = topicInput.trim() || "ai in ecom";
+    const chosenTopic = (topicOverride !== null && topicOverride !== undefined ? topicOverride : topicInput).trim();
+    const topic = chosenTopic || "Will generative AI net benefit or displace human workforces?";
+    
     setError(null);
     setTurns([]);
     setScores([]);
@@ -535,6 +537,7 @@ function App() {
     setSelectedClaim(null);
     setActiveRoundTab('1');
     setClaimFilter('all');
+    setTopicInput(topic);
     setDebateTopic(topic);
     setDebateMode(mode);
 
@@ -568,6 +571,21 @@ function App() {
       
       const data = await res.json();
       setActiveDebateId(data.debate_id);
+      
+      // Instantly insert into history list so sidebar updates immediately
+      setHistoryList(prev => {
+        const exists = prev.some(item => item.id === data.debate_id);
+        if (exists) return prev;
+        return [{
+          id: data.debate_id,
+          topic: topic,
+          mode: mode,
+          created_at: new Date().toISOString(),
+          scores: [],
+          claim_stats: { Confirmed: 0, Disputed: 0, Unverifiable: 0 }
+        }, ...prev];
+      });
+
       connectToStream(data.debate_id, startTime);
     } catch (err) {
       setError(err.message || "Something went wrong. Make sure backend is running.");
@@ -1515,6 +1533,7 @@ function App() {
                   setTurns([]);
                   setScores([]);
                   setTopicInput('');
+                  loadHistory();
                   setActiveView('studio');
                 }}
                 className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-sm transition-all cursor-pointer font-medium border ${
@@ -2241,7 +2260,7 @@ function App() {
                           key={card.id}
                           onClick={() => {
                             setTopicInput(card.topic);
-                            handleStartDebate(null, 'debate');
+                            handleStartDebate(null, 'debate', card.topic);
                           }}
                           className={`p-3.5 rounded-2xl border backdrop-blur-xl transition-all cursor-pointer flex items-start space-x-3 group ${
                             darkMode 

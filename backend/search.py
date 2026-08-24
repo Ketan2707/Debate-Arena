@@ -200,38 +200,42 @@ def ddg_search_fallback(query: str, max_results: int = 5) -> list[dict]:
         pass
     return []
 
-def search_whitelist(claim_text: str, max_results: int = 5) -> list[dict]:
+def search_whitelist(claim_text: str, max_results: int = 6) -> list[dict]:
     """
     Ultra-fast parallel search across trusted whitelist domains.
     Uses multi-threaded fast querying across Wikipedia, Google RSS, and DDG.
     """
     # 1. Clean and optimize query
-    search_query = generate_search_query(claim_text)
-    cleaned_query = clean_claim_for_query(search_query)
-    if not cleaned_query:
+    keyword_query = clean_claim_for_query(generate_search_query(claim_text))
+    direct_query = clean_claim_for_query(claim_text[:120])
+    
+    if not keyword_query and not direct_query:
         return []
 
     # 2. Check query cache
-    cache_key = (cleaned_query, max_results)
+    cache_key = (keyword_query or direct_query, max_results)
     if cache_key in _search_cache:
         return _search_cache[cache_key]
     
     # 3. Parallel search execution with quick concurrent fetchers
     combined_raw_results = []
     
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        # Launch Wikipedia, Google RSS, and DuckDuckGo concurrently
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        # Launch Wikipedia, Google RSS, and DuckDuckGo concurrently for both queries
         futures = [
-            executor.submit(google_rss_search, cleaned_query, max_results + 3),
-            executor.submit(wikipedia_search, cleaned_query, 4),
-            executor.submit(ddg_search, cleaned_query, max_results + 3),
+            executor.submit(google_rss_search, keyword_query, max_results + 3),
+            executor.submit(wikipedia_search, keyword_query, 4),
+            executor.submit(ddg_search, keyword_query, max_results + 3),
         ]
+        if direct_query != keyword_query:
+            futures.append(executor.submit(google_rss_search, direct_query, 4))
+            futures.append(executor.submit(ddg_search, direct_query, 4))
         
         # If Google Search API key is present, also query Google
         if settings.GOOGLE_SEARCH_API_KEY and settings.GOOGLE_SEARCH_CX:
-            futures.append(executor.submit(google_search, cleaned_query, max_results))
+            futures.append(executor.submit(google_search, keyword_query, max_results))
         
-        done, not_done = wait(futures, timeout=2.0)
+        done, not_done = wait(futures, timeout=2.5)
         for future in done:
             try:
                 res_list = future.result()
@@ -272,7 +276,7 @@ def search_whitelist(claim_text: str, max_results: int = 5) -> list[dict]:
                     "url": url,
                     "title": item.get("title", ""),
                     "snippet": item.get("snippet", ""),
-                    "tier": 3
+                    "tier": get_domain_tier(url) or 3
                 })
 
     _search_cache[cache_key] = tiered_results

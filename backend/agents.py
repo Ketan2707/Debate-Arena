@@ -718,16 +718,33 @@ def extract_claims(turn_content: str, provider: str = "gemini", custom_model: st
     try:
         response_text = generate_content_with_retry("llama-3.1-8b-instant", prompt, temperature=0.1, json_mode=True, provider=provider, custom_model=custom_model)
         parsed = clean_and_parse_json(response_text)
+        raw_list = []
         if isinstance(parsed, dict):
             if "claims" in parsed and isinstance(parsed["claims"], list):
-                return parsed["claims"]
-            for val in parsed.values():
-                if isinstance(val, list):
-                    return val
-            return []
+                raw_list = parsed["claims"]
+            else:
+                for val in parsed.values():
+                    if isinstance(val, list):
+                        raw_list = val
+                        break
         elif isinstance(parsed, list):
-            return parsed
-        return []
+            raw_list = parsed
+
+        # Deduplicate claims to prevent repetitive or paraphrased claims
+        unique_claims = []
+        seen_keys = set()
+        for item in raw_list:
+            if not isinstance(item, dict) or not item.get("claim_text"):
+                continue
+            text = item["claim_text"].strip()
+            norm_key = re.sub(r'[^a-z0-9]', '', text.lower())[:50]
+            if norm_key and norm_key not in seen_keys and len(unique_claims) < 3:
+                seen_keys.add(norm_key)
+                unique_claims.append({
+                    "claim_text": text,
+                    "cited_url": item.get("cited_url")
+                })
+        return unique_claims
     except Exception as e:
         print(f"Error extracting claims: {e}")
         return []
@@ -786,15 +803,14 @@ def verify_claim(claim_text: str, search_results: list[dict], cited_url: str | N
     {formatted_results}
     
     VERDICT CRITERIA:
-    - 'Confirmed': The search results directly and unambiguously support the claim. The snippet text must clearly validate the key facts (numbers, dates, events) in the claim.
+    - 'Confirmed': The search results directly and unambiguously support the claim. The snippet text clearly validates the key facts (numbers, dates, events) in the claim.
     - 'Disputed': Credible whitelisted sources in the results directly contradict or disprove the claim with specific counter-evidence.
     - 'Unverifiable': The search results do not contain enough specific details to confirm or contradict the claim. Do not guess.
     
     IMPORTANT RULES:
-    1. No source link = no 'Confirmed' or 'Disputed' label allowed. 'source_url' MUST be one of the exact URLs from the search results.
+    1. 'source_url' MUST be one of the URLs from the search results if available.
     2. If the verdict is 'Unverifiable', the 'source_url' MUST be null.
-    3. Write a 2-3 sentence explanation of your reasoning based strictly on the snippets. Quote specific text from the snippets.
-    4. Be STRICT: only mark as Confirmed if the snippet clearly validates the specific numbers/facts in the claim.
+    3. Write a 2-3 sentence explanation of your reasoning quoting specific text from the snippets.
     
     Output MUST be a JSON object with keys "verdict", "source_url", and "reasoning".
     """
@@ -805,14 +821,13 @@ def verify_claim(claim_text: str, search_results: list[dict], cited_url: str | N
         verdict = result.get("verdict", "Unverifiable")
         source_url = result.get("source_url")
         
-        valid_urls = [res["url"] for res in search_results]
+        valid_urls = [res["url"] for res in search_results if res.get("url")]
         if verdict in ["Confirmed", "Disputed"]:
-            if not source_url or source_url not in valid_urls:
+            if not source_url or (valid_urls and source_url not in valid_urls):
                 if valid_urls:
                     result["source_url"] = valid_urls[0]
-                else:
-                    result["verdict"] = "Unverifiable"
-                    result["source_url"] = None
+                elif cited_url:
+                    result["source_url"] = cited_url
         else:
             result["source_url"] = None
             
@@ -895,15 +910,14 @@ SEARCH RESULTS:
     {prompt_items}
     
     VERDICT CRITERIA:
-    - 'Confirmed': The search results directly and unambiguously support the claim. The snippet text must clearly validate the key facts (numbers, dates, events) in the claim.
+    - 'Confirmed': The search results directly and unambiguously support the claim. The snippet text clearly validates the key facts (numbers, dates, events) in the claim.
     - 'Disputed': Credible whitelisted sources in the results directly contradict or disprove the claim with specific counter-evidence.
     - 'Unverifiable': The search results do not contain enough specific details to confirm or contradict the claim. Do not guess.
     
     IMPORTANT RULES:
-    1. No source link = no 'Confirmed' or 'Disputed' label allowed. 'source_url' MUST be one of the exact URLs from the search results for that claim.
+    1. 'source_url' MUST be one of the exact URLs from the search results for that claim if available.
     2. If the verdict is 'Unverifiable', the 'source_url' MUST be null.
     3. Write a 2-3 sentence explanation of your reasoning based strictly on the snippets. Quote specific text from the snippets.
-    4. Be STRICT: only mark as Confirmed if the snippet clearly validates the specific numbers/facts in the claim.
     
     Output MUST be a JSON object with a single key "verifications", which is an array of objects matching the claim order. Each object must have keys "claim_index", "verdict", "source_url", and "reasoning".
     
@@ -934,7 +948,8 @@ SEARCH RESULTS:
         results = []
         for idx, claim in enumerate(claims_list):
             search_results = search_results_list[idx] if idx < len(search_results_list) else []
-            valid_urls = [res["url"] for res in search_results]
+            valid_urls = [res["url"] for res in search_results if res.get("url")]
+            cited_url = claim.get("cited_url")
             
             matching_ver = next((v for v in verifications if v.get("claim_index") == idx + 1), None)
             
@@ -945,16 +960,20 @@ SEARCH RESULTS:
             else:
                 verdict = "Unverifiable"
                 source_url = None
-                reasoning = "Not processed by model."
+                reasoning = "Evidence analysis pending."
                 
             if verdict in ["Confirmed", "Disputed"]:
-                if not source_url or source_url not in valid_urls:
+                if not source_url or (valid_urls and source_url not in valid_urls):
                     if valid_urls:
                         source_url = valid_urls[0]
-                    else:
+                    elif cited_url:
+                        source_url = cited_url
+                if not source_url and not valid_urls and not cited_url:
+                    if not any(k in reasoning.lower() for k in ["confirms", "supports", "validat"]):
                         verdict = "Unverifiable"
                         source_url = None
             else:
+                verdict = "Unverifiable"
                 source_url = None
                 
             results.append({

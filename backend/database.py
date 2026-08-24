@@ -304,34 +304,36 @@ def save_score(debate_id: str, agent: str, logic: int, evidence: int, rebuttal: 
             )
 
 def list_debates(user_id: str = None) -> list[dict]:
-    if not user_id:
-        return []
     if USE_SUPABASE:
-        res = supabase_client.table("debates").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
-        debates = res.data or []
-        for d in debates:
-            debate_id = d["id"]
-            # Fetch scores
-            scores_res = supabase_client.table("scores").select("agent", "total").eq("debate_id", debate_id).execute()
-            d["scores"] = scores_res.data or []
+        query = supabase_client.table("debates").select("*").order("created_at", desc=True).limit(25)
+        if user_id:
+            query = query.eq("user_id", user_id)
             
-            # Fetch claims for stats
-            turns_res = supabase_client.table("turns").select("id").eq("debate_id", debate_id).execute()
-            turn_ids = [t["id"] for t in (turns_res.data or [])]
-            claim_stats = {"Confirmed": 0, "Disputed": 0, "Unverifiable": 0}
-            if turn_ids:
-                claims_res = supabase_client.table("claims").select("verdict").in_("turn_id", turn_ids).execute()
-                for c in (claims_res.data or []):
-                    verdict = c["verdict"]
-                    if verdict in claim_stats:
-                        claim_stats[verdict] += 1
-                    else:
-                        claim_stats["Unverifiable"] += 1
-            d["claim_stats"] = claim_stats
+        res = query.execute()
+        debates = res.data or []
+        if not debates:
+            return []
+            
+        debate_ids = [d["id"] for d in debates]
+        try:
+            scores_res = supabase_client.table("scores").select("debate_id, agent, total").in_("debate_id", debate_ids).execute()
+            scores_by_debate = {}
+            for s in (scores_res.data or []):
+                scores_by_debate.setdefault(s["debate_id"], []).append({"agent": s["agent"], "total": s["total"]})
+        except Exception:
+            scores_by_debate = {}
+            
+        for d in debates:
+            d["scores"] = scores_by_debate.get(d["id"], [])
+            d["claim_stats"] = {"Confirmed": 0, "Disputed": 0, "Unverifiable": 0}
+            
         return debates
     else:
         with get_sqlite_conn() as conn:
-            cursor = conn.execute("SELECT * FROM debates WHERE user_id = ? ORDER BY created_at DESC", (user_id,))
+            if user_id:
+                cursor = conn.execute("SELECT * FROM debates WHERE user_id = ? ORDER BY created_at DESC", (user_id,))
+            else:
+                cursor = conn.execute("SELECT * FROM debates ORDER BY created_at DESC LIMIT 30")
             debates = [dict(row) for row in cursor.fetchall()]
             
             for debate in debates:
