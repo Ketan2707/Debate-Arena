@@ -246,6 +246,73 @@ class DebateCreateRequest(BaseModel):
     topic: str
     mode: str = "debate"  # "debate" or "factcheck"
     stance_preference: str = "both"  # "both", "for", or "against"
+    model_provider: str = "gemini"  # "gemini", "groq", "oxalpha", "openrouter"
+    custom_model: str = ""  # OpenRouter custom model slug e.g. "meta-llama/llama-3.3-70b-instruct"
+
+@app.get("/api/models/openrouter")
+async def get_openrouter_models():
+    """
+    Returns curated active OpenRouter models list for the custom model selector.
+    """
+    curated = [
+        {
+            "id": "meta-llama/llama-3.3-70b-instruct",
+            "name": "Llama 3.3 70B Instruct",
+            "provider": "Meta",
+            "description": "High capability open weights model with balanced argument logic.",
+            "is_free": False
+        },
+        {
+            "id": "deepseek/deepseek-chat",
+            "name": "DeepSeek V3",
+            "provider": "DeepSeek",
+            "description": "High-efficiency general purpose conversational intelligence.",
+            "is_free": False
+        },
+        {
+            "id": "qwen/qwen-2.5-72b-instruct",
+            "name": "Qwen 2.5 72B Instruct",
+            "provider": "Alibaba",
+            "description": "Leaderboard champion in complex mathematics and argument logic.",
+            "is_free": False
+        },
+        {
+            "id": "stealth/ox-alpha",
+            "name": "OxAlpha Deep Reasoning",
+            "provider": "OxAlpha",
+            "description": "Advanced analytical and fallacy detection engine.",
+            "is_free": True
+        },
+        {
+            "id": "nvidia/nemotron-3.5-lightning:free",
+            "name": "Nvidia Nemotron 3.5 Lightning (Free)",
+            "provider": "Nvidia",
+            "description": "Ultra-fast inference optimized for factual coherence.",
+            "is_free": True
+        },
+        {
+            "id": "google/gemma-4-31b-it:free",
+            "name": "Google Gemma 4 31B (Free)",
+            "provider": "Google",
+            "description": "High capability lightweight open model by Google DeepMind.",
+            "is_free": True
+        },
+        {
+            "id": "anthropic/claude-3.5-sonnet",
+            "name": "Claude 3.5 Sonnet",
+            "provider": "Anthropic",
+            "description": "Benchmark-leading intelligence, writing nuance and critical critique.",
+            "is_free": False
+        },
+        {
+            "id": "openai/gpt-4o-mini",
+            "name": "GPT-4o Mini",
+            "provider": "OpenAI",
+            "description": "Fast, versatile multimodal intelligence with strong instruction following.",
+            "is_free": False
+        }
+    ]
+    return {"models": curated}
 
 @app.post("/api/debates")
 def start_debate(request: DebateCreateRequest, current_user: dict = Depends(get_current_user)):
@@ -259,14 +326,25 @@ def start_debate(request: DebateCreateRequest, current_user: dict = Depends(get_
     
     mode = request.mode if request.mode in ("debate", "factcheck") else "debate"
     stance_pref = request.stance_preference if request.stance_preference in ("both", "for", "against") else "both"
+    provider = request.model_provider if request.model_provider in ("gemini", "groq", "oxalpha", "openrouter") else "gemini"
+    custom_model = request.custom_model.strip() if request.custom_model else ""
     
     debate_id = database.create_debate(
         topic_stripped, 
         mode=mode, 
         user_id=current_user["user_id"], 
-        stance_preference=stance_pref
+        stance_preference=stance_pref,
+        model_provider=provider,
+        custom_model=custom_model
     )
-    return {"debate_id": debate_id, "topic": topic_stripped, "mode": mode, "stance_preference": stance_pref}
+    return {
+        "debate_id": debate_id, 
+        "topic": topic_stripped, 
+        "mode": mode, 
+        "stance_preference": stance_pref,
+        "model_provider": provider,
+        "custom_model": custom_model
+    }
 
 
 @app.get("/api/debates")
@@ -306,6 +384,8 @@ async def debate_stream_generator(debate_id: str):
         
     topic = db_debate["topic"]
     mode = db_debate.get("mode", "debate")
+    model_provider = db_debate.get("model_provider", "gemini")
+    custom_model = db_debate.get("custom_model", "")
     
     # Send immediate connection ack and status so client establishes SSE instantly
     yield f": keep-alive\n\n"
@@ -337,7 +417,7 @@ async def debate_stream_generator(debate_id: str):
 
             # Generate structured FOR / AGAINST / VERDICT analysis
             analysis = await run_in_threadpool(
-                agents.generate_factcheck_analysis, topic, research_context, stance_preference
+                agents.generate_factcheck_analysis, topic, research_context, stance_preference, model_provider, custom_model
             )
             
             # Save analysis sections as turns
@@ -364,7 +444,7 @@ async def debate_stream_generator(debate_id: str):
                 await asyncio.sleep(0.2)
                 
                 # Extract and verify claims from this section
-                extracted_claims = await run_in_threadpool(agents.extract_claims, section_content)
+                extracted_claims = await run_in_threadpool(agents.extract_claims, section_content, model_provider, custom_model)
                 
                 verified_claims = []
                 if extracted_claims:
@@ -372,7 +452,7 @@ async def debate_stream_generator(debate_id: str):
                     search_results_list = await asyncio.gather(*search_tasks)
                     
                     verdict_data_list = await run_in_threadpool(
-                        agents.verify_claims_batch, extracted_claims, search_results_list
+                        agents.verify_claims_batch, extracted_claims, search_results_list, model_provider, custom_model
                     )
                     
                     for idx, claim_item in enumerate(extracted_claims):
@@ -423,7 +503,7 @@ async def debate_stream_generator(debate_id: str):
     # ── DEBATE MODE (original flow) ───────────────────────────
     # 2. Generate stances for this topic using the research context
     try:
-        stances = await run_in_threadpool(agents.parse_topic_stances, topic, research_context)
+        stances = await run_in_threadpool(agents.parse_topic_stances, topic, research_context, model_provider, custom_model)
     except Exception as e:
         yield f"event: error\ndata: {json.dumps({'error': f'Failed to parse stances: {e}'})}\n\n"
         return
@@ -472,7 +552,7 @@ async def debate_stream_generator(debate_id: str):
             # Generate the agent's turn
             content = await run_in_threadpool(
                 agents.generate_debate_turn,
-                topic, stance, agent_name, history, round_number, temp, research_context
+                topic, stance, agent_name, history, round_number, temp, research_context, model_provider, custom_model
             )
             
             # Save raw turn in DB
@@ -486,7 +566,7 @@ async def debate_stream_generator(debate_id: str):
             await asyncio.sleep(0.2)
             
             # Extract checkable claims
-            extracted_claims = await run_in_threadpool(agents.extract_claims, content)
+            extracted_claims = await run_in_threadpool(agents.extract_claims, content, model_provider, custom_model)
             
             verified_claims = []
             if extracted_claims:
@@ -494,7 +574,7 @@ async def debate_stream_generator(debate_id: str):
                 search_results_list = await asyncio.gather(*search_tasks)
                 
                 verdict_data_list = await run_in_threadpool(
-                    agents.verify_claims_batch, extracted_claims, search_results_list
+                    agents.verify_claims_batch, extracted_claims, search_results_list, model_provider, custom_model
                 )
                 
                 for idx, claim_item in enumerate(extracted_claims):
@@ -549,7 +629,7 @@ async def debate_stream_generator(debate_id: str):
     
     try:
         # Run double evaluation
-        scores_dict = await run_in_threadpool(agents.evaluate_debate, topic, history, claims_by_turn)
+        scores_dict = await run_in_threadpool(agents.evaluate_debate, topic, history, claims_by_turn, model_provider, custom_model)
         
         # Save scores to database
         for agent_name, score in scores_dict.items():

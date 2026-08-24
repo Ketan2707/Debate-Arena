@@ -3,6 +3,7 @@ import re
 import time
 import random
 import sys
+import requests
 from groq import Groq
 from backend.config import settings
 
@@ -15,13 +16,13 @@ if sys.platform == "win32":
         pass
 
 # Detect if we should run in Mock Mode for demonstration when API key is missing
-MOCK_MODE = not settings.GROQ_API_KEY
+MOCK_MODE = not (settings.GROQ_API_KEY or settings.GEMINI_API_KEY or settings.OPENROUTER_API_KEY)
 if MOCK_MODE:
-    print("WARNING: GROQ_API_KEY is not configured. Running in MOCK DEMO MODE.")
+    print("WARNING: No LLM API keys configured. Running in MOCK DEMO MODE.")
     client = None
 else:
-    # Initialize the Groq API client
-    client = Groq(api_key=settings.GROQ_API_KEY)
+    # Initialize the Groq API client if key exists
+    client = Groq(api_key=settings.GROQ_API_KEY) if settings.GROQ_API_KEY else None
 
 # Prioritized list of active chat generation models on Groq
 CANDIDATE_MODELS = [
@@ -42,12 +43,11 @@ def get_available_groq_models():
     global _available_models_cache
     if _available_models_cache is not None:
         return _available_models_cache
-    if MOCK_MODE or not client:
+    if not client:
         return set()
     try:
         models = client.models.list()
         _available_models_cache = {m.id for m in models.data if getattr(m, 'active', True)}
-        print(f"Groq: Discovered {len(_available_models_cache)} active models on account.")
         return _available_models_cache
     except Exception as e:
         print(f"Warning: Could not fetch Groq models list ({e}). Will try candidates sequentially.")
@@ -55,7 +55,7 @@ def get_available_groq_models():
 
 def get_best_model(requested_model: str = "") -> str:
     """
-    Returns the best available active model, prioritizing fast compound models.
+    Returns the best available active model on Groq.
     """
     global _active_model
     available = get_available_groq_models()
@@ -80,42 +80,27 @@ def strip_internal_thinking(text: str) -> str:
     """
     if not text:
         return ""
-    # If </think> is present, take the text following the final </think> tag
     if "</think>" in text.lower():
         parts = re.split(r'</think>', text, flags=re.IGNORECASE)
         cleaned = parts[-1].strip()
     elif "<think>" in text.lower():
-        # Unclosed think tag: strip the <think> tag itself
         cleaned = re.sub(r'<think>', '', text, flags=re.IGNORECASE).strip()
     else:
         cleaned = text.strip()
 
-    # Strip "Thinking Process: ..." or "Thought Process: ..."
     cleaned = re.sub(r'^(?:Thinking Process|Thought Process|Reasoning):[\s\S]*?\n\n', '', cleaned.strip(), flags=re.IGNORECASE)
-    
-    # Strip meta-planning & outline scratchpad blocks (e.g. "**Review Transcript...**", "*Goal for Closing:* ...")
     cleaned = re.sub(r'(?:^\s*\d+\.\s*\n+)?\s*\*{1,2}(?:Review Transcript|Identify Key Points|Goal for Closing|Agent [AB]\'s (?:Core|Previous) Arguments|Drafting Notes|Strategy|Plan|Debate Plan)[^*]*\*{1,2}[\s\S]*?(?=\n\n[A-Z0-9]|\Z)', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\*+(?:Word Count|Constraint|Cutting|Deconstruct)[^*]*\*+[\s\S]*?(?=\n\n|\Z)', '', cleaned, flags=re.IGNORECASE)
-    
-    # Clean leaked template placeholders like "[Source Name](exact URL from research)"
     cleaned = re.sub(r'\[(?:Source Name|Source|Source Title)\]\(exact URL from research\)', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\(exact URL from research\)', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\[exact URL from research\]', '', cleaned, flags=re.IGNORECASE)
-    
-    # Clean bracketed footnote tags <[1]> to [1]
     cleaned = re.sub(r'<\s*\[\s*(\d+)\s*\]\s*>', r'[\1]', cleaned)
-    # Strip Asian citation brackets like 【4:0†source】 or 【1】
     cleaned = re.sub(r'[【\u3010][^】\u3011]*[】\u3011]', '', cleaned)
-    
-    # Strip standalone References / Bibliography / Works Cited lists at the beginning or end of text
     cleaned = re.sub(r'^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)+', '', cleaned.strip(), flags=re.IGNORECASE)
     cleaned = re.sub(r'\n+(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):\s*\n(?:[-*•\d.]+[^\n]*\n*)+$', '', cleaned.strip(), flags=re.IGNORECASE)
     cleaned = re.sub(r'^(?:Reference\(s\)|References|Bibliography|Sources|Works Cited):[ \t]*\n+', '', cleaned.strip(), flags=re.IGNORECASE)
     cleaned = re.sub(r'^(?:[-*•]\s+[A-Za-z\s,.\(\)\d]+(?:Retrieved from\s*)?<https?://[^\s>]+>\s*\n*)+', '', cleaned.strip(), flags=re.IGNORECASE)
-    
-    # Clean orphan numbers at the very beginning resulting from stripped numbered list items (e.g. "1.\n\n")
     cleaned = re.sub(r'^\s*\d+\.\s*\n+', '', cleaned)
-    
     return cleaned.strip()
 
 def clean_and_parse_json(text: str):
@@ -134,7 +119,6 @@ def clean_and_parse_json(text: str):
     try:
         return json.loads(clean_text)
     except json.JSONDecodeError:
-        # Regex search for first matching brace/bracket block
         match_obj = re.search(r'(\{[\s\S]*\}|\[[\s\S]*\])', clean_text)
         if match_obj:
             try:
@@ -143,7 +127,124 @@ def clean_and_parse_json(text: str):
                 pass
         raise Exception(f"Failed to parse JSON from output: {text[:250]}")
 
-def generate_content_with_retry(
+# ─── Multi-Provider LLM Callers ──────────────────────────────
+
+def call_gemini_api(prompt: str, temperature: float = 0.7, json_mode: bool = False, max_tokens: int = 2048) -> str:
+    """
+    Calls Google Gemini API (Gemini 2.5 Flash / 3.6 Flash / Balanced Mode).
+    """
+    if not settings.GEMINI_API_KEY:
+        raise Exception("GEMINI_API_KEY is not configured")
+        
+    models = ["gemini-3.6-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemma-4-31b-it"]
+    cur_prompt = prompt
+    if json_mode and "json" not in cur_prompt.lower():
+        cur_prompt += "\n\nPlease ensure your output is strictly a valid JSON object."
+        
+    last_err = None
+    for m in models:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={settings.GEMINI_API_KEY}"
+            payload = {
+                "contents": [{"parts": [{"text": cur_prompt}]}],
+                "generationConfig": {
+                    "temperature": temperature,
+                    "maxOutputTokens": max_tokens
+                }
+            }
+            if json_mode:
+                payload["generationConfig"]["responseMimeType"] = "application/json"
+            r = requests.post(url, json=payload, timeout=25)
+            if r.status_code == 200:
+                res = r.json()
+                raw = res["candidates"][0]["content"]["parts"][0]["text"]
+                return strip_internal_thinking(raw)
+            else:
+                last_err = f"Status {r.status_code}: {r.text[:120]}"
+        except Exception as e:
+            last_err = str(e)
+            continue
+    raise Exception(f"Gemini generation failed: {last_err}")
+
+
+def call_oxalpha_api(prompt: str, temperature: float = 0.7, json_mode: bool = False, max_tokens: int = 2048) -> str:
+    """
+    Calls OxAlpha (Deep Reasoning Mode) via OpenRouter / Stealth engine.
+    """
+    if not settings.OPENROUTER_API_KEY:
+        raise Exception("OPENROUTER_API_KEY is not configured for OxAlpha")
+        
+    models = ["stealth/ox-alpha", "deepseek/deepseek-chat", "meta-llama/llama-3.3-70b-instruct", "qwen/qwen-2.5-72b-instruct"]
+    cur_prompt = prompt
+    if json_mode and "json" not in cur_prompt.lower():
+        cur_prompt += "\n\nPlease ensure your output is strictly a valid JSON object."
+        
+    headers = {
+        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://arguforge.ai",
+        "X-Title": "ArguForge AI Arena"
+    }
+    last_err = None
+    for m in models:
+        try:
+            payload = {
+                "model": m,
+                "messages": [{"role": "user", "content": cur_prompt}],
+                "temperature": temperature,
+                "max_tokens": max_tokens
+            }
+            if json_mode:
+                payload["response_format"] = {"type": "json_object"}
+            r = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload, timeout=25)
+            if r.status_code == 200:
+                res = r.json()
+                raw = res["choices"][0]["message"]["content"]
+                return strip_internal_thinking(raw)
+            else:
+                last_err = f"Status {r.status_code}: {r.text[:120]}"
+        except Exception as e:
+            last_err = str(e)
+            continue
+    raise Exception(f"OxAlpha generation failed: {last_err}")
+
+
+def call_openrouter_api(model_slug: str, prompt: str, temperature: float = 0.7, json_mode: bool = False, max_tokens: int = 2048) -> str:
+    """
+    Calls user-specified custom model via OpenRouter (Custom Mode).
+    """
+    if not settings.OPENROUTER_API_KEY:
+        raise Exception("OPENROUTER_API_KEY is not configured")
+        
+    cur_prompt = prompt
+    if json_mode and "json" not in cur_prompt.lower():
+        cur_prompt += "\n\nPlease ensure your output is strictly a valid JSON object."
+        
+    headers = {
+        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://arguforge.ai",
+        "X-Title": "ArguForge AI Arena"
+    }
+    slug = (model_slug or "").strip() or "meta-llama/llama-3.3-70b-instruct"
+    payload = {
+        "model": slug,
+        "messages": [{"role": "user", "content": cur_prompt}],
+        "temperature": temperature,
+        "max_tokens": max_tokens
+    }
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
+        
+    r = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload, timeout=30)
+    if r.status_code == 200:
+        res = r.json()
+        raw = res["choices"][0]["message"]["content"]
+        return strip_internal_thinking(raw)
+    raise Exception(f"OpenRouter error for model '{slug}': Status {r.status_code} - {r.text[:120]}")
+
+
+def call_groq_api(
     model_name: str = "", 
     prompt: str = "", 
     temperature: float = 0.7, 
@@ -152,17 +253,16 @@ def generate_content_with_retry(
     max_tokens: int = 2048
 ) -> str:
     """
-    Calls the Groq API with automatic model discovery, multi-tier fallback, exponential backoff, and jitter.
+    Calls the Groq API (Lightning / Speed Mode) with automatic candidate fallback.
     """
     global _active_model
-    if MOCK_MODE or not client:
-        return "{}"
+    if not client:
+        raise Exception("Groq client not initialized")
         
     best_initial = get_best_model(model_name)
     models_to_try = [best_initial] + [m for m in CANDIDATE_MODELS if m != best_initial]
     
     last_exception = None
-    
     for current_model in models_to_try:
         delay = 0.8
         for attempt in range(max_retries):
@@ -184,21 +284,16 @@ def generate_content_with_retry(
             except Exception as e:
                 err_str = str(e).lower()
                 last_exception = e
-                # Check for model not found / deleted / terms required / decommissioned
-                if "model_not_found" in err_str or "404" in err_str or "does not exist" in err_str or "decommissioned" in err_str or "terms_required" in err_str or "model_terms_required" in err_str:
-                    print(f"Model '{current_model}' unavailable on Groq ({err_str[:60]}). Trying next candidate...")
-                    break  # Move directly to next candidate model
-                elif "413" in err_str or "too_large" in err_str or "request entity too large" in err_str:
-                    print(f"Payload too large for '{current_model}'. Switching to next model...")
-                    break  # Switch to next candidate model with larger context window
+                if "model_not_found" in err_str or "404" in err_str or "does not exist" in err_str or "decommissioned" in err_str:
+                    break
+                elif "413" in err_str or "too_large" in err_str:
+                    break
                 elif "429" in err_str or "rate limit" in err_str:
-                    print(f"Groq rate limit on '{current_model}'. Switching to next model...")
                     time.sleep(0.5)
-                    break  # Rotate to next candidate model immediately for fresh quota
-                elif "response_format" in err_str or "json_object" in err_str or "json_validate_failed" in err_str:
-                    # Model failed JSON validation mode, fallback to text mode and parse JSON from string
+                    break
+                elif "response_format" in err_str or "json_object" in err_str:
                     try:
-                        text_prompt = cur_prompt + "\n\nCRITICAL: Output ONLY a valid JSON object without surrounding explanations or conversation."
+                        text_prompt = cur_prompt + "\n\nCRITICAL: Output ONLY a valid JSON object without conversation."
                         completion = client.chat.completions.create(
                             model=current_model,
                             messages=[{"role": "user", "content": text_prompt}],
@@ -212,14 +307,72 @@ def generate_content_with_retry(
                         last_exception = sub_e
                         break
                 else:
-                    print(f"Groq API error on '{current_model}' (attempt {attempt+1}/{max_retries}): {e}")
                     time.sleep(delay)
                     
     raise Exception(f"All Groq models failed. Last error: {last_exception}")
 
+
+def generate_content_with_retry(
+    model_name: str = "", 
+    prompt: str = "", 
+    temperature: float = 0.7, 
+    json_mode: bool = False, 
+    max_retries: int = 3,
+    max_tokens: int = 2048,
+    provider: str = "gemini",
+    custom_model: str = ""
+) -> str:
+    """
+    Unified multi-model dispatcher routing requests through Groq, Gemini 2.5 Flash, 
+    OxAlpha, or OpenRouter with automatic provider fallback for zero downtime.
+    """
+    if MOCK_MODE:
+        return "{}"
+        
+    provider_norm = (provider or "gemini").lower().strip()
+    
+    # 1. Gemini (Default / Balanced)
+    if provider_norm == "gemini":
+        try:
+            return call_gemini_api(prompt=prompt, temperature=temperature, json_mode=json_mode, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"Gemini dispatch warning ({e}). Falling back to Groq...")
+            try:
+                return call_groq_api(model_name=model_name, prompt=prompt, temperature=temperature, json_mode=json_mode, max_retries=max_retries, max_tokens=max_tokens)
+            except Exception:
+                return call_oxalpha_api(prompt=prompt, temperature=temperature, json_mode=json_mode, max_tokens=max_tokens)
+                
+    # 2. Groq (Lightning / Speed)
+    elif provider_norm == "groq":
+        try:
+            return call_groq_api(model_name=model_name, prompt=prompt, temperature=temperature, json_mode=json_mode, max_retries=max_retries, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"Groq dispatch warning ({e}). Falling back to Gemini...")
+            return call_gemini_api(prompt=prompt, temperature=temperature, json_mode=json_mode, max_tokens=max_tokens)
+            
+    # 3. OxAlpha (Deep Reasoning)
+    elif provider_norm == "oxalpha":
+        try:
+            return call_oxalpha_api(prompt=prompt, temperature=temperature, json_mode=json_mode, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"OxAlpha dispatch warning ({e}). Falling back to Gemini...")
+            return call_gemini_api(prompt=prompt, temperature=temperature, json_mode=json_mode, max_tokens=max_tokens)
+            
+    # 4. OpenRouter (Custom Mode)
+    elif provider_norm == "openrouter":
+        try:
+            return call_openrouter_api(model_slug=custom_model, prompt=prompt, temperature=temperature, json_mode=json_mode, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"OpenRouter dispatch warning ({e}). Falling back to Gemini...")
+            return call_gemini_api(prompt=prompt, temperature=temperature, json_mode=json_mode, max_tokens=max_tokens)
+            
+    # Default: Gemini
+    else:
+        return call_gemini_api(prompt=prompt, temperature=temperature, json_mode=json_mode, max_tokens=max_tokens)
+
 # ─── Topic Stances ───────────────────────────────────────────
 
-def parse_topic_stances(topic: str, research_context: str = "") -> dict:
+def parse_topic_stances(topic: str, research_context: str = "", provider: str = "gemini", custom_model: str = "") -> dict:
     """
     Generates opposing stances for Agent A and Agent B based on the topic and optional research.
     """
@@ -252,7 +405,7 @@ def parse_topic_stances(topic: str, research_context: str = "") -> dict:
     Do not add extra commentary.
     """
     try:
-        response_text = generate_content_with_retry("groq/compound-mini", prompt, temperature=0.2, json_mode=True)
+        response_text = generate_content_with_retry("groq/compound-mini", prompt, temperature=0.2, json_mode=True, provider=provider, custom_model=custom_model)
         return clean_and_parse_json(response_text)
     except Exception as e:
         print(f"Error parsing topic stances: {e}")
@@ -270,7 +423,9 @@ def generate_debate_turn(
     history: list[dict], 
     round_number: int, 
     temperature: float,
-    research_context: str = ""
+    research_context: str = "",
+    provider: str = "gemini",
+    custom_model: str = ""
 ) -> str:
     """
     Generates a turn for a debating agent, strictly grounded in provided research context.
@@ -344,7 +499,7 @@ def generate_debate_turn(
     """
     
     try:
-        raw = generate_content_with_retry("groq/compound-mini", prompt, temperature=temperature)
+        raw = generate_content_with_retry("groq/compound-mini", prompt, temperature=temperature, provider=provider, custom_model=custom_model)
         return strip_internal_thinking(raw)
     except Exception as e:
         print(f"Error generating debate turn for {agent_name} (Round {round_number}): {e}")
@@ -352,7 +507,13 @@ def generate_debate_turn(
 
 # ─── Factcheck Analysis Mode ─────────────────────────────────
 
-def generate_factcheck_analysis(topic: str, research_context: str = "", stance_preference: str = "both") -> dict:
+def generate_factcheck_analysis(
+    topic: str, 
+    research_context: str = "", 
+    stance_preference: str = "both",
+    provider: str = "gemini",
+    custom_model: str = ""
+) -> dict:
     """
     Generates a structured fact-check analysis focusing on the user's stance preference:
     FOR case, AGAINST case, or BOTH, alongside a balanced/contextual VERDICT.
@@ -451,7 +612,7 @@ def generate_factcheck_analysis(topic: str, research_context: str = "", stance_p
     """
     
     try:
-        response_text = generate_content_with_retry("groq/compound-mini", prompt, temperature=0.3, json_mode=True)
+        response_text = generate_content_with_retry("groq/compound-mini", prompt, temperature=0.3, json_mode=True, provider=provider, custom_model=custom_model)
         result = clean_and_parse_json(response_text)
         
         # Ensure fallback keys are populated to avoid frontend breakdown
@@ -476,13 +637,12 @@ def generate_factcheck_analysis(topic: str, research_context: str = "", stance_p
 
 # ─── Claim Extraction ────────────────────────────────────────
 
-def extract_claims(turn_content: str) -> list[dict]:
+def extract_claims(turn_content: str, provider: str = "gemini", custom_model: str = "") -> list[dict]:
     """
     Extracts objectively checkable claims from a turn's content.
     Also extracts any inline cited URLs associated with each claim.
     """
     if MOCK_MODE:
-        # Extract markdown links and pair with surrounding sentence
         claims = []
         sentences = re.split(r'(?<=[.!?])\s+', turn_content)
         for s in sentences:
@@ -518,7 +678,7 @@ def extract_claims(turn_content: str) -> list[dict]:
     If there are no factual claims, return: {{"claims": []}}.
     """
     try:
-        response_text = generate_content_with_retry("llama-3.1-8b-instant", prompt, temperature=0.1, json_mode=True)
+        response_text = generate_content_with_retry("llama-3.1-8b-instant", prompt, temperature=0.1, json_mode=True, provider=provider, custom_model=custom_model)
         parsed = clean_and_parse_json(response_text)
         if isinstance(parsed, dict):
             if "claims" in parsed and isinstance(parsed["claims"], list):
@@ -536,7 +696,7 @@ def extract_claims(turn_content: str) -> list[dict]:
 
 # ─── Claim Verification ──────────────────────────────────────
 
-def verify_claim(claim_text: str, search_results: list[dict], cited_url: str | None = None) -> dict:
+def verify_claim(claim_text: str, search_results: list[dict], cited_url: str | None = None, provider: str = "gemini", custom_model: str = "") -> dict:
     """
     Verifies a claim against search results from whitelisted domains.
     If the agent provided a cited_url, that URL is prioritized in verification.
@@ -554,14 +714,12 @@ def verify_claim(claim_text: str, search_results: list[dict], cited_url: str | N
             "reasoning": "No matching source found in the whitelisted domains."
         }
 
-    # If the agent cited a specific URL, check if it's in our search results or whitelist
     cited_url_in_results = False
     if cited_url:
         from backend.config import get_domain_tier
         cited_tier = get_domain_tier(cited_url)
         if cited_tier is not None:
             cited_url_in_results = True
-            # Ensure the cited URL is included in the search results for verification
             if not any(r["url"] == cited_url for r in search_results):
                 search_results = [{"url": cited_url, "title": "Agent-cited source", "snippet": "", "tier": cited_tier}] + search_results
 
@@ -603,7 +761,7 @@ def verify_claim(claim_text: str, search_results: list[dict], cited_url: str | N
     Output MUST be a JSON object with keys "verdict", "source_url", and "reasoning".
     """
     try:
-        response_text = generate_content_with_retry("groq/compound-mini", prompt, temperature=0.1, json_mode=True)
+        response_text = generate_content_with_retry("groq/compound-mini", prompt, temperature=0.1, json_mode=True, provider=provider, custom_model=custom_model)
         result = clean_and_parse_json(response_text)
         
         verdict = result.get("verdict", "Unverifiable")
@@ -629,10 +787,10 @@ def verify_claim(claim_text: str, search_results: list[dict], cited_url: str | N
             "reasoning": f"Fact-checker error: {e}"
         }
 
-def verify_claims_batch(claims_list: list[dict], search_results_list: list[list[dict]]) -> list[dict]:
+def verify_claims_batch(claims_list: list[dict], search_results_list: list[list[dict]], provider: str = "gemini", custom_model: str = "") -> list[dict]:
     """
     Verifies a batch of claims against their respective search results in a SINGLE LLM call.
-    This saves multiple parallel API calls and avoids hitting Groq rate limits (429).
+    This saves multiple parallel API calls and avoids hitting provider rate limits.
     """
     if MOCK_MODE:
         results = []
@@ -655,14 +813,12 @@ def verify_claims_batch(claims_list: list[dict], search_results_list: list[list[
     if not claims_list:
         return []
 
-    # Build the prompt with all claims and their search results
     formatted_claims = []
     for idx, claim in enumerate(claims_list):
         claim_text = claim["claim_text"]
         cited_url = claim.get("cited_url")
         search_results = search_results_list[idx] if idx < len(search_results_list) else []
 
-        # If cited_url is present, ensure it's in search results
         cited_url_in_results = False
         if cited_url:
             from backend.config import get_domain_tier
@@ -733,7 +889,7 @@ SEARCH RESULTS:
     """
     
     try:
-        response_text = generate_content_with_retry("llama-3.1-8b-instant", prompt, temperature=0.1, json_mode=True)
+        response_text = generate_content_with_retry("llama-3.1-8b-instant", prompt, temperature=0.1, json_mode=True, provider=provider, custom_model=custom_model)
         parsed = clean_and_parse_json(response_text)
         verifications = parsed.get("verifications", [])
         
@@ -742,7 +898,6 @@ SEARCH RESULTS:
             search_results = search_results_list[idx] if idx < len(search_results_list) else []
             valid_urls = [res["url"] for res in search_results]
             
-            # Find matching index from LLM output
             matching_ver = next((v for v in verifications if v.get("claim_index") == idx + 1), None)
             
             if matching_ver:
@@ -798,7 +953,9 @@ def run_single_judge_evaluation(
     agent_b_name: str, 
     transcript: str, 
     claim_stats_a: dict, 
-    claim_stats_b: dict
+    claim_stats_b: dict,
+    provider: str = "gemini",
+    custom_model: str = ""
 ) -> dict:
     """
     Runs a single judge evaluation with strengthened scoring criteria.
@@ -864,10 +1021,10 @@ def run_single_judge_evaluation(
       }}
     }}
     """
-    response_text = generate_content_with_retry("groq/compound-mini", prompt, temperature=0.2, json_mode=True)
+    response_text = generate_content_with_retry("groq/compound-mini", prompt, temperature=0.2, json_mode=True, provider=provider, custom_model=custom_model)
     return clean_and_parse_json(response_text)
 
-def evaluate_debate(topic: str, history: list[dict], claims_by_turn: dict) -> dict:
+def evaluate_debate(topic: str, history: list[dict], claims_by_turn: dict, provider: str = "gemini", custom_model: str = "") -> dict:
     """
     Runs the judge twice with swapped labels to eliminate position bias in PARALLEL,
     speeding up evaluation from 30+ seconds to ~2 seconds, with intelligent fallback.
@@ -922,12 +1079,14 @@ def evaluate_debate(topic: str, history: list[dict], claims_by_turn: dict) -> di
             f1 = executor.submit(
                 run_single_judge_evaluation,
                 topic, "Agent A", "Agent B", 
-                transcript_standard, claim_stats["Agent A"], claim_stats["Agent B"]
+                transcript_standard, claim_stats["Agent A"], claim_stats["Agent B"],
+                provider, custom_model
             )
             f2 = executor.submit(
                 run_single_judge_evaluation,
                 topic, "Agent B", "Agent A", 
-                transcript_swapped, claim_stats["Agent B"], claim_stats["Agent A"]
+                transcript_swapped, claim_stats["Agent B"], claim_stats["Agent A"],
+                provider, custom_model
             )
             try:
                 run1 = f1.result(timeout=14.0)

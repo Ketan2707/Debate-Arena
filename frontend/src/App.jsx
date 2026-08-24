@@ -60,6 +60,37 @@ export const MODE_OPTIONS = [
   }
 ];
 
+export const MODEL_OPTIONS = [
+  {
+    id: 'groq',
+    name: 'Groq',
+    badge: 'Lightning',
+    desc: 'Fast responses with low-latency inference',
+    icon: <Zap className="h-4 w-4" />
+  },
+  {
+    id: 'gemini',
+    name: 'Gemini 2.5 Flash',
+    badge: 'Balanced',
+    desc: 'Balanced reasoning, context handling, and response speed',
+    icon: <Sparkles className="h-4 w-4" />
+  },
+  {
+    id: 'oxalpha',
+    name: 'OxAlpha',
+    badge: 'Deep Reasoning',
+    desc: 'Deeper reasoning for complex debates and analysis',
+    icon: <Cpu className="h-4 w-4" />
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    badge: 'Custom',
+    desc: 'Choose from multiple AI models through OpenRouter',
+    icon: <Layers className="h-4 w-4" />
+  }
+];
+
 // ─── Dark mode helper ───
 function getInitialDarkMode() {
   try {
@@ -223,11 +254,41 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
 
-  // Stance & Mode Dropdown states
+  // Stance, Mode & Model Dropdown states
   const [showStanceDropdown, setShowStanceDropdown] = useState(false);
   const [showModeDropdown, setShowModeDropdown] = useState(false);
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [showOpenRouterSubDropdown, setShowOpenRouterSubDropdown] = useState(false);
+  
+  const [selectedModelProvider, setSelectedModelProvider] = useState('gemini'); // Default: Gemini 2.5 Flash
+  const [openRouterCustomModel, setOpenRouterCustomModel] = useState('meta-llama/llama-3.3-70b-instruct');
+  const [openRouterModelsList, setOpenRouterModelsList] = useState([
+    { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B Instruct', provider: 'Meta', description: 'High capability open weights model' },
+    { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3', provider: 'DeepSeek', description: 'General conversational intelligence' },
+    { id: 'qwen/qwen-2.5-72b-instruct', name: 'Qwen 2.5 72B Instruct', provider: 'Alibaba', description: 'Top mathematical & argument logic' },
+    { id: 'stealth/ox-alpha', name: 'OxAlpha Deep Reasoning', provider: 'OxAlpha', description: 'Deep analytical debate model' },
+    { id: 'nvidia/nemotron-3.5-lightning:free', name: 'Nvidia Nemotron 3.5 Lightning (Free)', provider: 'Nvidia', description: 'Fast inference for factual grounding' },
+    { id: 'google/gemma-4-31b-it:free', name: 'Google Gemma 4 31B (Free)', provider: 'Google', description: 'DeepMind open model' },
+    { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', description: 'Nuanced writing and critical critique' },
+    { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', description: 'Versatile multimodal intelligence' }
+  ]);
+
   const stanceDropdownRef = useRef(null);
   const modeDropdownRef = useRef(null);
+  const modelDropdownRef = useRef(null);
+  const openRouterSubDropdownRef = useRef(null);
+
+  // Fetch active OpenRouter models list on mount
+  useEffect(() => {
+    fetch(`${API_BASE}/api/models/openrouter`)
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => {
+        if (data && data.models && data.models.length > 0) {
+          setOpenRouterModelsList(data.models);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -236,6 +297,12 @@ function App() {
       }
       if (modeDropdownRef.current && !modeDropdownRef.current.contains(e.target)) {
         setShowModeDropdown(false);
+      }
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target)) {
+        setShowModelDropdown(false);
+      }
+      if (openRouterSubDropdownRef.current && !openRouterSubDropdownRef.current.contains(e.target)) {
+        setShowOpenRouterSubDropdown(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -484,7 +551,13 @@ function App() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({ topic, mode, stance_preference: stancePreference })
+        body: JSON.stringify({ 
+          topic, 
+          mode, 
+          stance_preference: stancePreference,
+          model_provider: selectedModelProvider,
+          custom_model: openRouterCustomModel
+        })
       });
       
       if (!res.ok) {
@@ -1628,6 +1701,8 @@ function App() {
                               onClick={() => {
                                 setShowStanceDropdown(!showStanceDropdown);
                                 setShowModeDropdown(false);
+                                setShowModelDropdown(false);
+                                setShowOpenRouterSubDropdown(false);
                               }}
                               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer text-xs font-semibold border ${
                                 darkMode 
@@ -1708,7 +1783,206 @@ function App() {
                             )}
                           </div>
 
-                          {/* 3. Voice Dictation */}
+                          {/* 3. AI Model Selector Dropdown (Claude / ChatGPT style) */}
+                          <div className="relative" ref={modelDropdownRef}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowModelDropdown(!showModelDropdown);
+                                setShowModeDropdown(false);
+                                setShowStanceDropdown(false);
+                                setShowOpenRouterSubDropdown(false);
+                              }}
+                              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer text-xs font-semibold border ${
+                                darkMode 
+                                  ? 'bg-white/5 border-white/15 hover:bg-white/10 text-slate-200 shadow-sm' 
+                                  : 'bg-white border-blue-200 text-slate-800 hover:bg-slate-50 shadow-xs'
+                              }`}
+                              title="Choose AI Model"
+                            >
+                              <span className="p-0.5">
+                                {selectedModelProvider === 'groq' ? <Zap className="h-3.5 w-3.5 text-amber-400" /> :
+                                 selectedModelProvider === 'gemini' ? <Sparkles className="h-3.5 w-3.5 text-cyan-400" /> :
+                                 selectedModelProvider === 'oxalpha' ? <Cpu className="h-3.5 w-3.5 text-purple-400" /> :
+                                 <Layers className="h-3.5 w-3.5 text-emerald-400" />}
+                              </span>
+                              <span>
+                                {MODEL_OPTIONS.find(m => m.id === selectedModelProvider)?.name || 'Gemini 2.5 Flash'}
+                              </span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold tracking-tight ${
+                                selectedModelProvider === 'groq' ? (darkMode ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-100 text-amber-800') :
+                                selectedModelProvider === 'gemini' ? (darkMode ? 'bg-cyan-500/20 text-cyan-300' : 'bg-cyan-100 text-cyan-800') :
+                                selectedModelProvider === 'oxalpha' ? (darkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-800') :
+                                (darkMode ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-800')
+                              }`}>
+                                {MODEL_OPTIONS.find(m => m.id === selectedModelProvider)?.badge}
+                              </span>
+                              <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {/* Model Dropdown Menu */}
+                            {showModelDropdown && (
+                              <div className={`absolute left-0 bottom-full mb-2 w-80 rounded-2xl p-2 border shadow-2xl z-50 backdrop-blur-2xl animate-scale-in ${
+                                darkMode 
+                                  ? 'bg-[#080d19]/95 border-white/20 text-white shadow-black/80' 
+                                  : 'bg-white/95 border-blue-200 text-slate-900 shadow-xl'
+                              }`}>
+                                <div className={`flex items-center justify-between px-2.5 py-1 ${
+                                  darkMode ? 'text-slate-400' : 'text-slate-500'
+                                }`}>
+                                  <span className="text-[10px] font-bold uppercase tracking-wider">AI Model Intelligence</span>
+                                  <span className="text-[9px] font-mono opacity-60">Multi-Engine</span>
+                                </div>
+                                <div className="space-y-1 mt-1">
+                                  {MODEL_OPTIONS.map((opt) => {
+                                    const isSelected = selectedModelProvider === opt.id;
+                                    return (
+                                      <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedModelProvider(opt.id);
+                                          setShowModelDropdown(false);
+                                          if (opt.id === 'openrouter') {
+                                            setShowOpenRouterSubDropdown(true);
+                                          }
+                                        }}
+                                        className={`w-full flex items-start space-x-2.5 p-2 rounded-xl text-left transition-all cursor-pointer ${
+                                          isSelected
+                                            ? (darkMode ? 'bg-white/10 border border-cyan-400/40 shadow-xs' : 'bg-indigo-50/80 border border-indigo-200 shadow-xs')
+                                            : (darkMode ? 'hover:bg-white/5 border border-transparent' : 'hover:bg-slate-50 border border-transparent')
+                                        }`}
+                                      >
+                                        <div className={`p-1.5 rounded-lg mt-0.5 ${
+                                          isSelected 
+                                            ? (darkMode ? 'bg-cyan-500 text-black' : 'bg-indigo-600 text-white')
+                                            : (darkMode ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-700')
+                                        }`}>
+                                          {opt.icon}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-1.5">
+                                              <span className={`text-xs font-bold font-sans ${
+                                                isSelected 
+                                                  ? (darkMode ? 'text-cyan-300' : 'text-indigo-700')
+                                                  : (darkMode ? 'text-white' : 'text-slate-900')
+                                              }`}>
+                                                {opt.name}
+                                              </span>
+                                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold ${
+                                                opt.id === 'groq' ? (darkMode ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-100 text-amber-700') :
+                                                opt.id === 'gemini' ? (darkMode ? 'bg-cyan-500/20 text-cyan-300' : 'bg-cyan-100 text-cyan-700') :
+                                                opt.id === 'oxalpha' ? (darkMode ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-700') :
+                                                (darkMode ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-700')
+                                              }`}>
+                                                {opt.badge}
+                                              </span>
+                                            </div>
+                                            {isSelected && <Check className={`h-3.5 w-3.5 ${darkMode ? 'text-cyan-400' : 'text-indigo-600'}`} />}
+                                          </div>
+                                          <p className={`text-[11px] leading-tight mt-0.5 ${
+                                            darkMode ? 'text-slate-400' : 'text-slate-500'
+                                          }`}>
+                                            {opt.desc}
+                                          </p>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 4. Secondary OpenRouter Model Selector (when OpenRouter is selected) */}
+                          {selectedModelProvider === 'openrouter' && (
+                            <div className="relative" ref={openRouterSubDropdownRef}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowOpenRouterSubDropdown(!showOpenRouterSubDropdown);
+                                  setShowModelDropdown(false);
+                                  setShowModeDropdown(false);
+                                  setShowStanceDropdown(false);
+                                }}
+                                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer text-xs font-semibold border ${
+                                  darkMode 
+                                    ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/25' 
+                                    : 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100 shadow-xs'
+                                }`}
+                                title="Select Custom OpenRouter Model"
+                              >
+                                <Layers className="h-3.5 w-3.5" />
+                                <span className="max-w-[120px] truncate">
+                                  {openRouterModelsList.find(m => m.id === openRouterCustomModel)?.name || openRouterCustomModel || 'Custom Model'}
+                                </span>
+                                <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${showOpenRouterSubDropdown ? 'rotate-180' : ''}`} />
+                              </button>
+
+                              {/* Secondary OpenRouter Dropdown Menu */}
+                              {showOpenRouterSubDropdown && (
+                                <div className={`absolute left-0 bottom-full mb-2 w-80 max-h-72 overflow-y-auto rounded-2xl p-2 border shadow-2xl z-50 backdrop-blur-2xl animate-scale-in no-scrollbar ${
+                                  darkMode 
+                                    ? 'bg-[#080d19]/95 border-white/20 text-white shadow-black/80' 
+                                    : 'bg-white/95 border-blue-200 text-slate-900 shadow-xl'
+                                }`}>
+                                  <div className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 ${
+                                    darkMode ? 'text-slate-400' : 'text-slate-500'
+                                  }`}>
+                                    Select OpenRouter AI Model
+                                  </div>
+                                  <div className="space-y-1 mt-1">
+                                    {openRouterModelsList.map((m) => {
+                                      const isSelected = openRouterCustomModel === m.id;
+                                      return (
+                                        <button
+                                          key={m.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setOpenRouterCustomModel(m.id);
+                                            setShowOpenRouterSubDropdown(false);
+                                          }}
+                                          className={`w-full flex items-start space-x-2.5 p-2 rounded-xl text-left transition-all cursor-pointer ${
+                                            isSelected
+                                              ? (darkMode ? 'bg-emerald-500/20 border border-emerald-400/50' : 'bg-emerald-50 border border-emerald-200 shadow-xs')
+                                              : (darkMode ? 'hover:bg-white/5 border border-transparent' : 'hover:bg-slate-50 border border-transparent')
+                                          }`}
+                                        >
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between">
+                                              <span className={`text-xs font-bold font-sans truncate ${
+                                                isSelected 
+                                                  ? (darkMode ? 'text-emerald-300' : 'text-emerald-700')
+                                                  : (darkMode ? 'text-white' : 'text-slate-900')
+                                              }`}>
+                                                {m.name || m.id}
+                                              </span>
+                                              {isSelected && <Check className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0 ml-1" />}
+                                            </div>
+                                            <div className="flex items-center space-x-1.5 mt-0.5">
+                                              {m.provider && (
+                                                <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
+                                                  darkMode ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-600'
+                                                }`}>
+                                                  {m.provider}
+                                                </span>
+                                              )}
+                                              <span className={`text-[10px] truncate ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                {m.description || m.id}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 5. Voice Dictation */}
                           <button
                             type="button"
                             onClick={toggleVoiceInput}
@@ -2066,11 +2340,22 @@ function App() {
                                 ? (darkMode ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50' : 'bg-indigo-50 text-indigo-700 border-indigo-200')
                                 : (darkMode ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50' : 'bg-emerald-50 text-emerald-700 border-emerald-200')
                             }`}
-                            title="Switch mode"
+                            title="Switch engine mode"
                           >
-                            <Zap className="h-3 w-3" />
-                            <span>{debateMode === 'debate' ? '⚔️ Debate' : '🛡️ Fact-Check'}</span>
+                            {debateMode === 'debate' ? <Swords className="h-3 w-3" /> : <ShieldCheck className="h-3 w-3" />}
+                            <span>{debateMode === 'debate' ? 'Debate' : 'Fact-Check'}</span>
                           </button>
+
+                          {/* Active Model Indicator Tag */}
+                          <div className={`hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-xl text-[11px] font-mono font-medium border ${
+                            darkMode ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                          }`}>
+                            {selectedModelProvider === 'groq' ? <Zap className="h-3 w-3 text-amber-400" /> :
+                             selectedModelProvider === 'gemini' ? <Sparkles className="h-3 w-3 text-cyan-400" /> :
+                             selectedModelProvider === 'oxalpha' ? <Cpu className="h-3 w-3 text-purple-400" /> :
+                             <Layers className="h-3 w-3 text-emerald-400" />}
+                            <span>{MODEL_OPTIONS.find(m => m.id === selectedModelProvider)?.name || 'Gemini 2.5 Flash'}</span>
+                          </div>
 
                           <button
                             type="button"
@@ -2080,7 +2365,7 @@ function App() {
                                 ? 'text-rose-400 bg-rose-500/20 border-rose-400 animate-pulse' 
                                 : (darkMode ? 'bg-white/5 border-white/10 text-slate-400 hover:text-white' : 'bg-white border-blue-200 text-slate-600')
                             }`}
-                            title="Voice Input"
+                            title={isRecordingVoice ? "Recording... Click to stop" : "Voice Input"}
                           >
                             <Mic className="h-3 w-3" />
                           </button>

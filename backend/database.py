@@ -125,6 +125,10 @@ def init_db():
             conn.execute("ALTER TABLE debates ADD COLUMN stance_preference TEXT NOT NULL DEFAULT 'both'")
         if "user_id" not in debates_cols:
             conn.execute("ALTER TABLE debates ADD COLUMN user_id TEXT")
+        if "model_provider" not in debates_cols:
+            conn.execute("ALTER TABLE debates ADD COLUMN model_provider TEXT NOT NULL DEFAULT 'gemini'")
+        if "custom_model" not in debates_cols:
+            conn.execute("ALTER TABLE debates ADD COLUMN custom_model TEXT DEFAULT ''")
 
 
 # ─── User CRUD ───────────────────────────────────────────────
@@ -173,27 +177,55 @@ def get_user_by_id(user_id: str) -> dict | None:
             ).fetchone()
             return dict(row) if row else None
 
+# In-memory cache for active debate model parameters
+_session_debate_models = {}
+
 # ─── Debate CRUD ─────────────────────────────────────────────
 
-def create_debate(topic: str, mode: str = "debate", user_id: str | None = None, stance_preference: str = "both") -> str:
+def create_debate(
+    topic: str, 
+    mode: str = "debate", 
+    user_id: str | None = None, 
+    stance_preference: str = "both",
+    model_provider: str = "gemini",
+    custom_model: str = ""
+) -> str:
     debate_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
+    _session_debate_models[debate_id] = {
+        "model_provider": model_provider,
+        "custom_model": custom_model
+    }
     
     if USE_SUPABASE:
-        supabase_client.table("debates").insert({
-            "id": debate_id,
-            "topic": topic,
-            "created_at": now,
-            "status": "running",
-            "mode": mode,
-            "stance_preference": stance_preference,
-            "user_id": user_id
-        }).execute()
+        try:
+            supabase_client.table("debates").insert({
+                "id": debate_id,
+                "topic": topic,
+                "created_at": now,
+                "status": "running",
+                "mode": mode,
+                "stance_preference": stance_preference,
+                "user_id": user_id,
+                "model_provider": model_provider,
+                "custom_model": custom_model
+            }).execute()
+        except Exception as e:
+            # Fallback if remote Supabase schema cache does not have custom_model column yet
+            supabase_client.table("debates").insert({
+                "id": debate_id,
+                "topic": topic,
+                "created_at": now,
+                "status": "running",
+                "mode": mode,
+                "stance_preference": stance_preference,
+                "user_id": user_id
+            }).execute()
     else:
         with get_sqlite_conn() as conn:
             conn.execute(
-                "INSERT INTO debates (id, topic, created_at, status, mode, stance_preference, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (debate_id, topic, now, "running", mode, stance_preference, user_id)
+                "INSERT INTO debates (id, topic, created_at, status, mode, stance_preference, user_id, model_provider, custom_model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (debate_id, topic, now, "running", mode, stance_preference, user_id, model_provider, custom_model)
             )
     return debate_id
 
@@ -338,6 +370,14 @@ def get_debate_details(debate_id: str) -> dict | None:
         scores_res = supabase_client.table("scores").select("*").eq("debate_id", debate_id).execute()
         debate["scores"] = scores_res.data or []
         
+        # Merge session model params if available
+        if debate_id in _session_debate_models:
+            debate.setdefault("model_provider", _session_debate_models[debate_id].get("model_provider", "gemini"))
+            debate.setdefault("custom_model", _session_debate_models[debate_id].get("custom_model", ""))
+        else:
+            debate.setdefault("model_provider", "gemini")
+            debate.setdefault("custom_model", "")
+            
         return debate
     else:
         with get_sqlite_conn() as conn:
